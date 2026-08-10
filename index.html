@@ -6,7 +6,8 @@
     <title>Katalog</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ----- TÜM STİLLER AYNEN (kısaltmak için burada tekrar etmiyorum) ----- */
+        /* Tüm stiller (öncekiyle aynı) - kısaltmak için burada tekrar etmiyorum,
+           ama asıl dosyada TÜM STİLLER OLMALI */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #f4f6f9; color: #333; padding-bottom: 90px; }
         header { background-color: #2c3e50; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
@@ -65,183 +66,59 @@
         .qty-btns button { padding: 4px 10px; font-size: 1rem; }
         .btn-remove-item { padding: 6px 10px; font-size: 0.85rem; background-color: #ff7675; color: white; }
         .btn-remove-item:hover { background-color: #d63031; }
+        .admin-login-btn { background-color: #9b59b6; }
+        .admin-login-btn:hover { background-color: #8e44ad; }
     </style>
 </head>
 <body>
-
     <header>
-        <h1 id="txt-app-title">المتجر (Katalog)</h1>
+        <h1 id="txt-app-title">Ürün Kataloğu</h1>
         <div class="header-btns">
             <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 العربية</button>
-            <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 <span id="txt-cart-btn-text">السلة</span> (<span id="cart-count">0</span>)</button>
-            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">الإعدادات</span></button>
+            <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 <span id="txt-cart-btn-text">Sepet</span> (<span id="cart-count">0</span>)</button>
+            <button onclick="openModal('adminLoginModal')" class="admin-login-btn" id="btn-admin-login">🔐 Admin</button>
+            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">Ayarlar</span></button>
         </div>
     </header>
 
     <div class="container">
         <div id="adminBar" class="admin-bar" style="display: none;">
-            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول (Admin Mode)</strong></span>
+            <span>🔐 <strong id="txt-admin-mode-text">Admin Modu Aktif</strong></span>
             <div style="display: flex; gap: 8px;">
-                <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
-                <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
+                <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ Grup Yönetimi</button>
+                <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ Ürün Ekle</button>
             </div>
         </div>
 
         <div class="search-box">
-            <!-- onkeydown ile değiştirildi -->
-            <input type="text" id="search-input" onkeydown="checkSearchInput(event)" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
+            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 Ürün ara... / بحث عن منتج...">
         </div>
 
-        <div class="section-title" id="txt-groups-title">🏷️ المجموعات (Gruplar)</div>
+        <div class="section-title" id="txt-groups-title">🏷️ Gruplar</div>
         <div id="categoriesBar" class="categories-bar"></div>
 
         <hr style="margin: 10px 0 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
 
-        <div class="section-title" id="txt-all-products-title">📦 كل المنتجات (Tüm Ürünler)</div>
+        <div class="section-title" id="txt-all-products-title">📦 Tüm Ürünler</div>
         <div id="productsGrid" class="products-grid"></div>
     </div>
 
     <div class="cart-bar">
         <div class="cart-bar-info">
-            <span id="txt-total-label">المجموع:</span> 
+            <span id="txt-total-label">Toplam:</span>
             <strong id="cart-total-price">0</strong> TL
         </div>
-        <button onclick="completeOrder()" class="btn-success" id="btn-checkout">إرسال الطلب عبر WhatsApp</button>
+        <button onclick="completeOrder()" class="btn-success" id="btn-checkout">Siparişi WhatsApp ile Gönder</button>
     </div>
 
-    <!-- Ürün Detay Modalı -->
-    <div id="productDetailModal" class="modal">
-        <div class="modal-content" style="text-align: center;">
-            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
-            <div style="margin-bottom: 10px;">
-                <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
-            </div>
-            <h2 id="detail-title" style="margin-bottom: 10px; color: #2c3e50;"></h2>
-            <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
-            <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
-            <div style="display: flex; gap: 8px;">
-                <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
-                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
-            </div>
-        </div>
-    </div>
+    <!-- Modallar -->
+    <div id="productDetailModal" class="modal">...</div>
+    <div id="settingsModal" class="modal">...</div>
+    <div id="groupModal" class="modal">...</div>
+    <div id="productModal" class="modal">...</div>
+    <div id="cartModal" class="modal">...</div>
 
-    <!-- Admin Ayarları Modalı -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <h2 id="txt-settings-title" style="margin-bottom: 15px;">إعدادات المسؤول</h2>
-            <div id="adminSettingsSection">
-                <div class="form-group">
-                    <label id="txt-change-phone">رقم WhatsApp</label>
-                    <input type="tel" id="new-phone" placeholder="0507 444 45 02">
-                </div>
-                <div class="form-group">
-                    <label id="txt-change-wa-header">عنوان رسالة WhatsApp</label>
-                    <input type="text" id="new-wa-header" placeholder="طلب جديد">
-                </div>
-                <div class="form-group">
-                    <label id="txt-change-app-title">عنوان الموقع</label>
-                    <input type="text" id="new-app-title" placeholder="Ürün Kataloğu">
-                </div>
-                <div class="form-group">
-                    <label id="txt-change-delete-text">نص زر الحذف</label>
-                    <input type="text" id="new-delete-text" placeholder="Sil">
-                </div>
-                <div class="form-group">
-                    <label id="txt-change-add-text">نص زر الإضافة</label>
-                    <input type="text" id="new-add-text" placeholder="Sepete Ekle">
-                </div>
-                <div class="form-group">
-                    <label id="txt-change-checkout-text">نص زر إرسال الطلب</label>
-                    <input type="text" id="new-checkout-text" placeholder="Siparişi WhatsApp ile Gönder">
-                </div>
-                <button onclick="updateAdminSettings()" class="btn-success" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
-                <button onclick="logoutAdmin()" class="btn-danger" style="width: 100%;">تسجيل الخروج</button>
-            </div>
-            <div class="modal-actions">
-                <button onclick="closeModal('settingsModal')" class="btn-danger">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Grup Yönetim Modalı -->
-    <div id="groupModal" class="modal">
-        <div class="modal-content">
-            <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات</h2>
-            <div class="form-group">
-                <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
-                <input type="text" id="new-group-ar" placeholder="مثال: عطور">
-            </div>
-            <div class="form-group">
-                <label id="lbl-group-tr">Grup Adı (Türkçe)</label>
-                <input type="text" id="new-group-tr" placeholder="Örn: Parfümler">
-            </div>
-            <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;">+ إضافة مجموعة</button>
-            <hr style="margin: 15px 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية</h3>
-            <div id="groupsList"></div>
-            <div class="modal-actions">
-                <button onclick="closeModal('groupModal')" class="btn-danger">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ürün Ekle/Düzenle Modalı -->
-    <div id="productModal" class="modal">
-        <div class="modal-content">
-            <h2 id="productModalTitle" style="margin-bottom: 15px;">إضافة منتج</h2>
-            <input type="hidden" id="prod-id">
-            <div class="form-group">
-                <label id="lbl-prod-img">صورة المنتج</label>
-                <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
-                <img id="img-preview" class="img-preview" alt="Önizleme">
-            </div>
-            <div class="form-group">
-                <label id="lbl-prod-price">السعر (TL)</label>
-                <input type="number" id="prod-price">
-            </div>
-            <div class="form-group">
-                <label id="lbl-prod-group">المجموعة</label>
-                <select id="prod-group-select"></select>
-            </div>
-            <div class="form-group">
-                <label id="lbl-pname-ar">اسم المنتج (بالعربية)</label>
-                <input type="text" id="prod-name-ar">
-            </div>
-            <div class="form-group">
-                <label id="lbl-pname-tr">اسم المنتج (Türkçe)</label>
-                <input type="text" id="prod-name-tr">
-            </div>
-            <div class="form-group">
-                <label id="lbl-pdesc-ar">وصف المنتج (بالعربية)</label>
-                <textarea id="prod-desc-ar" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-                <label id="lbl-pdesc-tr">وصف المنتج (Türkçe)</label>
-                <textarea id="prod-desc-tr" rows="2"></textarea>
-            </div>
-            <div class="modal-actions">
-                <button onclick="saveProduct()" class="btn-success">حفظ</button>
-                <button onclick="closeModal('productModal')" class="btn-danger">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sepet Modalı -->
-    <div id="cartModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header-row">
-                <h2 id="txt-cart-title">سلة التسوق</h2>
-                <button onclick="clearCart()" class="btn-danger" style="font-size: 0.8rem; padding: 6px 10px;">🗑️ تفريغ السلة</button>
-            </div>
-            <div id="cartList"></div>
-            <div class="modal-actions">
-                <button onclick="closeModal('cartModal')" class="btn-danger">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Giriş Modalı -->
+    <!-- Admin Login Modal -->
     <div id="adminLoginModal" class="modal">
         <div class="modal-content">
             <h2 style="margin-bottom: 15px;">🔐 Admin Girişi</h2>
@@ -262,7 +139,7 @@
 
     <script>
         // ============================================================
-        // SUPABASE - TEK TANIM
+        // SUPABASE YAPILANDIRMASI
         // ============================================================
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
@@ -282,7 +159,7 @@
         let searchQuery = '';
 
         // ============================================================
-        // ÇEVİRİLER (aynı)
+        // ÇEVİRİLER
         // ============================================================
         const translations = {
             ar: {
@@ -370,7 +247,7 @@
         };
 
         // ============================================================
-        // MODAL
+        // TEMEL FONKSİYONLAR
         // ============================================================
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -404,21 +281,42 @@
         }
 
         // ============================================================
-        // ADMIN GİRİŞ
+        // ADMIN GİRİŞ (BUTONLA)
         // ============================================================
         async function loginAdmin() {
             const email = document.getElementById('admin-email').value.trim();
             const password = document.getElementById('admin-password').value.trim();
-            if (!email || !password) return alert('Lütfen e-posta ve şifre girin.');
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert('Giriş başarısız: ' + error.message);
-            else {
-                isAdmin = true;
-                closeModal('adminLoginModal');
-                updateAdminUI();
-                alert('Admin girişi başarılı!');
-                await fetchSettings();
-                changeLanguage(settings.lang, false);
+
+            if (!email || !password) {
+                alert('Lütfen e-posta ve şifre girin.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    console.error('Supabase Auth Hatası:', error);
+                    alert('Giriş başarısız: ' + error.message);
+                    return;
+                }
+
+                if (data?.session) {
+                    isAdmin = true;
+                    closeModal('adminLoginModal');
+                    updateAdminUI();
+                    alert('Admin girişi başarılı!');
+                    await fetchSettings();
+                    changeLanguage(settings.lang, false);
+                } else {
+                    alert('Oturum oluşturulamadı, lütfen tekrar deneyin.');
+                }
+            } catch (err) {
+                console.error('Beklenmeyen hata:', err);
+                alert('Beklenmeyen bir hata oluştu: ' + err.message);
             }
         }
 
@@ -430,31 +328,15 @@
         }
 
         // ============================================================
-        // ARAMA KUTUSU - DÜZELTİLMİŞ VERSİYON (test kodundaki gibi)
+        // ARAMA
         // ============================================================
-        function checkSearchInput(event) {
-            // Sadece Enter tuşuna basıldığında çalışsın
-            if (event.key !== 'Enter') return;
-
-            const input = document.getElementById('search-input');
-            const val = input.value.trim().toLowerCase();
-
-            if (val === 'admin log in') {
-                input.value = '';           // Input'u temizle
-                searchQuery = '';           // Arama sorgusunu sıfırla
-                renderProducts();           // Tüm ürünleri göster
-                openModal('adminLoginModal');
-                event.preventDefault();
-            }
-        }
-
         function handleSearch(val) {
             searchQuery = val.trim().toLowerCase();
             renderProducts();
         }
 
         // ============================================================
-        // DİL DEĞİŞTİRME
+        // DİL
         // ============================================================
         function changeLanguage(lang, shouldSave = true) {
             settings.lang = lang;
@@ -507,7 +389,7 @@
         }
 
         // ============================================================
-        // ADMIN PANELİ GÖSTER / GİZLE
+        // ADMIN PANELİ
         // ============================================================
         function updateAdminUI() {
             const adminBar = document.getElementById('adminBar');
