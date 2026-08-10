@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Katalog</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            padding-bottom: 90px;
+        }
+
+        /* Header Navbar */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .header-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.1s;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.btn-danger { background-color: #e74c3c; }
+        button.btn-danger:hover { background-color: #c0392b; }
+
+        button.btn-success { background-color: #2ecc71; }
+        button.btn-success:hover { background-color: #27ae60; }
+
+        button.btn-warning { background-color: #f39c12; }
+        button.btn-warning:hover { background-color: #d68910; }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 15px auto;
+            padding: 0 12px;
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Search Input */
+        .search-box {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #3498db;
+        }
+
+        /* Admin Control Bar */
+        .admin-bar {
+            background-color: #e8f4f8;
+            border: 1px solid #bce8f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Categories Bar (Gruplar) */
+        .categories-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            scrollbar-width: thin;
+        }
+
+        .cat-btn {
+            background-color: #ffffff;
+            color: #2c3e50;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .cat-btn.active {
+            background-color: #2c3e50;
+            color: #ffffff;
+            border-color: #2c3e50;
+        }
+
+        /* Catalog Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        @media (max-width: 500px) {
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .product-card img {
+                height: 130px !important;
+            }
+            .product-info {
+                padding: 10px !important;
+            }
+            .product-title {
+                font-size: 0.95rem !important;
+            }
+            .product-actions {
+                flex-direction: column;
+            }
+            .product-actions button {
+                width: 100%;
+                padding: 8px 5px;
+            }
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: rgba(44, 62, 80, 0.85);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        html[dir="ltr"] .product-badge {
+            right: auto;
+            left: 8px;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 170px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .product-info {
+            padding: 12px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-title {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .product-price {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Cart Floating Bottom Bar */
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 90;
+        }
+
+        .cart-bar-info {
+            font-size: 0.95rem;
+        }
+
+        .cart-bar-info strong {
+            color: #2ecc71;
+            font-size: 1.1rem;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-content h2 {
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .img-preview {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-top: 8px;
+            display: none;
+            border: 1px solid #ddd;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Cart Items */
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            gap: 10px;
+        }
+
+        .cart-item-details {
+            flex-grow: 1;
+        }
+
+        .qty-btns {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .qty-btns button {
+            padding: 4px 10px;
+            font-size: 1rem;
+        }
+
+        .btn-remove-item {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            background-color: #ff7675;
+            color: white;
+        }
+
+        .btn-remove-item:hover {
+            background-color: #d63031;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="txt-app-title">المتجر (Katalog)</h1>
+        <div class="header-btns">
+            <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 العربية</button>
+            <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 السلة (<span id="cart-count">0</span>)</button>
+            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ الإعدادات</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="adminBar" class="admin-bar" style="display: none;">
+            <span>🔐 <strong>وضع المسؤول (Admin Mode)</strong></span>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
+                <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search-input" onkeyup="checkSearchInput(event)" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
+        </div>
+
+        <div class="section-title" id="txt-groups-title">🏷️ المجموعات (Gruplar)</div>
+        <div id="categoriesBar" class="categories-bar"></div>
+
+        <hr style="margin: 10px 0 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <div class="section-title" id="txt-all-products-title">📦 كل المنتجات (Tüm Ürünler)</div>
+        <div id="productsGrid" class="products-grid"></div>
+    </div>
+
+    <div class="cart-bar">
+        <div class="cart-bar-info">
+            <span id="txt-total-label">المجموع:</span> 
+            <strong id="cart-total-price">0</strong> TL
+        </div>
+        <button onclick="completeOrder()" class="btn-success" id="btn-checkout">إرسال الطلب عبر WhatsApp</button>
+    </div>
+
+    <div id="productDetailModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <div style="margin-bottom: 10px;">
+                <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
+            </div>
+            <h2 id="detail-title" style="margin-bottom: 10px; color: #2c3e50;"></h2>
+            <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
+            <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
+            
+            <div style="display: flex; gap: 8px;">
+                <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
+                <button onclick="closeModal('productDetailModal')" class="btn-danger" style="padding: 10px 15px;">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2 id="txt-settings-title" style="margin-bottom: 15px;">إعدادات المسؤول</h2>
+
+            <div id="adminSettingsSection">
+                <div class="form-group">
+                    <label id="txt-change-user">اسم مستخدم جديد</label>
+                    <input type="text" id="new-username">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-pass">كلمة مرور جديدة</label>
+                    <input type="password" id="new-password">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-phone">رقم WhatsApp</label>
+                    <input type="tel" id="new-phone" placeholder="0507 444 45 02">
+                </div>
+                <button onclick="updateAdminSettings()" class="btn-success" id="btn-save-settings" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
+                <button onclick="logoutAdmin()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج</button>
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="closeModal('settingsModal')" class="btn-danger" id="btn-close-settings">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات (Grup Yönetimi)</h2>
+            
+            <div class="form-group">
+                <label>اسم المجموعة (بالعربية)</label>
+                <input type="text" id="new-group-ar" placeholder="مثال: عطور">
+            </div>
+            <div class="form-group">
+                <label>Grup Adı (Türkçe)</label>
+                <input type="text" id="new-group-tr" placeholder="Örn: Parfümler">
+            </div>
+            <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
+
+            <hr style="margin: 15px 0;">
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplar)</h3>
+            <div id="groupsList"></div>
+
+            <div class="modal-actions">
+                <button onclick="closeModal('groupModal')" class="btn-danger" id="btn-close-group-modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <h2 id="productModalTitle" style="margin-bottom: 15px;">إضافة منتج</h2>
+            <input type="hidden" id="prod-id">
+            
+            <div class="form-group">
+                <label id="lbl-prod-img">صورة المنتج (Fotoğraf Seç)</label>
+                <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
+                <img id="img-preview" class="img-preview" alt="Önizleme">
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-prod-price">السعر (Fiyat)</label>
+                <input type="number" id="prod-price">
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-prod-group">المجموعة (Grup Seçin)</label>
+                <select id="prod-group-select"></select>
+            </div>
+
+            <div class="form-group">
+                <label>اسم المنتج (بالعربية)</label>
+                <input type="text" id="prod-name-ar">
+            </div>
+            <div class="form-group">
+                <label>اسم المنتج (Türkçe)</label>
+                <input type="text" id="prod-name-tr">
+            </div>
+            <div class="form-group">
+                <label>وصف المنتج (بالعربية)</label>
+                <textarea id="prod-desc-ar" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>وصف المنتج (Türkçe)</label>
+                <textarea id="prod-desc-tr" rows="2"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="saveProduct()" class="btn-success" id="btn-save-prod">حفظ</button>
+                <button onclick="closeModal('productModal')" class="btn-danger" id="btn-cancel-prod">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-row">
+                <h2 id="txt-cart-title">سلة التسوق</h2>
+                <button onclick="clearCart()" class="btn-danger" id="btn-clear-cart" style="font-size: 0.8rem; padding: 6px 10px;">🗑️ تفريغ السلة</button>
+            </div>
+            <div id="cartList"></div>
+            <div class="modal-actions">
+                <button onclick="closeModal('cartModal')" class="btn-danger" id="btn-close-cart">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultSettings = {
+            lang: 'ar',
+            phone: '0507 444 45 02',
+            adminUser: 'mayar',
+            adminPass: '1212'
+        };
+
+        const defaultGroups = [
+            { id: 1, name_ar: 'عطور', name_tr: 'Parfümler' },
+            { id: 2, name_ar: 'العناية بالبشرة', name_tr: 'Cilt Bakımı' },
+            { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
+        ];
+
+        const defaultProducts = [
+            { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
+            { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' },
+            { id: 3, img: 'https://picsum.photos/300/200?random=3', price: 180, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر حدائق الزهور', name_tr: 'Çiçek Bahçesi Parfümü', desc_ar: 'عطر خفيف بنفحات الياسمين والورد الانتعاشية.', desc_tr: 'Taze yasemin ve gül notaları içeren hafif koku.' },
+            { id: 4, img: 'https://picsum.photos/300/200?random=4', price: 220, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الخشب والعنبر', name_tr: 'Odunsu & Amber Parfümü', desc_ar: 'رائحة دافئة وثابتة تدوم طويلاً.', desc_tr: 'Derin ve kalıcı odunsu tonlar.' },
+            { id: 5, img: 'https://picsum.photos/300/200?random=5', price: 160, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الحمضيات المنعش', name_tr: 'Ferah Narenciye Parfümü', desc_ar: 'نفحات الليمون والبرتقال للانتعاش اليومي.', desc_tr: 'Gün boyu tazelik veren narenciye esansı.' },
+            { id: 6, img: 'https://picsum.photos/300/200?random=6', price: 120, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'كريم مرطب للوجه', name_tr: 'Nemlendirici Yüz Kremi', desc_ar: 'يوفر ترطيباً عميقاً للبشرة طوال اليوم.', desc_tr: 'Gün boyu derinlemesine nem sağlayan bakım kremi.' },
+            { id: 7, img: 'https://picsum.photos/300/200?random=7', price: 190, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'سيروم فيتامين سي', name_tr: 'C Vitamini Serumu', desc_ar: 'يعيد النضارة للبشرة ويوحد لونها.', desc_tr: 'Cilt tonunu eşitleyen ve parlaklık veren serum.' },
+            { id: 8, img: 'https://picsum.photos/300/200?random=8', price: 140, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'واقي شمس 50+', name_tr: 'Güneş Kremi SPF 50+', desc_ar: 'حماية عالية من أشعة الشمس غير دهني.', desc_tr: 'Yüksek korumalı, yağsız güneş kremi.' },
+            { id: 9, img: 'https://picsum.photos/300/200?random=9', price: 95, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'غسول وتنظيف الوجه', name_tr: 'Yüz Temizleme Jeli', desc_ar: 'ينظف المسام بفعالية ولطف.', desc_tr: 'Gözenekleri derinlemesine temizleyen hassas jel.' },
+            { id: 10, img: 'https://picsum.photos/300/200?random=10', price: 210, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'زيت الترميم الليلي', name_tr: 'Gece Onarıcı Bakım Yağı', desc_ar: 'يغذي البشرة أثناء النوم وينشط الخلايا.', desc_tr: 'Gece boyunca cildi besleyen doğal bakım yağı.' },
+            { id: 11, img: 'https://picsum.photos/300/200?random=11', price: 85, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'أحمر شفاه مات', name_tr: 'Mat Kırmızı Ruj', desc_ar: 'لون أحمر غني وثابت يدوم طويلاً.', desc_tr: 'Uzun süre kalıcı yoğun kırmızı dudak boyası.' },
+            { id: 12, img: 'https://picsum.photos/300/200?random=12', price: 110, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'ماسكارا لتكثيف الرموش', name_tr: 'Hacim Veren Maskara', desc_ar: 'تكثيف وطول ملحوظ للرموش.', desc_tr: 'Kirpikleri tek tek ayıran ve hacim veren maskara.' },
+            { id: 13, img: 'https://picsum.photos/300/200?random=13', price: 130, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'هايلايتر مضيء', name_tr: 'Işıltılı Aydınlatıcı', desc_ar: 'لمعان طبيعي ومشرق للوجنتين.', desc_tr: 'Doğal ve parlak görünüm sağlayan aydınlatıcı.' },
+            { id: 14, img: 'https://picsum.photos/300/200?random=14', price: 90, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'خافي عيوب سائل', name_tr: 'Likit Kapatıcı', desc_ar: 'تغطية مثالية للهالات والعيوب.', desc_tr: 'Göz altı morluklarını ve lekeleri kapatan likit formül.' },
+            { id: 15, img: 'https://picsum.photos/300/200?random=15', price: 105, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'بلاشر وردي طبيعي', name_tr: 'Doğal Pembe Allık', desc_ar: 'إطلالة حيوية وردية للخدود.', desc_tr: 'Yanaklara doğal ve canlı pembelik veren allık.' }
+        ];
+
+        const translations = {
+            ar: {
+                appTitle: "المتجر الإلكتروني",
+                viewCart: "🛒 السلة",
+                settings: "⚙️ الإعدادات",
+                totalLabel: "المجموع:",
+                checkout: "إرسال الطلب عبر WhatsApp",
+                adminPanelTitle: "إعدادات المسؤول",
+                changeUser: "اسم مستخدم جديد",
+                changePass: "كلمة مرور جديدة",
+                changePhone: "رقم WhatsApp",
+                saveSettings: "حفظ التغييرات",
+                logout: "تسجيل الخروج",
+                close: "إغلاق",
+                addProduct: "+ إضافة منتج جديد",
+                manageGroups: "+ إدارة المجموعات",
+                selectGroup: "اختر المجموعة (Grup Seçin)",
+                groupModalTitle: "إدارة المجموعات (Grup Yönetimi)",
+                addGroupBtn: "+ إضافة مجموعة",
+                existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
+                addToCart: "إضافة للسلة",
+                edit: "تعديل",
+                delete: "حذف",
+                prodImg: "صورة المنتج (Fotoğraf Seç)",
+                prodPrice: "السعر (TL)",
+                save: "حفظ",
+                cancel: "إلغاء",
+                cartTitle: "سلة التسوق",
+                cartEmpty: "السلة فارغة",
+                adminMode: "وضع المسؤول مفعل",
+                groupsTitle: "🏷️ المجموعات (Gruplar)",
+                allProductsTitle: "📦 كل المنتجات (Tüm Ürünler)",
+                allBtn: "الكل (Tümü)",
+                clearCart: "🗑️ تفريغ السلة",
+                clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
+                searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
+                noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
+                langBtnText: "🌐 Türkçe"
+            },
+            tr: {
+                appTitle: "Ürün Kataloğu",
+                viewCart: "🛒 Sepet",
+                settings: "⚙️ Ayarlar",
+                totalLabel: "Toplam:",
+                checkout: "Siparişi WhatsApp ile Gönder",
+                adminPanelTitle: "Admin Ayarları",
+                changeUser: "Yeni Kullanıcı Adı",
+                changePass: "Yeni Şifre",
+                changePhone: "WhatsApp Numarası",
+                saveSettings: "Ayarları Kaydet",
+                logout: "Çıkış Yap",
+                close: "Kapat",
+                addProduct: "+ Ürün Ekle",
+                manageGroups: "+ Grup Yönetimi",
+                selectGroup: "Grup Seçin (اختر المجموعة)",
+                groupModalTitle: "Grup Yönetimi (إدارة المجموعات)",
+                addGroupBtn: "+ Grup Ekle",
+                existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
+                addToCart: "Sepete Ekle",
+                edit: "Düzenle",
+                delete: "Sil",
+                prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
+                prodPrice: "Fiyat (TL)",
+                save: "Kaydet",
+                cancel: "İptal",
+                cartTitle: "Alışveriş Sepeti",
+                cartEmpty: "Sepetiniz boş",
+                adminMode: "Admin Modu Aktif",
+                groupsTitle: "🏷️ Gruplar (المجموعات)",
+                allProductsTitle: "📦 Tüm Ürünler (كل المنتجات)",
+                allBtn: "Tümü (الكل)",
+                clearCart: "🗑️ Sepeti Boşalt",
+                clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
+                searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
+                noProductsFound: "Aramanıza uygun ürün bulunamadı.",
+                langBtnText: "🌐 العربية"
+            }
+        };
+
+        // App State
+        let settings = JSON.parse(localStorage.getItem('catalog_settings')) || defaultSettings;
+        let groups = JSON.parse(localStorage.getItem('catalog_groups')) || defaultGroups;
+        let products = JSON.parse(localStorage.getItem('catalog_products')) || defaultProducts;
+        let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
+        let isAdmin = false;
+        let currentBase64Image = '';
+        let selectedCategory = 'ALL';
+        let searchQuery = '';
+
+        function saveState() {
+            localStorage.setItem('catalog_settings', JSON.stringify(settings));
+            localStorage.setItem('catalog_groups', JSON.stringify(groups));
+            localStorage.setItem('catalog_products', JSON.stringify(products));
+            localStorage.setItem('catalog_cart', JSON.stringify(cart));
+        }
+
+        function init() {
+            if (!localStorage.getItem('catalog_settings')) saveState();
+            changeLanguage(settings.lang, false);
+            renderCategories();
+            renderProducts();
+            renderCart();
+            updateAdminUI();
+        }
+
+        function toggleLanguage() {
+            const nextLang = settings.lang === 'ar' ? 'tr' : 'ar';
+            changeLanguage(nextLang);
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.trim().toLowerCase();
+            renderProducts();
+        }
+
+        function checkSearchInput(event) {
+            const input = document.getElementById('search-input');
+            const rawVal = input.value;
+            const cleanVal = rawVal.trim().toLowerCase();
+
+            const adminPasscode = `${settings.adminUser}.${settings.adminPass}`.toLowerCase();
+
+            const isTamamTyped = cleanVal.endsWith('tamam');
+            const isEnterPressed = (event.key === 'Enter');
+
+            if (isTamamTyped || isEnterPressed) {
+                input.blur();
+
+                let targetCode = cleanVal;
+                if (isTamamTyped) {
+                    targetCode = cleanVal.slice(0, -5).trim();
+                }
+
+                if (targetCode === adminPasscode) {
+                    isAdmin = true;
+                    input.value = '';
+                    searchQuery = '';
+                    updateAdminUI();
+                    openModal('settingsModal');
+                    alert(settings.lang === 'ar' ? 'تم تسجيل دخول المسؤول بنجاح!' : 'Admin girişi başarılı!');
+                }
+            }
+        }
+
+        function changeLanguage(lang, shouldSave = true) {
+            settings.lang = lang;
+            if (shouldSave) saveState();
+
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+            const t = translations[lang];
+            document.getElementById('txt-app-title').innerText = t.appTitle;
+            document.getElementById('btn-lang-toggle').innerText = t.langBtnText;
+            document.getElementById('btn-view-cart').childNodes[0].nodeValue = `${t.viewCart} `;
+            document.getElementById('btn-settings').innerText = t.settings;
+            document.getElementById('txt-total-label').innerText = t.totalLabel;
+            document.getElementById('btn-checkout').innerText = t.checkout;
+            document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
+            document.getElementById('txt-change-user').innerText = t.changeUser;
+            document.getElementById('txt-change-pass').innerText = t.changePass;
+            document.getElementById('txt-change-phone').innerText = t.changePhone;
+            document.getElementById('btn-save-settings').innerText = t.saveSettings;
+            document.getElementById('btn-logout').innerText = t.logout;
+            document.getElementById('btn-close-settings').innerText = t.close;
+            document.getElementById('btn-add-product').innerText = t.addProduct;
+            document.getElementById('btn-manage-groups').innerText = t.manageGroups;
+            document.getElementById('lbl-prod-group').innerText = t.selectGroup;
+            document.getElementById('txt-group-modal-title').innerText = t.groupModalTitle;
+            document.getElementById('btn-save-group').innerText = t.addGroupBtn;
+            document.getElementById('txt-existing-groups').innerText = t.existingGroups;
+            document.getElementById('btn-close-group-modal').innerText = t.close;
+            document.getElementById('lbl-prod-img').innerText = t.prodImg;
+            document.getElementById('lbl-prod-price').innerText = t.prodPrice;
+            document.getElementById('btn-save-prod').innerText = t.save;
+            document.getElementById('btn-cancel-prod').innerText = t.cancel;
+            document.getElementById('txt-cart-title').innerText = t.cartTitle;
+            document.getElementById('btn-clear-cart').innerText = t.clearCart;
+            document.getElementById('btn-close-cart').innerText = t.close;
+            document.getElementById('txt-groups-title').innerText = t.groupsTitle;
+            document.getElementById('txt-all-products-title').innerText = t.allProductsTitle;
+            document.getElementById('search-input').placeholder = t.searchPlaceholder;
+
+            renderCategories();
+            renderProducts();
+            renderCart();
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            updateAdminUI();
+            closeModal('settingsModal');
+        }
+
+        function updateAdminUI() {
+            const adminBar = document.getElementById('adminBar');
+            const btnSettings = document.getElementById('btn-settings');
+
+            if (isAdmin) {
+                btnSettings.style.display = 'inline-block';
+                adminBar.style.display = 'flex';
+                document.getElementById('new-username').value = settings.adminUser;
+                document.getElementById('new-password').value = settings.adminPass;
+                document.getElementById('new-phone').value = settings.phone;
+            } else {
+                btnSettings.style.display = 'none';
+                adminBar.style.display = 'none';
+            }
+            renderProducts();
+        }
+
+        function updateAdminSettings() {
+            const newU = document.getElementById('new-username').value.trim();
+            const newP = document.getElementById('new-password').value.trim();
+            const newPh = document.getElementById('new-phone').value.trim();
+
+            if (newU) settings.adminUser = newU;
+            if (newP) settings.adminPass = newP;
+            if (newPh) settings.phone = newPh;
+
+            saveState();
+            alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
+        }
+
+        function renderGroupSelect() {
+            const select = document.getElementById('prod-group-select');
+            select.innerHTML = '';
+
+            if (groups.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = settings.lang === 'ar' ? 'لا توجد مجموعات (Grup Yok)' : 'Grup yok (Lütfen önce grup ekleyin)';
+                select.appendChild(opt);
+                return;
+            }
+
+            groups.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.innerText = settings.lang === 'ar' ? `${g.name_ar} (${g.name_tr})` : `${g.name_tr} (${g.name_ar})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function openGroupModal() {
+            document.getElementById('new-group-ar').value = '';
+            document.getElementById('new-group-tr').value = '';
+            renderGroupsList();
+            openModal('groupModal');
+        }
+
+        function saveGroup() {
+            const name_ar = document.getElementById('new-group-ar').value.trim();
+            const name_tr = document.getElementById('new-group-tr').value.trim();
+
+            if (!name_ar && !name_tr) {
+                alert(settings.lang === 'ar' ? 'يرجى إدخال اسم المجموعة' : 'Lütfen grup adı girin!');
+                return;
+            }
+
+            const newId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
+            groups.push({
+                id: newId,
+                name_ar: name_ar || name_tr,
+                name_tr: name_tr || name_ar
+            });
+
+            saveState();
+            renderGroupsList();
+            renderGroupSelect();
+            renderCategories();
+            document.getElementById('new-group-ar').value = '';
+            document.getElementById('new-group-tr').value = '';
+        }
+
+        function deleteGroup(id) {
+            if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) {
+                groups = groups.filter(g => g.id !== id);
+                saveState();
+                renderGroupsList();
+                renderGroupSelect();
+                renderCategories();
+                renderProducts();
+            }
+        }
+
+        function renderGroupsList() {
+            const list = document.getElementById('groupsList');
+            list.innerHTML = '';
+
+            if (groups.length === 0) {
+                list.innerHTML = `<p style="color:#888; text-align:center; padding:10px;">${settings.lang === 'ar' ? 'لا توجد مجموعات' : 'Henüz grup eklenmedi.'}</p>`;
+                return;
+            }
+
+            groups.forEach(g => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
+                const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
+                item.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="deleteGroup(${g.id})" class="btn-danger" style="padding:4px 8px; font-size:0.8rem;">${translations[settings.lang].delete}</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function renderCategories() {
+            const bar = document.getElementById('categoriesBar');
+            bar.innerHTML = '';
+
+            const t = translations[settings.lang];
+
+            const allBtn = document.createElement('button');
+            allBtn.className = `cat-btn ${selectedCategory === 'ALL' ? 'active' : ''}`;
+            allBtn.innerText = t.allBtn;
+            allBtn.onclick = () => {
+                selectedCategory = 'ALL';
+                renderCategories();
+                renderProducts();
+            };
+            bar.appendChild(allBtn);
+
+            const catMap = new Map();
+
+            groups.forEach(g => {
+                const catKey = g.name_ar + '|' + g.name_tr;
+                catMap.set(catKey, { ar: g.name_ar, tr: g.name_tr });
+            });
+
+            products.forEach(p => {
+                const catAr = (p.category_ar || '').trim();
+                const catTr = (p.category_tr || '').trim();
+                if (catAr || catTr) {
+                    const catKey = catAr + '|' + catTr;
+                    if (!catMap.has(catKey)) {
+                        catMap.set(catKey, { ar: catAr || catTr, tr: catTr || catAr });
+                    }
+                }
+            });
+
+            catMap.forEach((catObj, catKey) => {
+                const displayName = settings.lang === 'ar' ? catObj.ar : catObj.tr;
+                const btn = document.createElement('button');
+                btn.className = `cat-btn ${selectedCategory === catKey ? 'active' : ''}`;
+                btn.innerText = displayName;
+                btn.onclick = () => {
+                    selectedCategory = catKey;
+                    renderCategories();
+                    renderProducts();
+                };
+                bar.appendChild(btn);
+            });
+        }
+
+        // Render Products
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+            const t = translations[settings.lang];
+
+            const filteredProducts = products.filter(p => {
+                let catMatch = false;
+                if (selectedCategory === 'ALL') {
+                    catMatch = true;
+                } else {
+                    const catAr = (p.category_ar || '').trim();
+                    const catTr = (p.category_tr || '').trim();
+                    catMatch = (catAr + '|' + catTr) === selectedCategory;
+                }
+
+                let searchMatch = true;
+                if (searchQuery) {
+                    const nameAr = (p.name_ar || '').toLowerCase();
+                    const nameTr = (p.name_tr || '').toLowerCase();
+                    const descAr = (p.desc_ar || '').toLowerCase();
+                    const descTr = (p.desc_tr || '').toLowerCase();
+                    const catAr = (p.category_ar || '').toLowerCase();
+                    const catTr = (p.category_tr || '').toLowerCase();
+
+                    searchMatch = nameAr.includes(searchQuery) ||
+                                  nameTr.includes(searchQuery) ||
+                                  descAr.includes(searchQuery) ||
+                                  descTr.includes(searchQuery) ||
+                                  catAr.includes(searchQuery) ||
+                                  catTr.includes(searchQuery);
+                }
+
+                return catMatch && searchMatch;
+            });
+
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #777; padding: 20px 0;">${t.noProductsFound}</p>`;
+                return;
+            }
+
+            filteredProducts.forEach(p => {
+                const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+                const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    ${catName ? `<span class="product-badge">${catName}</span>` : ''}
+                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
+                    <div class="product-info">
+                        <div>
+                            <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
+                            <div class="product-price">${p.price} TL</div>
+                        </div>
+                        <div class="product-actions">
+                            <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${t.addToCart}</button>
+                            ${isAdmin ? `
+                                <button onclick="editProduct(${p.id})">${t.edit}</button>
+                                <button onclick="deleteProduct(${p.id})" class="btn-danger">${t.delete}</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Ürün Detayı Penceresini Açan Fonksiyon
+        function openProductDetail(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+            const desc = settings.lang === 'ar' ? p.desc_ar : p.desc_tr;
+            const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
+
+            document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
+            
+            const catBadge = document.getElementById('detail-category');
+            if (catName) {
+                catBadge.innerText = catName;
+                catBadge.style.display = 'inline-block';
+            } else {
+                catBadge.style.display = 'none';
+            }
+
+            document.getElementById('detail-title').innerText = name;
+            document.getElementById('detail-desc').innerText = desc || (settings.lang === 'ar' ? 'لا يوجد وصف' : 'Açıklama bulunmuyor.');
+            document.getElementById('detail-price').innerText = `${p.price} TL`;
+
+            const addBtn = document.getElementById('detail-add-btn');
+            addBtn.innerText = translations[settings.lang].addToCart;
+            addBtn.onclick = function() {
+                addToCart(p.id);
+                closeModal('productDetailModal');
+            };
+
+            openModal('productDetailModal');
+        }
+
+        function previewSelectedImage(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('img-preview');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentBase64Image = e.target.result;
+                    preview.src = currentBase64Image;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openAddProductModal() {
+            renderGroupSelect();
+            document.getElementById('prod-id').value = '';
+            document.getElementById('prod-img-file').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-name-ar').value = '';
+            document.getElementById('prod-name-tr').value = '';
+            document.getElementById('prod-desc-ar').value = '';
+            document.getElementById('prod-desc-tr').value = '';
+            
+            currentBase64Image = '';
+            const preview = document.getElementById('img-preview');
+            preview.src = '';
+            preview.style.display = 'none';
+
+            document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'إضافة منتج' : 'Ürün Ekle';
+            openModal('productModal');
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+
+            renderGroupSelect();
+
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-img-file').value = '';
+            document.getElementById('prod-price').value = p.price;
+            document.getElementById('prod-name-ar').value = p.name_ar;
+            document.getElementById('prod-name-tr').value = p.name_tr;
+            document.getElementById('prod-desc-ar').value = p.desc_ar;
+            document.getElementById('prod-desc-tr').value = p.desc_tr;
+
+            const matchGroup = groups.find(g => (g.name_ar === p.category_ar && g.name_tr === p.category_tr) || g.name_tr === p.category_tr || g.name_ar === p.category_ar);
+            if (matchGroup) {
+                document.getElementById('prod-group-select').value = matchGroup.id;
+            }
+
+            currentBase64Image = p.img || '';
+            const preview = document.getElementById('img-preview');
+            if (currentBase64Image) {
+                preview.src = currentBase64Image;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+
+            document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'تعديل المنتج' : 'Ürünü Düzenle';
+            openModal('productModal');
+        }
+
+        function saveProduct() {
+            const id = document.getElementById('prod-id').value;
+            const price = parseFloat(document.getElementById('prod-price').value) || 0;
+            const selectedGroupId = parseInt(document.getElementById('prod-group-select').value);
+            
+            const selectedGroup = groups.find(g => g.id === selectedGroupId);
+            const category_ar = selectedGroup ? selectedGroup.name_ar : '';
+            const category_tr = selectedGroup ? selectedGroup.name_tr : '';
+
+            const name_ar = document.getElementById('prod-name-ar').value;
+            const name_tr = document.getElementById('prod-name-tr').value;
+            const desc_ar = document.getElementById('prod-desc-ar').value;
+            const desc_tr = document.getElementById('prod-desc-tr').value;
+
+            const img = currentBase64Image || 'https://via.placeholder.com/300x200';
+
+            if (id) {
+                const index = products.findIndex(x => x.id == id);
+                if (index !== -1) {
+                    products[index] = { id: Number(id), img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
+                }
+            } else {
+                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                products.push({ id: newId, img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr });
+            }
+
+            saveState();
+            renderCategories();
+            renderProducts();
+            closeModal('productModal');
+        }
+
+        function deleteProduct(id) {
+            if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) {
+                products = products.filter(p => p.id !== id);
+                cart = cart.filter(c => c.id !== id);
+                saveState();
+                renderCategories();
+                renderProducts();
+                renderCart();
+            }
+        }
+
+        function addToCart(id) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.qty++;
+            } else {
+                cart.push({ id: id, qty: 1 });
+            }
+            saveState();
+            renderCart();
+        }
+
+        function updateQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    cart = cart.filter(c => c.id !== id);
+                }
+            }
+            saveState();
+            renderCart();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(c => c.id !== id);
+            saveState();
+            renderCart();
+        }
+
+        function clearCart() {
+            if (cart.length === 0) return;
+            const confirmMsg = translations[settings.lang].clearCartConfirm;
+            if (confirm(confirmMsg)) {
+                cart = [];
+                saveState();
+                renderCart();
+            }
+        }
+
+        function renderCart() {
+            const cartList = document.getElementById('cartList');
+            cartList.innerHTML = '';
+            
+            let totalQty = 0;
+            let totalPrice = 0;
+
+            if (cart.length === 0) {
+                cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty}</p>`;
+            } else {
+                cart.forEach(c => {
+                    const prod = products.find(p => p.id === c.id);
+                    if (prod) {
+                        const name = settings.lang === 'ar' ? prod.name_ar : prod.name_tr;
+                        const itemTotal = prod.price * c.qty;
+                        totalQty += c.qty;
+                        totalPrice += itemTotal;
+
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'cart-item';
+                        itemDiv.innerHTML = `
+                            <div class="cart-item-details">
+                                <strong>${name}</strong><br>
+                                <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
+                            </div>
+                            <div class="qty-btns">
+                                <button onclick="updateQty(${prod.id}, -1)">-</button>
+                                <span>${c.qty}</span>
+                                <button onclick="updateQty(${prod.id}, 1)">+</button>
+                            </div>
+                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="Sil">🗑️</button>
+                        `;
+                        cartList.appendChild(itemDiv);
+                    }
+                });
+            }
+
+            document.getElementById('cart-count').innerText = totalQty;
+            document.getElementById('cart-total-price').innerText = totalPrice;
+        }
+
+        function formatPhoneForWa(phoneStr) {
+            let digits = phoneStr.replace(/[^0-9]/g, '');
+            if (digits.startsWith('0')) {
+                digits = '9' + digits;
+            } else if (digits.length === 10 && digits.startsWith('5')) {
+                digits = '90' + digits;
+            }
+            return digits;
+        }
+
+        function completeOrder() {
+            if (cart.length === 0) {
+                alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
+                return;
+            }
+
+            let messageLines = [];
+            let totalQty = 0;
+            let grandTotal = 0;
+
+            const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
+            messageLines.push(`( لغة التطبيق / Uygulama Dili: ${activeLangText} )`);
+
+            cart.forEach(c => {
+                const prod = products.find(p => p.id === c.id);
+                if (prod) {
+                    const name = prod.name_ar || prod.name_tr; 
+                    const itemTotal = prod.price * c.qty;
+                    totalQty += c.qty;
+                    grandTotal += itemTotal;
+
+                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+                }
+            });
+
+            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
+
+            const fullMessage = messageLines.join('\n');
+            const encodedMessage = encodeURIComponent(fullMessage);
+            
+            const cleanPhone = formatPhoneForWa(settings.phone);
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+            window.open(waUrl, '_blank');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
