@@ -384,14 +384,14 @@
         <h1 id="txt-app-title">المتجر (Katalog)</h1>
         <div class="header-btns">
             <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 العربية</button>
-            <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 السلة (<span id="cart-count">0</span>)</button>
-            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ الإعدادات</button>
+            <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 <span id="txt-cart-btn-text">السلة</span> (<span id="cart-count">0</span>)</button>
+            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">الإعدادات</span></button>
         </div>
     </header>
 
     <div class="container">
         <div id="adminBar" class="admin-bar" style="display: none;">
-            <span>🔐 <strong>وضع المسؤول (Admin Mode)</strong></span>
+            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول (Admin Mode)</strong></span>
             <div style="display: flex; gap: 8px;">
                 <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
                 <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
@@ -431,7 +431,7 @@
             
             <div style="display: flex; gap: 8px;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
-                <button onclick="closeModal('productDetailModal')" class="btn-danger" style="padding: 10px 15px;">إغلاق</button>
+                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
             </div>
         </div>
     </div>
@@ -453,6 +453,27 @@
                     <label id="txt-change-phone">رقم WhatsApp</label>
                     <input type="tel" id="new-phone" placeholder="0507 444 45 02">
                 </div>
+                <div class="form-group">
+                    <label id="txt-change-wa-header">عنوان رسالة WhatsApp (WhatsApp Başlığı)</label>
+                    <input type="text" id="new-wa-header" placeholder="طلب جديد">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-app-title">Site Adı (عنوان الموقع)</label>
+                    <input type="text" id="new-app-title" placeholder="Ürün Kataloğu">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-delete-text">"Sil" Butonu Yazısı (نص زر الحذف)</label>
+                    <input type="text" id="new-delete-text" placeholder="Sil">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-add-text">"Sepete Ekle" Butonu Yazısı (نص زر الإضافة)</label>
+                    <input type="text" id="new-add-text" placeholder="Sepete Ekle">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-checkout-text">"WhatsApp Sipariş" Butonu Yazısı (نص زر إرسال الطلب)</label>
+                    <input type="text" id="new-checkout-text" placeholder="Siparişi WhatsApp ile Gönder">
+                </div>
+
                 <button onclick="updateAdminSettings()" class="btn-success" id="btn-save-settings" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
                 <button onclick="logoutAdmin()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج</button>
             </div>
@@ -468,11 +489,11 @@
             <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات (Grup Yönetimi)</h2>
             
             <div class="form-group">
-                <label>اسم المجموعة (بالعربية)</label>
+                <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
                 <input type="text" id="new-group-ar" placeholder="مثال: عطور">
             </div>
             <div class="form-group">
-                <label>Grup Adı (Türkçe)</label>
+                <label id="lbl-group-tr">Grup Adı (Türkçe)</label>
                 <input type="text" id="new-group-tr" placeholder="Örn: Parfümler">
             </div>
             <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
@@ -509,19 +530,19 @@
             </div>
 
             <div class="form-group">
-                <label>اسم المنتج (بالعربية)</label>
+                <label id="lbl-pname-ar">اسم المنتج (بالعربية)</label>
                 <input type="text" id="prod-name-ar">
             </div>
             <div class="form-group">
-                <label>اسم المنتج (Türkçe)</label>
+                <label id="lbl-pname-tr">اسم المنتج (Türkçe)</label>
                 <input type="text" id="prod-name-tr">
             </div>
             <div class="form-group">
-                <label>وصف المنتج (بالعربية)</label>
+                <label id="lbl-pdesc-ar">وصف المنتج (بالعربية)</label>
                 <textarea id="prod-desc-ar" rows="2"></textarea>
             </div>
             <div class="form-group">
-                <label>وصف المنتج (Türkçe)</label>
+                <label id="lbl-pdesc-tr">وصف المنتج (Türkçe)</label>
                 <textarea id="prod-desc-tr" rows="2"></textarea>
             </div>
 
@@ -546,11 +567,17 @@
     </div>
 
     <script>
+        // Default Ayarlar - Site metinleri özelleştirme alanları eklendi
         const defaultSettings = {
             lang: 'ar',
             phone: '0507 444 45 02',
             adminUser: 'mayar',
-            adminPass: '1212'
+            adminPass: '1212',
+            waHeader: 'طلب جديد',
+            customAppTitle: '',
+            customDeleteText: '',
+            customAddText: '',
+            customCheckoutText: ''
         };
 
         const defaultGroups = [
@@ -563,31 +590,25 @@
             { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
             { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' },
             { id: 3, img: 'https://picsum.photos/300/200?random=3', price: 180, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر حدائق الزهور', name_tr: 'Çiçek Bahçesi Parfümü', desc_ar: 'عطر خفيف بنفحات الياسمين والورد الانتعاشية.', desc_tr: 'Taze yasemin ve gül notaları içeren hafif koku.' },
-            { id: 4, img: 'https://picsum.photos/300/200?random=4', price: 220, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الخشب والعنبر', name_tr: 'Odunsu & Amber Parfümü', desc_ar: 'رائحة دافئة وثابتة تدوم طويلاً.', desc_tr: 'Derin ve kalıcı odunsu tonlar.' },
-            { id: 5, img: 'https://picsum.photos/300/200?random=5', price: 160, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الحمضيات المنعش', name_tr: 'Ferah Narenciye Parfümü', desc_ar: 'نفحات الليمون والبرتقال للانتعاش اليومي.', desc_tr: 'Gün boyu tazelik veren narenciye esansı.' },
-            { id: 6, img: 'https://picsum.photos/300/200?random=6', price: 120, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'كريم مرطب للوجه', name_tr: 'Nemlendirici Yüz Kremi', desc_ar: 'يوفر ترطيباً عميقاً للبشرة طوال اليوم.', desc_tr: 'Gün boyu derinlemesine nem sağlayan bakım kremi.' },
-            { id: 7, img: 'https://picsum.photos/300/200?random=7', price: 190, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'سيروم فيتامين سي', name_tr: 'C Vitamini Serumu', desc_ar: 'يعيد النضارة للبشرة ويوحد لونها.', desc_tr: 'Cilt tonunu eşitleyen ve parlaklık veren serum.' },
-            { id: 8, img: 'https://picsum.photos/300/200?random=8', price: 140, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'واقي شمس 50+', name_tr: 'Güneş Kremi SPF 50+', desc_ar: 'حماية عالية من أشعة الشمس غير دهني.', desc_tr: 'Yüksek korumalı, yağsız güneş kremi.' },
-            { id: 9, img: 'https://picsum.photos/300/200?random=9', price: 95, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'غسول وتنظيف الوجه', name_tr: 'Yüz Temizleme Jeli', desc_ar: 'ينظف المسام بفعالية ولطف.', desc_tr: 'Gözenekleri derinlemesine temizleyen hassas jel.' },
-            { id: 10, img: 'https://picsum.photos/300/200?random=10', price: 210, category_ar: 'العناية بالبشرة', category_tr: 'Cilt Bakımı', name_ar: 'زيت الترميم الليلي', name_tr: 'Gece Onarıcı Bakım Yağı', desc_ar: 'يغذي البشرة أثناء النوم وينشط الخلايا.', desc_tr: 'Gece boyunca cildi besleyen doğal bakım yağı.' },
-            { id: 11, img: 'https://picsum.photos/300/200?random=11', price: 85, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'أحمر شفاه مات', name_tr: 'Mat Kırmızı Ruj', desc_ar: 'لون أحمر غني وثابت يدوم طويلاً.', desc_tr: 'Uzun süre kalıcı yoğun kırmızı dudak boyası.' },
-            { id: 12, img: 'https://picsum.photos/300/200?random=12', price: 110, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'ماسكارا لتكثيف الرموش', name_tr: 'Hacim Veren Maskara', desc_ar: 'تكثيف وطول ملحوظ للرموش.', desc_tr: 'Kirpikleri tek tek ayıran ve hacim veren maskara.' },
-            { id: 13, img: 'https://picsum.photos/300/200?random=13', price: 130, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'هايلايتر مضيء', name_tr: 'Işıltılı Aydınlatıcı', desc_ar: 'لمعان طبيعي ومشرق للوجنتين.', desc_tr: 'Doğal ve parlak görünüm sağlayan aydınlatıcı.' },
-            { id: 14, img: 'https://picsum.photos/300/200?random=14', price: 90, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'خافي عيوب سائل', name_tr: 'Likit Kapatıcı', desc_ar: 'تغطية مثالية للهالات والعيوب.', desc_tr: 'Göz altı morluklarını ve lekeleri kapatan likit formül.' },
-            { id: 15, img: 'https://picsum.photos/300/200?random=15', price: 105, category_ar: 'المكياج', category_tr: 'Makyaj', name_ar: 'بلاشر وردي طبيعي', name_tr: 'Doğal Pembe Allık', desc_ar: 'إطلالة حيوية وردية للخدود.', desc_tr: 'Yanaklara doğal ve canlı pembelik veren allık.' }
+            { id: 4, img: 'https://picsum.photos/300/200?random=4', price: 220, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الخشب والعنبر', name_tr: 'Odunsu & Amber Parfümü', desc_ar: 'رائحة دافئة وثابتة تدوم طويلاً.', desc_tr: 'Derin ve kalıcı odunsu tonlar.' }
         ];
 
         const translations = {
             ar: {
                 appTitle: "المتجر الإلكتروني",
-                viewCart: "🛒 السلة",
-                settings: "⚙️ الإعدادات",
+                viewCart: "السلة",
+                settings: "الإعدادات",
                 totalLabel: "المجموع:",
                 checkout: "إرسال الطلب عبر WhatsApp",
                 adminPanelTitle: "إعدادات المسؤول",
                 changeUser: "اسم مستخدم جديد",
                 changePass: "كلمة مرور جديدة",
                 changePhone: "رقم WhatsApp",
+                changeWaHeader: "عنوان رسالة WhatsApp (WhatsApp Başlığı)",
+                changeAppTitle: "Site Adı (عنوان الموقع)",
+                changeDeleteText: "\"Sil\" Butonu Yazısı (نص زر الحذف)",
+                changeAddText: "\"Sepete Ekle\" Butonu Yazısı (نص زر الإضافة)",
+                changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Yazısı",
                 saveSettings: "حفظ التغييرات",
                 logout: "تسجيل الخروج",
                 close: "إغلاق",
@@ -618,14 +639,19 @@
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
-                viewCart: "🛒 Sepet",
-                settings: "⚙️ Ayarlar",
+                viewCart: "Sepet",
+                settings: "Ayarlar",
                 totalLabel: "Toplam:",
                 checkout: "Siparişi WhatsApp ile Gönder",
                 adminPanelTitle: "Admin Ayarları",
                 changeUser: "Yeni Kullanıcı Adı",
                 changePass: "Yeni Şifre",
                 changePhone: "WhatsApp Numarası",
+                changeWaHeader: "WhatsApp Mesaj Başlığı",
+                changeAppTitle: "Site Adı",
+                changeDeleteText: "\"Sil\" Butonu Metni",
+                changeAddText: "\"Sepete Ekle\" Butonu Metni",
+                changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Metni",
                 saveSettings: "Ayarları Kaydet",
                 logout: "Çıkış Yap",
                 close: "Kapat",
@@ -698,7 +724,6 @@
             const cleanVal = rawVal.trim().toLowerCase();
 
             const adminPasscode = `${settings.adminUser}.${settings.adminPass}`.toLowerCase();
-
             const isTamamTyped = cleanVal.endsWith('tamam');
             const isEnterPressed = (event.key === 'Enter');
 
@@ -729,16 +754,28 @@
             document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
 
             const t = translations[lang];
-            document.getElementById('txt-app-title').innerText = t.appTitle;
+
+            // Dinamik veya Özelleştirilmiş Alanlar Kontrolü
+            const appTitleText = settings.customAppTitle || t.appTitle;
+            document.getElementById('txt-app-title').innerText = appTitleText;
             document.getElementById('btn-lang-toggle').innerText = t.langBtnText;
-            document.getElementById('btn-view-cart').childNodes[0].nodeValue = `${t.viewCart} `;
-            document.getElementById('btn-settings').innerText = t.settings;
+            document.getElementById('txt-cart-btn-text').innerText = t.viewCart;
+            document.getElementById('txt-settings-btn-text').innerText = t.settings;
             document.getElementById('txt-total-label').innerText = t.totalLabel;
-            document.getElementById('btn-checkout').innerText = t.checkout;
+            
+            const checkoutText = settings.customCheckoutText || t.checkout;
+            document.getElementById('btn-checkout').innerText = checkoutText;
+
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-user').innerText = t.changeUser;
             document.getElementById('txt-change-pass').innerText = t.changePass;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
+            document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
+            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
+            document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
+            document.getElementById('txt-change-add-text').innerText = t.changeAddText;
+            document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
+
             document.getElementById('btn-save-settings').innerText = t.saveSettings;
             document.getElementById('btn-logout').innerText = t.logout;
             document.getElementById('btn-close-settings').innerText = t.close;
@@ -781,6 +818,11 @@
                 document.getElementById('new-username').value = settings.adminUser;
                 document.getElementById('new-password').value = settings.adminPass;
                 document.getElementById('new-phone').value = settings.phone;
+                document.getElementById('new-wa-header').value = settings.waHeader || 'طلب جديد';
+                document.getElementById('new-app-title').value = settings.customAppTitle || '';
+                document.getElementById('new-delete-text').value = settings.customDeleteText || '';
+                document.getElementById('new-add-text').value = settings.customAddText || '';
+                document.getElementById('new-checkout-text').value = settings.customCheckoutText || '';
             } else {
                 btnSettings.style.display = 'none';
                 adminBar.style.display = 'none';
@@ -792,12 +834,24 @@
             const newU = document.getElementById('new-username').value.trim();
             const newP = document.getElementById('new-password').value.trim();
             const newPh = document.getElementById('new-phone').value.trim();
+            const newWaHeader = document.getElementById('new-wa-header').value.trim();
+            const newAppTitle = document.getElementById('new-app-title').value.trim();
+            const newDeleteText = document.getElementById('new-delete-text').value.trim();
+            const newAddText = document.getElementById('new-add-text').value.trim();
+            const newCheckoutText = document.getElementById('new-checkout-text').value.trim();
 
             if (newU) settings.adminUser = newU;
             if (newP) settings.adminPass = newP;
             if (newPh) settings.phone = newPh;
+            if (newWaHeader) settings.waHeader = newWaHeader;
+            
+            settings.customAppTitle = newAppTitle;
+            settings.customDeleteText = newDeleteText;
+            settings.customAddText = newAddText;
+            settings.customCheckoutText = newCheckoutText;
 
             saveState();
+            changeLanguage(settings.lang, false);
             alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
         }
 
@@ -876,9 +930,10 @@
                 const item = document.createElement('div');
                 item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
                 const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
+                const deleteText = settings.customDeleteText || translations[settings.lang].delete;
                 item.innerHTML = `
                     <span>${name}</span>
-                    <button onclick="deleteGroup(${g.id})" class="btn-danger" style="padding:4px 8px; font-size:0.8rem;">${translations[settings.lang].delete}</button>
+                    <button onclick="deleteGroup(${g.id})" class="btn-danger" style="padding:4px 8px; font-size:0.8rem;">${deleteText}</button>
                 `;
                 list.appendChild(item);
             });
@@ -932,11 +987,14 @@
             });
         }
 
-        // Render Products
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
             const t = translations[settings.lang];
+
+            const addText = settings.customAddText || t.addToCart;
+            const editText = settings.customEditText || t.edit;
+            const deleteText = settings.customDeleteText || t.delete;
 
             const filteredProducts = products.filter(p => {
                 let catMatch = false;
@@ -988,10 +1046,10 @@
                             <div class="product-price">${p.price} TL</div>
                         </div>
                         <div class="product-actions">
-                            <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${t.addToCart}</button>
+                            <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
                             ${isAdmin ? `
-                                <button onclick="editProduct(${p.id})">${t.edit}</button>
-                                <button onclick="deleteProduct(${p.id})" class="btn-danger">${t.delete}</button>
+                                <button onclick="editProduct(${p.id})">${editText}</button>
+                                <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
                             ` : ''}
                         </div>
                     </div>
@@ -1000,7 +1058,6 @@
             });
         }
 
-        // Ürün Detayı Penceresini Açan Fonksiyon
         function openProductDetail(id) {
             const p = products.find(x => x.id === id);
             if (!p) return;
@@ -1024,7 +1081,7 @@
             document.getElementById('detail-price').innerText = `${p.price} TL`;
 
             const addBtn = document.getElementById('detail-add-btn');
-            addBtn.innerText = translations[settings.lang].addToCart;
+            addBtn.innerText = settings.customAddText || translations[settings.lang].addToCart;
             addBtn.onclick = function() {
                 addToCart(p.id);
                 closeModal('productDetailModal');
@@ -1198,6 +1255,7 @@
                         const itemTotal = prod.price * c.qty;
                         totalQty += c.qty;
                         totalPrice += itemTotal;
+                        const deleteText = settings.customDeleteText || translations[settings.lang].delete;
 
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'cart-item';
@@ -1211,7 +1269,7 @@
                                 <span>${c.qty}</span>
                                 <button onclick="updateQty(${prod.id}, 1)">+</button>
                             </div>
-                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="Sil">🗑️</button>
+                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="${deleteText}">🗑️</button>
                         `;
                         cartList.appendChild(itemDiv);
                     }
@@ -1242,8 +1300,10 @@
             let totalQty = 0;
             let grandTotal = 0;
 
+            const customHeader = settings.waHeader || 'طلب جديد';
             const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
-            messageLines.push(`( لغة التطبيق / Uygulama Dili: ${activeLangText} )`);
+            
+            messageLines.push(`${customHeader} (${activeLangText})`);
 
             cart.forEach(c => {
                 const prod = products.find(p => p.id === c.id);
