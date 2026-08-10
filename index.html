@@ -4,16 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Katalog</title>
-    <!-- Supabase JS Client -->
+    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* (TÜM CSS AYNEN KALDI - değişiklik yok) */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #f4f6f9; color: #333; padding-bottom: 90px; }
-        header { background-color: #2c3e50; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            padding-bottom: 90px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
         header h1 { font-size: 1.1rem; font-weight: 600; }
         .header-btns { display: flex; gap: 8px; }
-        button { cursor: pointer; padding: 8px 12px; border: none; border-radius: 6px; background-color: #3498db; color: white; font-weight: bold; font-size: 0.85rem; transition: background 0.2s, transform 0.1s; touch-action: manipulation; }
+        button {
+            cursor: pointer;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.1s;
+            touch-action: manipulation;
+        }
         button:active { transform: scale(0.97); }
         button:hover { background-color: #2980b9; }
         button.btn-danger { background-color: #e74c3c; }
@@ -70,7 +101,6 @@
 </head>
 <body>
 
-    <!-- Header ve diğer HTML kısımları AYNEN KALDI -->
     <header>
         <h1 id="txt-app-title">المتجر (Katalog)</h1>
         <div class="header-btns">
@@ -90,7 +120,7 @@
         </div>
 
         <div class="search-box">
-            <input type="text" id="search-input" onkeyup="checkSearchInput(event)" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
+            <input type="text" id="search-input" onkeydown="checkSearchInput(event)" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
         </div>
 
         <div class="section-title" id="txt-groups-title">🏷️ المجموعات (Gruplar)</div>
@@ -110,170 +140,425 @@
         <button onclick="completeOrder()" class="btn-success" id="btn-checkout">إرسال الطلب عبر WhatsApp</button>
     </div>
 
-    <!-- MODALLAR (AYNEN) -->
-    <div id="productDetailModal" class="modal"> ... </div>
-    <div id="settingsModal" class="modal"> ... </div>
-    <div id="groupModal" class="modal"> ... </div>
-    <div id="productModal" class="modal"> ... </div>
-    <div id="cartModal" class="modal"> ... </div>
+    <!-- Ürün Detay Modalı -->
+    <div id="productDetailModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <div style="margin-bottom: 10px;">
+                <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
+            </div>
+            <h2 id="detail-title" style="margin-bottom: 10px; color: #2c3e50;"></h2>
+            <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
+            <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
+            <div style="display: flex; gap: 8px;">
+                <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
+                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Ayarları Modalı -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2 id="txt-settings-title" style="margin-bottom: 15px;">إعدادات المسؤول</h2>
+            <div id="adminSettingsSection">
+                <div class="form-group">
+                    <label id="txt-change-phone">رقم WhatsApp</label>
+                    <input type="tel" id="new-phone" placeholder="0507 444 45 02">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-wa-header">عنوان رسالة WhatsApp</label>
+                    <input type="text" id="new-wa-header" placeholder="طلب جديد">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-app-title">عنوان الموقع</label>
+                    <input type="text" id="new-app-title" placeholder="Ürün Kataloğu">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-delete-text">نص زر الحذف</label>
+                    <input type="text" id="new-delete-text" placeholder="Sil">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-add-text">نص زر الإضافة</label>
+                    <input type="text" id="new-add-text" placeholder="Sepete Ekle">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-checkout-text">نص زر إرسال الطلب</label>
+                    <input type="text" id="new-checkout-text" placeholder="Siparişi WhatsApp ile Gönder">
+                </div>
+                <button onclick="updateAdminSettings()" class="btn-success" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
+                <button onclick="logoutAdmin()" class="btn-danger" style="width: 100%;">تسجيل الخروج</button>
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeModal('settingsModal')" class="btn-danger">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grup Yönetim Modalı -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات</h2>
+            <div class="form-group">
+                <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
+                <input type="text" id="new-group-ar" placeholder="مثال: عطور">
+            </div>
+            <div class="form-group">
+                <label id="lbl-group-tr">Grup Adı (Türkçe)</label>
+                <input type="text" id="new-group-tr" placeholder="Örn: Parfümler">
+            </div>
+            <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;">+ إضافة مجموعة</button>
+            <hr style="margin: 15px 0;">
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية</h3>
+            <div id="groupsList"></div>
+            <div class="modal-actions">
+                <button onclick="closeModal('groupModal')" class="btn-danger">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ürün Ekle/Düzenle Modalı -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <h2 id="productModalTitle" style="margin-bottom: 15px;">إضافة منتج</h2>
+            <input type="hidden" id="prod-id">
+            <div class="form-group">
+                <label id="lbl-prod-img">صورة المنتج</label>
+                <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
+                <img id="img-preview" class="img-preview" alt="Önizleme">
+            </div>
+            <div class="form-group">
+                <label id="lbl-prod-price">السعر (TL)</label>
+                <input type="number" id="prod-price">
+            </div>
+            <div class="form-group">
+                <label id="lbl-prod-group">المجموعة</label>
+                <select id="prod-group-select"></select>
+            </div>
+            <div class="form-group">
+                <label id="lbl-pname-ar">اسم المنتج (بالعربية)</label>
+                <input type="text" id="prod-name-ar">
+            </div>
+            <div class="form-group">
+                <label id="lbl-pname-tr">اسم المنتج (Türkçe)</label>
+                <input type="text" id="prod-name-tr">
+            </div>
+            <div class="form-group">
+                <label id="lbl-pdesc-ar">وصف المنتج (بالعربية)</label>
+                <textarea id="prod-desc-ar" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label id="lbl-pdesc-tr">وصف المنتج (Türkçe)</label>
+                <textarea id="prod-desc-tr" rows="2"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveProduct()" class="btn-success">حفظ</button>
+                <button onclick="closeModal('productModal')" class="btn-danger">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sepet Modalı -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-row">
+                <h2 id="txt-cart-title">سلة التسوق</h2>
+                <button onclick="clearCart()" class="btn-danger" style="font-size: 0.8rem; padding: 6px 10px;">🗑️ تفريغ السلة</button>
+            </div>
+            <div id="cartList"></div>
+            <div class="modal-actions">
+                <button onclick="closeModal('cartModal')" class="btn-danger">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Giriş Modalı (YENİ) -->
+    <div id="adminLoginModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px;">🔐 Admin Girişi</h2>
+            <div class="form-group">
+                <label>E‑posta</label>
+                <input type="email" id="admin-email" placeholder="admin@example.com">
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="admin-password" placeholder="••••••••">
+            </div>
+            <div class="modal-actions">
+                <button onclick="loginAdmin()" class="btn-success">Giriş Yap</button>
+                <button onclick="closeModal('adminLoginModal')" class="btn-danger">İptal</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // ==================== SUPABASE YAPILANDIRMASI ====================
-        // KENDİ SUPABASE BİLGİLERİNİZLE DEĞİŞTİRİN
-        const SUPABASE_URL = 'https://xxxxx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIs...';
+        // ============================================================
+        // 1. SUPABASE YAPILANDIRMASI (KENDİ BİLGİLERİNLE GÜNCELLENDİ)
+        // ============================================================
+        const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // ==================== VARSAYILAN VERİLER ====================
-        const defaultSettings = {
-            lang: 'ar',
-            phone: '0507 444 45 02',
-            adminUser: 'mayar',
-            adminPass: '1212',
-            waHeader: 'طلب جديد',
-            customAppTitle: '',
-            customDeleteText: '',
-            customAddText: '',
-            customCheckoutText: ''
-        };
-
-        const defaultGroups = [
-            { name_ar: 'عطور', name_tr: 'Parfümler' },
-            { name_ar: 'العناية بالبشرة', name_tr: 'Cilt Bakımı' },
-            { name_ar: 'المكياج', name_tr: 'Makyaj' }
-        ];
-
-        const defaultProducts = [
-            { img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
-            { img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' },
-            { img: 'https://picsum.photos/300/200?random=3', price: 180, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر حدائق الزهور', name_tr: 'Çiçek Bahçesi Parfümü', desc_ar: 'عطر خفيف بنفحات الياسمين والورد الانتعاشية.', desc_tr: 'Taze yasemin ve gül notaları içeren hafif koku.' },
-            { img: 'https://picsum.photos/300/200?random=4', price: 220, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الخشب والعنبر', name_tr: 'Odunsu & Amber Parfümü', desc_ar: 'رائحة دافئة وثابتة تدوم طويلاً.', desc_tr: 'Derin ve kalıcı odunsu tonlar.' }
-        ];
-
-        // ==================== ÇEVİRİLER (AYNEN) ====================
-        const translations = { ... }; // (Kısaltmak için tamamını buraya kopyalamadım, orijinalinde olduğu gibi kullanın)
-
-        // ==================== UYGULAMA STATE ====================
-        let settings = { ...defaultSettings };
+        // ============================================================
+        // 2. STATE (UYGULAMA DURUMU)
+        // ============================================================
+        let settings = { lang: 'ar', phone: '', waHeader: '', customAppTitle: '', customDeleteText: '', customAddText: '', customCheckoutText: '' };
         let groups = [];
         let products = [];
         let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         let isAdmin = false;
-        let currentBase64Image = '';
+        let currentFile = null;          // Storage'a yüklenecek dosya
+        let currentBase64Image = '';    // Önizleme için
         let selectedCategory = 'ALL';
         let searchQuery = '';
 
-        // ==================== SUPABASE VERİ İŞLEMLERİ ====================
+        // ============================================================
+        // 3. ÇEVİRİLER (TAMAMI)
+        // ============================================================
+        const translations = {
+            ar: {
+                appTitle: "المتجر الإلكتروني",
+                viewCart: "السلة",
+                settings: "الإعدادات",
+                totalLabel: "المجموع:",
+                checkout: "إرسال الطلب عبر WhatsApp",
+                adminPanelTitle: "إعدادات المسؤول",
+                changePhone: "رقم WhatsApp",
+                changeWaHeader: "عنوان رسالة WhatsApp",
+                changeAppTitle: "عنوان الموقع",
+                changeDeleteText: "نص زر الحذف",
+                changeAddText: "نص زر الإضافة",
+                changeCheckoutText: "نص زر إرسال الطلب",
+                saveSettings: "حفظ التغييرات",
+                logout: "تسجيل الخروج",
+                close: "إغلاق",
+                addProduct: "+ إضافة منتج",
+                manageGroups: "+ إدارة المجموعات",
+                selectGroup: "اختر المجموعة",
+                groupModalTitle: "إدارة المجموعات",
+                addGroupBtn: "+ إضافة مجموعة",
+                existingGroups: "المجموعات الحالية",
+                addToCart: "إضافة للسلة",
+                edit: "تعديل",
+                delete: "حذف",
+                prodImg: "صورة المنتج",
+                prodPrice: "السعر (TL)",
+                save: "حفظ",
+                cancel: "إلغاء",
+                cartTitle: "سلة التسوق",
+                cartEmpty: "السلة فارغة",
+                adminMode: "وضع المسؤول مفعل",
+                groupsTitle: "🏷️ المجموعات",
+                allProductsTitle: "📦 كل المنتجات",
+                allBtn: "الكل",
+                clearCart: "تفريغ السلة",
+                clearCartConfirm: "هل أنت متأكد من تفريغ السلة؟",
+                searchPlaceholder: "🔍 بحث عن منتج...",
+                noProductsFound: "لم يتم العثور على منتجات.",
+                langBtnText: "🌐 Türkçe"
+            },
+            tr: {
+                appTitle: "Ürün Kataloğu",
+                viewCart: "Sepet",
+                settings: "Ayarlar",
+                totalLabel: "Toplam:",
+                checkout: "Siparişi WhatsApp ile Gönder",
+                adminPanelTitle: "Admin Ayarları",
+                changePhone: "WhatsApp Numarası",
+                changeWaHeader: "WhatsApp Mesaj Başlığı",
+                changeAppTitle: "Site Başlığı",
+                changeDeleteText: "'Sil' Butonu Metni",
+                changeAddText: "'Sepete Ekle' Butonu Metni",
+                changeCheckoutText: "'Sipariş Gönder' Butonu Metni",
+                saveSettings: "Ayarları Kaydet",
+                logout: "Çıkış Yap",
+                close: "Kapat",
+                addProduct: "+ Ürün Ekle",
+                manageGroups: "+ Grup Yönetimi",
+                selectGroup: "Grup Seçin",
+                groupModalTitle: "Grup Yönetimi",
+                addGroupBtn: "+ Grup Ekle",
+                existingGroups: "Mevcut Gruplar",
+                addToCart: "Sepete Ekle",
+                edit: "Düzenle",
+                delete: "Sil",
+                prodImg: "Ürün Fotoğrafı",
+                prodPrice: "Fiyat (TL)",
+                save: "Kaydet",
+                cancel: "İptal",
+                cartTitle: "Alışveriş Sepeti",
+                cartEmpty: "Sepet boş",
+                adminMode: "Admin Modu Aktif",
+                groupsTitle: "🏷️ Gruplar",
+                allProductsTitle: "📦 Tüm Ürünler",
+                allBtn: "Tümü",
+                clearCart: "Sepeti Boşalt",
+                clearCartConfirm: "Sepeti boşaltmak istediğinize emin misiniz?",
+                searchPlaceholder: "🔍 Ürün ara...",
+                noProductsFound: "Ürün bulunamadı.",
+                langBtnText: "🌐 العربية"
+            }
+        };
+
+        // ============================================================
+        // 4. MODAL FONKSİYONLARI
+        // ============================================================
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ============================================================
+        // 5. VERİ ÇEKME (Supabase)
+        // ============================================================
         async function fetchSettings() {
             const { data, error } = await supabase.from('settings').select('*').limit(1);
-            if (error) {
-                console.error('Ayarlar çekilemedi:', error);
-                // Veritabanı boşsa default ayarları ekle
-                const { error: insertError } = await supabase.from('settings').insert([defaultSettings]);
-                if (insertError) console.error('Default ayarlar eklenemedi:', insertError);
-                else {
-                    const { data: newData } = await supabase.from('settings').select('*').limit(1);
-                    if (newData) settings = { ...defaultSettings, ...newData[0] };
-                }
-            } else if (data && data.length > 0) {
-                settings = { ...defaultSettings, ...data[0] };
-            } else {
-                // Hiç kayıt yoksa ekle
-                const { error: insertError } = await supabase.from('settings').insert([defaultSettings]);
-                if (!insertError) {
-                    const { data: newData } = await supabase.from('settings').select('*').limit(1);
-                    if (newData) settings = { ...defaultSettings, ...newData[0] };
-                }
-            }
+            if (error) console.error('Settings error:', error);
+            else if (data?.length) settings = { ...settings, ...data[0] };
         }
 
         async function fetchGroups() {
             const { data, error } = await supabase.from('groups').select('*').order('id');
-            if (error) {
-                console.error('Gruplar çekilemedi:', error);
-                groups = [];
-                return;
-            }
-            if (data && data.length > 0) {
-                groups = data;
-            } else {
-                // Default grupları ekle
-                const { error: insertError } = await supabase.from('groups').insert(defaultGroups);
-                if (!insertError) {
-                    const { data: newData } = await supabase.from('groups').select('*').order('id');
-                    groups = newData || [];
-                } else {
-                    groups = [];
-                }
-            }
+            if (!error && data) groups = data;
+            else groups = [];
         }
 
         async function fetchProducts() {
             const { data, error } = await supabase.from('products').select('*').order('id');
+            if (!error && data) products = data;
+            else products = [];
+        }
+
+        // ============================================================
+        // 6. RESİM YÜKLEME (Supabase Storage)
+        // ============================================================
+        async function uploadImage(file) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}.${fileExt}`;
+            const { data, error } = await supabase.storage
+                .from('product-images')
+                .upload(fileName, file);
             if (error) {
-                console.error('Ürünler çekilemedi:', error);
-                products = [];
+                console.error('Yükleme hatası:', error);
+                return null;
+            }
+            const { data: { publicUrl } } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+            return publicUrl;
+        }
+
+        // ============================================================
+        // 7. ADMIN GİRİŞ (Supabase Auth)
+        // ============================================================
+        async function loginAdmin() {
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
+            if (!email || !password) {
+                alert('Lütfen e-posta ve şifre girin.');
                 return;
             }
-            if (data && data.length > 0) {
-                products = data;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Giriş başarısız: ' + error.message);
             } else {
-                // Default ürünleri ekle
-                const { error: insertError } = await supabase.from('products').insert(defaultProducts);
-                if (!insertError) {
-                    const { data: newData } = await supabase.from('products').select('*').order('id');
-                    products = newData || [];
-                } else {
-                    products = [];
-                }
+                isAdmin = true;
+                closeModal('adminLoginModal');
+                updateAdminUI();
+                alert('Admin girişi başarılı!');
+                await fetchSettings();
+                changeLanguage(settings.lang, false);
             }
         }
 
-        // ==================== ADMIN GİRİŞ (MEVCUT YÖNTEM) ====================
-        function checkSearchInput(event) {
-            const input = document.getElementById('search-input');
-            const rawVal = input.value;
-            const cleanVal = rawVal.trim().toLowerCase();
-
-            const adminPasscode = `${settings.adminUser}.${settings.adminPass}`.toLowerCase();
-            const isTamamTyped = cleanVal.endsWith('tamam');
-            const isEnterPressed = (event.key === 'Enter');
-
-            if (isTamamTyped || isEnterPressed) {
-                input.blur();
-                let targetCode = cleanVal;
-                if (isTamamTyped) {
-                    targetCode = cleanVal.slice(0, -5).trim();
-                }
-                if (targetCode === adminPasscode) {
-                    isAdmin = true;
-                    input.value = '';
-                    searchQuery = '';
-                    updateAdminUI();
-                    openModal('settingsModal');
-                    alert(settings.lang === 'ar' ? 'تم تسجيل دخول المسؤول بنجاح!' : 'Admin girişi başarılı!');
-                }
-            }
-        }
-
-        function logoutAdmin() {
+        async function logoutAdmin() {
+            await supabase.auth.signOut();
             isAdmin = false;
             updateAdminUI();
             closeModal('settingsModal');
         }
 
+        // ============================================================
+        // 8. ARAMA KUTUSU (Admin login tetikleyicisi)
+        // ============================================================
+        function checkSearchInput(event) {
+            const input = document.getElementById('search-input');
+            const val = input.value.trim().toLowerCase();
+            if (val === 'admin log in' && event.key === 'Enter') {
+                input.value = '';
+                openModal('adminLoginModal');
+                event.preventDefault();
+            }
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.trim().toLowerCase();
+            renderProducts();
+        }
+
+        // ============================================================
+        // 9. DİL DEĞİŞTİRME
+        // ============================================================
+        function changeLanguage(lang, shouldSave = true) {
+            settings.lang = lang;
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+            const t = translations[lang];
+            document.getElementById('txt-app-title').innerText = settings.customAppTitle || t.appTitle;
+            document.getElementById('btn-lang-toggle').innerText = t.langBtnText;
+            document.getElementById('txt-cart-btn-text').innerText = t.viewCart;
+            document.getElementById('txt-settings-btn-text').innerText = t.settings;
+            document.getElementById('txt-total-label').innerText = t.totalLabel;
+            document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
+            document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
+            document.getElementById('txt-change-phone').innerText = t.changePhone;
+            document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
+            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
+            document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
+            document.getElementById('txt-change-add-text').innerText = t.changeAddText;
+            document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
+            document.getElementById('btn-save-settings').innerText = t.saveSettings;
+            document.getElementById('btn-logout').innerText = t.logout;
+            document.getElementById('btn-close-settings').innerText = t.close;
+            document.getElementById('btn-add-product').innerText = t.addProduct;
+            document.getElementById('btn-manage-groups').innerText = t.manageGroups;
+            document.getElementById('lbl-prod-group').innerText = t.selectGroup;
+            document.getElementById('txt-group-modal-title').innerText = t.groupModalTitle;
+            document.getElementById('btn-save-group').innerText = t.addGroupBtn;
+            document.getElementById('txt-existing-groups').innerText = t.existingGroups;
+            document.getElementById('lbl-prod-img').innerText = t.prodImg;
+            document.getElementById('lbl-prod-price').innerText = t.prodPrice;
+            document.getElementById('btn-save-prod').innerText = t.save;
+            document.getElementById('btn-cancel-prod').innerText = t.cancel;
+            document.getElementById('txt-cart-title').innerText = t.cartTitle;
+            document.getElementById('btn-clear-cart').innerText = t.clearCart;
+            document.getElementById('btn-close-cart').innerText = t.close;
+            document.getElementById('txt-groups-title').innerText = t.groupsTitle;
+            document.getElementById('txt-all-products-title').innerText = t.allProductsTitle;
+            document.getElementById('search-input').placeholder = t.searchPlaceholder;
+
+            renderCategories();
+            renderProducts();
+            renderCart();
+        }
+
+        function toggleLanguage() {
+            const next = settings.lang === 'ar' ? 'tr' : 'ar';
+            changeLanguage(next, true);
+            supabase.from('settings').update({ lang: next }).eq('id', 1);
+        }
+
+        // ============================================================
+        // 10. ADMIN PANELİ GÖSTER / GİZLE
+        // ============================================================
         function updateAdminUI() {
             const adminBar = document.getElementById('adminBar');
             const btnSettings = document.getElementById('btn-settings');
             if (isAdmin) {
                 btnSettings.style.display = 'inline-block';
                 adminBar.style.display = 'flex';
-                // Admin modal'ına mevcut değerleri doldur
-                document.getElementById('new-username').value = settings.adminUser;
-                document.getElementById('new-password').value = settings.adminPass;
-                document.getElementById('new-phone').value = settings.phone;
-                document.getElementById('new-wa-header').value = settings.waHeader || 'طلب جديد';
+                document.getElementById('new-phone').value = settings.phone || '';
+                document.getElementById('new-wa-header').value = settings.waHeader || '';
                 document.getElementById('new-app-title').value = settings.customAppTitle || '';
                 document.getElementById('new-delete-text').value = settings.customDeleteText || '';
                 document.getElementById('new-add-text').value = settings.customAddText || '';
@@ -285,115 +570,118 @@
             renderProducts();
         }
 
-        // ==================== AYAR GÜNCELLEME (Supabase) ====================
+        // ============================================================
+        // 11. AYAR GÜNCELLEME (Supabase)
+        // ============================================================
         async function updateAdminSettings() {
-            const newU = document.getElementById('new-username').value.trim();
-            const newP = document.getElementById('new-password').value.trim();
             const newPh = document.getElementById('new-phone').value.trim();
-            const newWaHeader = document.getElementById('new-wa-header').value.trim();
-            const newAppTitle = document.getElementById('new-app-title').value.trim();
-            const newDeleteText = document.getElementById('new-delete-text').value.trim();
-            const newAddText = document.getElementById('new-add-text').value.trim();
-            const newCheckoutText = document.getElementById('new-checkout-text').value.trim();
+            const newWa = document.getElementById('new-wa-header').value.trim();
+            const newApp = document.getElementById('new-app-title').value.trim();
+            const newDel = document.getElementById('new-delete-text').value.trim();
+            const newAdd = document.getElementById('new-add-text').value.trim();
+            const newCheck = document.getElementById('new-checkout-text').value.trim();
 
-            // Güncelleme nesnesi
             const updateObj = {};
-            if (newU) updateObj.admin_user = newU;
-            if (newP) updateObj.admin_pass = newP;
             if (newPh) updateObj.phone = newPh;
-            if (newWaHeader) updateObj.wa_header = newWaHeader;
-            updateObj.custom_app_title = newAppTitle;
-            updateObj.custom_delete_text = newDeleteText;
-            updateObj.custom_add_text = newAddText;
-            updateObj.custom_checkout_text = newCheckoutText;
+            if (newWa) updateObj.wa_header = newWa;
+            updateObj.custom_app_title = newApp;
+            updateObj.custom_delete_text = newDel;
+            updateObj.custom_add_text = newAdd;
+            updateObj.custom_checkout_text = newCheck;
 
-            // Local state'i güncelle
-            if (newU) settings.adminUser = newU;
-            if (newP) settings.adminPass = newP;
             if (newPh) settings.phone = newPh;
-            if (newWaHeader) settings.waHeader = newWaHeader;
-            settings.customAppTitle = newAppTitle;
-            settings.customDeleteText = newDeleteText;
-            settings.customAddText = newAddText;
-            settings.customCheckoutText = newCheckoutText;
+            if (newWa) settings.waHeader = newWa;
+            settings.customAppTitle = newApp;
+            settings.customDeleteText = newDel;
+            settings.customAddText = newAdd;
+            settings.customCheckoutText = newCheck;
 
-            // Supabase'e kaydet (settings tablosunda id=1 olduğunu varsayıyoruz)
-            const { error } = await supabase
-                .from('settings')
-                .update(updateObj)
-                .eq('id', 1);
-            if (error) {
-                alert('Ayarlar kaydedilemedi: ' + error.message);
-                return;
-            }
+            const { error } = await supabase.from('settings').update(updateObj).eq('id', 1);
+            if (error) alert('Kayıt hatası: ' + error.message);
+            else alert('Ayarlar kaydedildi!');
             changeLanguage(settings.lang, false);
-            alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
         }
 
-        // ==================== DİL DEĞİŞTİRME (Supabase'e kaydet) ====================
-        async function toggleLanguage() {
-            const nextLang = settings.lang === 'ar' ? 'tr' : 'ar';
-            settings.lang = nextLang;
-            // Supabase'de lang alanını güncelle
-            await supabase.from('settings').update({ lang: nextLang }).eq('id', 1);
-            changeLanguage(nextLang, false);
-        }
-
-        function changeLanguage(lang, shouldSave = true) {
-            settings.lang = lang;
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-            const t = translations[lang];
-            // ... (tüm UI metinlerini güncelle - aynen orijinal)
-            // Kısaltmak için burada tekrar yazmıyorum, orijinal kodun aynısı.
-            // Önemli: saveState çağrısını kaldırdık.
-            renderCategories();
-            renderProducts();
-            renderCart();
-        }
-
-        // ==================== GRUP YÖNETİMİ (Supabase) ====================
+        // ============================================================
+        // 12. GRUP İŞLEMLERİ (Supabase)
+        // ============================================================
         async function saveGroup() {
             const name_ar = document.getElementById('new-group-ar').value.trim();
             const name_tr = document.getElementById('new-group-tr').value.trim();
-            if (!name_ar && !name_tr) {
-                alert(settings.lang === 'ar' ? 'يرجى إدخال اسم المجموعة' : 'Lütfen grup adı girin!');
-                return;
+            if (!name_ar && !name_tr) return alert('Lütfen grup adı girin');
+            const { data, error } = await supabase.from('groups').insert([{ name_ar, name_tr }]).select();
+            if (error) alert('Hata: ' + error.message);
+            else if (data) {
+                groups.push(data[0]);
+                renderGroupsList();
+                renderGroupSelect();
+                renderCategories();
+                document.getElementById('new-group-ar').value = '';
+                document.getElementById('new-group-tr').value = '';
             }
-            const newGroup = { name_ar: name_ar || name_tr, name_tr: name_tr || name_ar };
-            const { data, error } = await supabase.from('groups').insert([newGroup]).select();
-            if (error) {
-                alert('Grup eklenemedi: ' + error.message);
-                return;
-            }
-            if (data) groups.push(data[0]);
-            renderGroupsList();
-            renderGroupSelect();
-            renderCategories();
-            document.getElementById('new-group-ar').value = '';
-            document.getElementById('new-group-tr').value = '';
         }
 
         async function deleteGroup(id) {
-            if (!confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) return;
+            if (!confirm('Silmek istediğinize emin misiniz?')) return;
             const { error } = await supabase.from('groups').delete().eq('id', id);
-            if (error) {
-                alert('Silme hatası: ' + error.message);
-                return;
+            if (error) alert('Hata: ' + error.message);
+            else {
+                groups = groups.filter(g => g.id !== id);
+                renderGroupsList();
+                renderGroupSelect();
+                renderCategories();
+                renderProducts();
             }
-            groups = groups.filter(g => g.id !== id);
-            renderGroupsList();
-            renderGroupSelect();
-            renderCategories();
-            renderProducts();
         }
 
-        function renderGroupsList() { /* aynen */ }
-        function renderGroupSelect() { /* aynen */ }
-        function openGroupModal() { /* aynen */ }
+        function renderGroupSelect() {
+            const select = document.getElementById('prod-group-select');
+            select.innerHTML = '';
+            if (groups.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = 'Grup yok, önce grup ekleyin.';
+                select.appendChild(opt);
+                return;
+            }
+            groups.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.innerText = settings.lang === 'ar' ? `${g.name_ar} (${g.name_tr})` : `${g.name_tr} (${g.name_ar})`;
+                select.appendChild(opt);
+            });
+        }
 
-        // ==================== ÜRÜN YÖNETİMİ (Supabase) ====================
+        function renderGroupsList() {
+            const list = document.getElementById('groupsList');
+            list.innerHTML = '';
+            if (groups.length === 0) {
+                list.innerHTML = `<p style="color:#888; text-align:center; padding:10px;">Henüz grup eklenmedi.</p>`;
+                return;
+            }
+            groups.forEach(g => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
+                const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
+                const deleteText = settings.customDeleteText || translations[settings.lang].delete;
+                item.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="deleteGroup(${g.id})" class="btn-danger" style="padding:4px 8px; font-size:0.8rem;">${deleteText}</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function openGroupModal() {
+            document.getElementById('new-group-ar').value = '';
+            document.getElementById('new-group-tr').value = '';
+            renderGroupsList();
+            openModal('groupModal');
+        }
+
+        // ============================================================
+        // 13. ÜRÜN İŞLEMLERİ (Supabase + Storage)
+        // ============================================================
         async function saveProduct() {
             const id = document.getElementById('prod-id').value;
             const price = parseFloat(document.getElementById('prod-price').value) || 0;
@@ -405,27 +693,30 @@
             const name_tr = document.getElementById('prod-name-tr').value.trim();
             const desc_ar = document.getElementById('prod-desc-ar').value.trim();
             const desc_tr = document.getElementById('prod-desc-tr').value.trim();
-            const img = currentBase64Image || 'https://via.placeholder.com/300x200';
 
-            const productData = { img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
+            let imgUrl = currentBase64Image;
+            if (currentFile) {
+                const uploadedUrl = await uploadImage(currentFile);
+                if (uploadedUrl) imgUrl = uploadedUrl;
+                else imgUrl = 'https://via.placeholder.com/300x200';
+                currentFile = null;
+            } else if (!imgUrl || imgUrl === '') {
+                imgUrl = 'https://via.placeholder.com/300x200';
+            }
+
+            const productData = { img: imgUrl, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
 
             if (id) {
-                // Güncelleme
                 const { error } = await supabase.from('products').update(productData).eq('id', id);
-                if (error) {
-                    alert('Güncelleme hatası: ' + error.message);
-                    return;
+                if (error) alert('Güncelleme hatası: ' + error.message);
+                else {
+                    const index = products.findIndex(p => p.id == id);
+                    if (index !== -1) products[index] = { ...products[index], ...productData };
                 }
-                const index = products.findIndex(p => p.id == id);
-                if (index !== -1) products[index] = { ...products[index], ...productData };
             } else {
-                // Ekleme
                 const { data, error } = await supabase.from('products').insert([productData]).select();
-                if (error) {
-                    alert('Ekleme hatası: ' + error.message);
-                    return;
-                }
-                if (data) products.push(data[0]);
+                if (error) alert('Ekleme hatası: ' + error.message);
+                else if (data) products.push(data[0]);
             }
             closeModal('productModal');
             renderCategories();
@@ -433,51 +724,336 @@
         }
 
         async function deleteProduct(id) {
-            if (!confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) return;
+            if (!confirm('Silmek istediğinize emin misiniz?')) return;
             const { error } = await supabase.from('products').delete().eq('id', id);
-            if (error) {
-                alert('Silme hatası: ' + error.message);
-                return;
+            if (error) alert('Hata: ' + error.message);
+            else {
+                products = products.filter(p => p.id !== id);
+                cart = cart.filter(c => c.id !== id);
+                localStorage.setItem('catalog_cart', JSON.stringify(cart));
+                renderCategories();
+                renderProducts();
+                renderCart();
             }
-            products = products.filter(p => p.id !== id);
-            cart = cart.filter(c => c.id !== id);
+        }
+
+        function previewSelectedImage(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('img-preview');
+            if (file) {
+                currentFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentBase64Image = e.target.result;
+                    preview.src = currentBase64Image;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                currentFile = null;
+                preview.style.display = 'none';
+            }
+        }
+
+        function openAddProductModal() {
+            renderGroupSelect();
+            document.getElementById('prod-id').value = '';
+            document.getElementById('prod-img-file').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-name-ar').value = '';
+            document.getElementById('prod-name-tr').value = '';
+            document.getElementById('prod-desc-ar').value = '';
+            document.getElementById('prod-desc-tr').value = '';
+            currentFile = null;
+            currentBase64Image = '';
+            document.getElementById('img-preview').src = '';
+            document.getElementById('img-preview').style.display = 'none';
+            document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'إضافة منتج' : 'Ürün Ekle';
+            openModal('productModal');
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            renderGroupSelect();
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-price').value = p.price;
+            document.getElementById('prod-name-ar').value = p.name_ar;
+            document.getElementById('prod-name-tr').value = p.name_tr;
+            document.getElementById('prod-desc-ar').value = p.desc_ar || '';
+            document.getElementById('prod-desc-tr').value = p.desc_tr || '';
+            const matchGroup = groups.find(g => g.name_ar === p.category_ar && g.name_tr === p.category_tr);
+            if (matchGroup) document.getElementById('prod-group-select').value = matchGroup.id;
+            const preview = document.getElementById('img-preview');
+            if (p.img) {
+                preview.src = p.img;
+                preview.style.display = 'block';
+                currentBase64Image = p.img;
+            } else {
+                preview.style.display = 'none';
+                currentBase64Image = '';
+            }
+            currentFile = null;
+            document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'تعديل المنتج' : 'Ürünü Düzenle';
+            openModal('productModal');
+        }
+
+        // ============================================================
+        // 14. SEPET (LocalStorage)
+        // ============================================================
+        function addToCart(id) {
+            const item = cart.find(c => c.id === id);
+            if (item) item.qty++;
+            else cart.push({ id, qty: 1 });
             localStorage.setItem('catalog_cart', JSON.stringify(cart));
-            renderCategories();
-            renderProducts();
             renderCart();
         }
 
-        function openAddProductModal() { /* aynen */ }
-        function editProduct(id) { /* aynen */ }
+        function updateQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+            }
+            localStorage.setItem('catalog_cart', JSON.stringify(cart));
+            renderCart();
+        }
 
-        // ==================== SEPET (LocalStorage'da kalır) ====================
-        // addToCart, updateQty, removeFromCart, clearCart, renderCart, completeOrder
-        // tamamen aynen kalabilir. Sadece products dizisi Supabase'den geliyor.
-        // Sepet işlemlerinde değişiklik yok.
+        function removeFromCart(id) {
+            cart = cart.filter(c => c.id !== id);
+            localStorage.setItem('catalog_cart', JSON.stringify(cart));
+            renderCart();
+        }
 
-        // ==================== RENDER FONKSİYONLARI ====================
-        function renderCategories() { /* aynen */ }
-        function renderProducts() { /* aynen */ }
-        function openProductDetail(id) { /* aynen */ }
+        function clearCart() {
+            if (cart.length === 0) return;
+            if (confirm(translations[settings.lang].clearCartConfirm)) {
+                cart = [];
+                localStorage.setItem('catalog_cart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
 
-        // ==================== UYGULAMA BAŞLATICI ====================
+        function renderCart() {
+            const cartList = document.getElementById('cartList');
+            cartList.innerHTML = '';
+            let totalQty = 0, totalPrice = 0;
+            if (cart.length === 0) {
+                cartList.innerHTML = `<p style="text-align:center; color:#888; padding:20px 0;">${translations[settings.lang].cartEmpty}</p>`;
+            } else {
+                cart.forEach(c => {
+                    const prod = products.find(p => p.id === c.id);
+                    if (prod) {
+                        const name = settings.lang === 'ar' ? prod.name_ar : prod.name_tr;
+                        const itemTotal = prod.price * c.qty;
+                        totalQty += c.qty;
+                        totalPrice += itemTotal;
+                        const deleteText = settings.customDeleteText || translations[settings.lang].delete;
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'cart-item';
+                        itemDiv.innerHTML = `
+                            <div class="cart-item-details">
+                                <strong>${name}</strong><br>
+                                <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
+                            </div>
+                            <div class="qty-btns">
+                                <button onclick="updateQty(${prod.id}, -1)">-</button>
+                                <span>${c.qty}</span>
+                                <button onclick="updateQty(${prod.id}, 1)">+</button>
+                            </div>
+                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="${deleteText}">🗑️</button>
+                        `;
+                        cartList.appendChild(itemDiv);
+                    }
+                });
+            }
+            document.getElementById('cart-count').innerText = totalQty;
+            document.getElementById('cart-total-price').innerText = totalPrice;
+        }
+
+        // ============================================================
+        // 15. WHATSAPP SİPARİŞ
+        // ============================================================
+        function formatPhoneForWa(phoneStr) {
+            let digits = phoneStr.replace(/[^0-9]/g, '');
+            if (digits.startsWith('0')) digits = '9' + digits;
+            else if (digits.length === 10 && digits.startsWith('5')) digits = '90' + digits;
+            return digits;
+        }
+
+        function completeOrder() {
+            if (cart.length === 0) {
+                alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
+                return;
+            }
+            let messageLines = [];
+            let totalQty = 0, grandTotal = 0;
+            const customHeader = settings.waHeader || 'Yeni Sipariş';
+            messageLines.push(`${customHeader} (${settings.lang === 'ar' ? 'العربية' : 'Türkçe'})`);
+
+            cart.forEach(c => {
+                const prod = products.find(p => p.id === c.id);
+                if (prod) {
+                    const name = prod.name_ar || prod.name_tr;
+                    const itemTotal = prod.price * c.qty;
+                    totalQty += c.qty;
+                    grandTotal += itemTotal;
+                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} adet ) ( ${itemTotal} TL )`);
+                }
+            });
+            messageLines.push(`( Toplam Ürün: ${totalQty} ) ( Genel Toplam: ${grandTotal} TL )`);
+            const fullMessage = messageLines.join('\n');
+            const encoded = encodeURIComponent(fullMessage);
+            const cleanPhone = formatPhoneForWa(settings.phone);
+            window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
+        }
+
+        // ============================================================
+        // 16. KATEGORİ VE ÜRÜN RENDER
+        // ============================================================
+        function renderCategories() {
+            const bar = document.getElementById('categoriesBar');
+            bar.innerHTML = '';
+            const t = translations[settings.lang];
+
+            const allBtn = document.createElement('button');
+            allBtn.className = `cat-btn ${selectedCategory === 'ALL' ? 'active' : ''}`;
+            allBtn.innerText = t.allBtn;
+            allBtn.onclick = () => { selectedCategory = 'ALL'; renderCategories(); renderProducts(); };
+            bar.appendChild(allBtn);
+
+            const catMap = new Map();
+            groups.forEach(g => catMap.set(g.name_ar + '|' + g.name_tr, { ar: g.name_ar, tr: g.name_tr }));
+            products.forEach(p => {
+                const catAr = (p.category_ar || '').trim();
+                const catTr = (p.category_tr || '').trim();
+                if (catAr || catTr) {
+                    const key = catAr + '|' + catTr;
+                    if (!catMap.has(key)) catMap.set(key, { ar: catAr || catTr, tr: catTr || catAr });
+                }
+            });
+            catMap.forEach((catObj, key) => {
+                const display = settings.lang === 'ar' ? catObj.ar : catObj.tr;
+                const btn = document.createElement('button');
+                btn.className = `cat-btn ${selectedCategory === key ? 'active' : ''}`;
+                btn.innerText = display;
+                btn.onclick = () => { selectedCategory = key; renderCategories(); renderProducts(); };
+                bar.appendChild(btn);
+            });
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+            const t = translations[settings.lang];
+            const addText = settings.customAddText || t.addToCart;
+            const editText = t.edit;
+            const deleteText = settings.customDeleteText || t.delete;
+
+            const filtered = products.filter(p => {
+                let catMatch = selectedCategory === 'ALL' || (p.category_ar + '|' + p.category_tr) === selectedCategory;
+                let searchMatch = true;
+                if (searchQuery) {
+                    const q = searchQuery;
+                    const nameAr = (p.name_ar || '').toLowerCase();
+                    const nameTr = (p.name_tr || '').toLowerCase();
+                    const descAr = (p.desc_ar || '').toLowerCase();
+                    const descTr = (p.desc_tr || '').toLowerCase();
+                    const catAr = (p.category_ar || '').toLowerCase();
+                    const catTr = (p.category_tr || '').toLowerCase();
+                    searchMatch = nameAr.includes(q) || nameTr.includes(q) ||
+                                  descAr.includes(q) || descTr.includes(q) ||
+                                  catAr.includes(q) || catTr.includes(q);
+                }
+                return catMatch && searchMatch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:20px 0;">${t.noProductsFound}</p>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+                const catName = settings.lang === 'ar' ? p.category_ar : p.category_tr;
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    ${catName ? `<span class="product-badge">${catName}</span>` : ''}
+                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
+                    <div class="product-info">
+                        <div>
+                            <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
+                            <div class="product-price">${p.price} TL</div>
+                        </div>
+                        <div class="product-actions">
+                            <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
+                            ${isAdmin ? `
+                                <button onclick="editProduct(${p.id})">${editText}</button>
+                                <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // ============================================================
+        // 17. ÜRÜN DETAY
+        // ============================================================
+        function openProductDetail(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+            const desc = settings.lang === 'ar' ? p.desc_ar : p.desc_tr;
+            const catName = settings.lang === 'ar' ? p.category_ar : p.category_tr;
+            document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
+            const badge = document.getElementById('detail-category');
+            if (catName) { badge.innerText = catName; badge.style.display = 'inline-block'; } 
+            else badge.style.display = 'none';
+            document.getElementById('detail-title').innerText = name;
+            document.getElementById('detail-desc').innerText = desc || (settings.lang === 'ar' ? 'لا يوجد وصف' : 'Açıklama yok');
+            document.getElementById('detail-price').innerText = `${p.price} TL`;
+            const addBtn = document.getElementById('detail-add-btn');
+            addBtn.innerText = settings.customAddText || translations[settings.lang].addToCart;
+            addBtn.onclick = () => { addToCart(p.id); closeModal('productDetailModal'); };
+            openModal('productDetailModal');
+        }
+
+        // ============================================================
+        // 18. UYGULAMA BAŞLANGICI
+        // ============================================================
         async function init() {
-            // Supabase'den verileri çek
+            // Oturum kontrolü
+            const { data: { session } } = await supabase.auth.getSession();
+            isAdmin = !!session;
+
+            // Verileri çek
             await fetchSettings();
             await fetchGroups();
             await fetchProducts();
-            // Sepet localStorage'dan
+
+            // Sepet
             cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
-            // Admin durumu (oturum yok, manuel giriş)
-            isAdmin = false;
-            // Dili ayarla
+
+            // UI
             changeLanguage(settings.lang, false);
-            // Admin bar'ı gizle
             updateAdminUI();
-            // Render et
             renderCategories();
             renderProducts();
             renderCart();
+
+            // Oturum değişikliklerini dinle
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN') {
+                    isAdmin = true;
+                    updateAdminUI();
+                } else if (event === 'SIGNED_OUT') {
+                    isAdmin = false;
+                    updateAdminUI();
+                }
+            });
         }
 
         window.onload = init;
