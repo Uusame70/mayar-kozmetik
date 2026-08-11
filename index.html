@@ -76,11 +76,12 @@
     </footer>
 
     <script>
-        // ==================== SUPABASE BAĞLANTISI (TEK VE DOĞRU TANIM) ====================
+        // ==================== SUPABASE BAĞLANTISI ====================
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Çakışmayı önlemek için değişken adı 'supabaseClient' yapıldı
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let settings = { phone: 'Belirtilmedi' };
 
@@ -106,7 +107,7 @@
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
 
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: password,
             });
@@ -121,7 +122,7 @@
 
         async function init() {
             try {
-                const { data, error } = await supabase.from('settings').select('*').limit(1);
+                const { data, error } = await supabaseClient.from('settings').select('*').limit(1);
                 if (!error && data && data.length > 0) {
                     settings = data[0];
                     if (settings.phone) {
