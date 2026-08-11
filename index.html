@@ -7,9 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: #f4f7f6; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+        body { background-color: #f4f7f6; color: #333; display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 80px; }
         
-        /* Şık Üst Menü Çubuğu (Navbar) */
+        /* Navbar */
         .navbar {
             background: #2c3e50; color: #fff; padding: 15px 20px;
             display: flex; justify-content: space-between; align-items: center;
@@ -17,42 +17,59 @@
         }
         .navbar h1 { font-size: 1.2rem; font-weight: bold; }
         .nav-buttons { display: flex; gap: 10px; align-items: center; }
-        .lang-btn { background: #34495e; color: #fff; border: 1px solid #fff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; }
+        .lang-btn { background: #34495e; color: #fff; border: 1px solid #fff; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
 
-        .container { flex: 1; max-width: 800px; width: 100%; margin: 0 auto; padding: 15px; }
+        .container { flex: 1; max-width: 900px; width: 100%; margin: 0 auto; padding: 15px; }
+        
+        /* Search Box */
         .search-box { margin-bottom: 20px; }
         .search-box input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; outline: none; }
         
-        /* Admin Giriş Modalı */
-        #admin-modal {
+        /* Admin Panels */
+        .admin-section {
+            display: none; background: #fff; padding: 20px; border-radius: 10px;
+            margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px dashed #2c3e50;
+        }
+        .admin-section h3 { color: #2c3e50; margin-bottom: 12px; font-size: 1.1rem; }
+        .admin-section input, .admin-section textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.9rem; }
+        .admin-section button { background: #27ae60; color: #fff; border: none; padding: 10px; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; margin-bottom: 5px; }
+        .logout-btn { background: #c0392b !important; }
+
+        /* Product Grid */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
+        .product-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.08); display: flex; flex-direction: column; position: relative; }
+        .product-card img { width: 100%; height: 180px; object-fit: cover; }
+        .product-info { padding: 15px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; color: #2c3e50; }
+        .product-desc { font-size: 0.85rem; color: #666; margin-bottom: 10px; line-height: 1.3; }
+        .product-price { font-size: 1.1rem; font-weight: bold; color: #e67e22; margin-bottom: 10px; }
+        .add-cart-btn { background: #2980b9; color: #fff; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        .delete-prod-btn { background: #e74c3c; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; font-size: 0.8rem; }
+
+        /* Floating Cart Bar (En Altta Sabit Sepet BARI) */
+        .cart-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; background: #2c3e50; color: #fff;
+            padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 999;
+        }
+        .cart-bar-btn { background: #27ae60; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+
+        /* Cart Modal */
+        #cart-modal, #admin-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000;
         }
         .modal-content {
-            background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center;
+            background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 450px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: right; max-height: 80vh; overflow-y: auto;
         }
-        .modal-content h3 { margin-bottom: 15px; color: #2c3e50; }
-        .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        .modal-content button { background: #2c3e50; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
-        .close-btn { background: #e74c3c !important; margin-top: 10px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 0.9rem; }
+        .cart-item-controls { display: flex; gap: 5px; align-items: center; }
+        .cart-item-controls button { width: 25px; height: 25px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        .close-btn { background: #7f8c8d !important; margin-top: 10px; width: 100%; color: #fff; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        /* Admin Yönetim Paneli (Giriş Yapınca Görünür) */
-        #admin-panel {
-            display: none; background: #fff; padding: 20px; border-radius: 10px;
-            margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px dashed #2c3e50;
-        }
-        #admin-panel h3 { color: #2c3e50; margin-bottom: 10px; }
-        #admin-panel input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        #admin-panel button { background: #27ae60; color: #fff; border: none; padding: 10px; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; }
-        .logout-btn { background: #c0392b !important; margin-top: 5px; }
-
-        /* Footer / İletişim Alanı */
-        footer {
-            background: #2c3e50; color: #fff; text-align: center;
-            padding: 20px; margin-top: auto; font-size: 0.9rem;
-        }
-        footer p { margin: 5px 0; }
+        /* Footer */
+        footer { background: #2c3e50; color: #fff; text-align: center; padding: 20px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -61,38 +78,68 @@
         <h1 id="app-title">كتالوج المنتجات</h1>
         <div class="nav-buttons">
             <button class="lang-btn" onclick="toggleLanguage()">TR / AR</button>
-            <span>🛒</span>
         </div>
     </div>
 
     <div class="container">
-        <div id="admin-panel">
-            <h3 id="admin-panel-title">🔒 Admin Paneli</h3>
-            <input type="text" id="new-phone-input" placeholder="Yeni telefon numarası girin">
-            <button onclick="updatePhoneInSupabase()" id="update-phone-btn">Telefonu Güncelle</button>
+        <div id="admin-panel" class="admin-section">
+            <h3 id="admin-panel-title">🔒 لوحة تحكم المشرف</h3>
+            
+            <h4>➕ <span id="add-prod-header">Yeni Ürün Ekle</span></h4>
+            <input type="text" id="prod-name-ar" placeholder="1. اسم المنتج (بالعربية) / Ürün Adı (Arapça)">
+            <textarea id="prod-desc-ar" placeholder="2. وصف المنتج (بالعربية) / Açıklama (Arapça)"></textarea>
+            <input type="text" id="prod-name-tr" placeholder="3. Ürün Adı (Türkçe)">
+            <textarea id="prod-desc-tr" placeholder="4. Ürün Açıklaması (Türkçe)"></textarea>
+            <input type="number" id="prod-price" placeholder="5. Fiyat / السعر (TL)">
+            <input type="text" id="prod-image" placeholder="6. Fotoğraf URL (Boş bırakılırsa varsayılan görsel eklenir)">
+            <button onclick="addNewProduct()" id="btn-save-prod">Ürünü Kaydet / حفظ المنتج</button>
+
+            <hr style="margin: 15px 0;">
+
+            <h4>⚙️ <span id="settings-header">Ayarlar</span></h4>
+            <input type="text" id="setting-phone" placeholder="WhatsApp Telefon (Örn: 05346322207)">
+            <textarea id="setting-template" placeholder="WhatsApp Sipariş Mesajı Dipnotu (Ek Açıklama)"></textarea>
+            <button onclick="saveSettings()" id="btn-save-settings">Ayarları Kaydet</button>
             <button class="logout-btn" onclick="logoutAdmin()" id="logout-btn">Çıkış Yap</button>
         </div>
 
         <div class="search-box">
-            <input type="text" id="search-input" onkeyup="checkSearchInput(event)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
+            <input type="text" id="search-input" onkeyup="checkSearchInput(event)" oninput="filterProducts(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
         </div>
-        <div id="products-container"></div>
+
+        <div class="products-grid" id="products-container"></div>
+    </div>
+
+    <div class="cart-bar">
+        <div>
+            🛒 <span id="cart-summary-text">السلة: 0 منتجات (0 TL)</span>
+        </div>
+        <button class="cart-bar-btn" onclick="openCartModal()" id="view-cart-btn">إتمام الطلب</button>
+    </div>
+
+    <div id="cart-modal">
+        <div class="modal-content">
+            <h3 id="cart-title">🛒 سلة التسوق</h3>
+            <div id="cart-items-list" style="margin: 15px 0;"></div>
+            <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 15px;" id="cart-total-label">İcmal: 0 TL</div>
+            <button style="background:#27ae60; color:#fff; border:none; padding:12px; border-radius:5px; width:100%; font-weight:bold; cursor:pointer;" onclick="completeOrderWhatsApp()" id="send-wa-btn">📲 ارسال الطلب عبر الواتساب</button>
+            <button class="close-btn" onclick="closeCartModal()" id="close-cart-btn">إغلاق</button>
+        </div>
     </div>
 
     <div id="admin-modal">
-        <div class="modal-content">
+        <div class="modal-content" style="text-align: center;">
             <h3 id="modal-title">🔒 Admin Girişi</h3>
-            <input type="email" id="admin-email" placeholder="E-posta adresiniz">
-            <input type="password" id="admin-password" placeholder="Şifreniz">
-            <button onclick="loginAdmin()" id="login-btn">Giriş Yap</button>
-            <button class="close-btn" onclick="closeAdminModal()" id="close-btn">Kapat</button>
+            <input type="email" id="admin-email" placeholder="E-posta" style="width: 100%; padding: 10px; margin: 10px 0;">
+            <input type="password" id="admin-password" placeholder="Şifre" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <button onclick="loginAdmin()" id="login-btn" style="background:#2c3e50; color:#fff; border:none; padding:10px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer;">Giriş Yap</button>
+            <button class="close-btn" onclick="closeAdminModal()" id="close-admin-btn">Kapat</button>
         </div>
     </div>
 
     <footer>
-        <p><span id="phone-label">📞 Telefon:</span> <span id="footer-phone">-</span></p>
-        <p><span id="email-label">✉️ E-posta:</span> <span id="footer-email">info@ornek.com</span></p>
-        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;" id="footer-rights">Tüm Hakları Saklıdır © 2026</p>
+        <p><span id="phone-label">📞 الهاتف:</span> <span id="footer-phone">05346322207</span></p>
+        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">Tüm Hakları Saklıdır © 2026</p>
     </footer>
 
     <script>
@@ -100,66 +147,83 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentLang = 'ar'; // Varsayılan Arapça
+        let currentLang = 'ar';
+        let isAdmin = false;
+        let cart = []; // [{ product, quantity }]
+        let allProducts = [];
+
+        // Varsayılan Ayarlar
+        let settings = {
+            phone: '05346322207',
+            whatsapp_template: 'شكراً لكم، أود تأكيد هذا الطلب.'
+        };
+
+        // Test Ürünleri (Supabase boşsa veya ilk yüklemede gösterilir)
+        const dummyProducts = [
+            {
+                id: 'dummy-1',
+                name_ar: 'منتج 1 (عطر فاخر)',
+                desc_ar: 'عطر مميز برائحة خشب الصندل والمسك يدوم طويلاً.',
+                name_tr: 'Ürün 1 (Lüks Parfüm)',
+                desc_tr: 'Uzun süre kalıcı sandal ağacı ve misk kokulu özel parfüm.',
+                price: 250,
+                image_url: 'https://picsum.photos/300/200?random=1'
+            },
+            {
+                id: 'dummy-2',
+                name_ar: 'منتج 2 (كريم ترطيب)',
+                desc_ar: 'كريم طبيعي لترطيب البشرة وحمايتها من الجفاف.',
+                name_tr: 'Ürün 2 (Nemlendirici Krem)',
+                desc_tr: 'Cildi nemlendiren ve kuruluğa karşı koruyan doğal krem.',
+                price: 180,
+                image_url: 'https://picsum.photos/300/200?random=2'
+            }
+        ];
 
         const translations = {
             ar: {
                 title: "كتالوج المنتجات",
                 searchPlaceholder: "🔍 بحث عن منتج...",
-                phoneLabel: "📞 الهاتف:",
-                emailLabel: "✉️ البريد الإلكتروني:",
-                rights: "جميع الحقوق محفوظة © 2026",
-                modalTitle: "🔒 تسجيل دخول المشرف",
-                emailPlaceholder: "البريد الإلكتروني",
-                passPlaceholder: "كلمة المرور",
-                loginText: "تسجيل الدخول",
-                closeText: "إغلاق",
-                adminTitle: "🔒 لوحة تحكم المشرف",
-                phoneInputPlaceholder: "أدخل رقم الهاتف الجديد",
-                updateBtn: "تحديث رقم الهاتف",
-                logoutText: "تسجيل الخروج"
+                cartSummary: "السلة: {count} منتجات ({total} TL)",
+                viewCart: "إتمام الطلب",
+                cartTitle: "🛒 سلة التسوق",
+                cartTotal: "الإجمالي: {total} TL",
+                sendWA: "📲 ارسال الطلب عبر الواتساب",
+                addToCart: "إضافة إلى السلة",
+                deleteProd: "حذف المنتج",
+                phoneLabel: "📞 الهاتف:"
             },
             tr: {
                 title: "Ürün Kataloğu",
                 searchPlaceholder: "🔍 Ürün ara...",
-                phoneLabel: "📞 Telefon:",
-                emailLabel: "✉️ E-posta:",
-                rights: "Tüm Hakları Saklıdır © 2026",
-                modalTitle: "🔒 Admin Girişi",
-                emailPlaceholder: "E-posta adresiniz",
-                passPlaceholder: "Şifreniz",
-                loginText: "Giriş Yap",
-                closeText: "Kapat",
-                adminTitle: "🔒 Admin Yönetim Paneli",
-                phoneInputPlaceholder: "Yeni telefon numarası girin",
-                updateBtn: "Telefonu Güncelle",
-                logoutText: "Çıkış Yap"
+                cartSummary: "Sepet: {count} Ürün ({total} TL)",
+                viewCart: "Siparişi Tamamla",
+                cartTitle: "🛒 Alışveriş Sepeti",
+                cartTotal: "Toplam Tutar: {total} TL",
+                sendWA: "📲 Siparişi WhatsApp ile Gönder",
+                addToCart: "Sepete Ekle",
+                deleteProd: "Ürünü Sil",
+                phoneLabel: "📞 Telefon:"
             }
         };
 
         function toggleLanguage() {
             currentLang = currentLang === 'ar' ? 'tr' : 'ar';
-            const htmlRoot = document.getElementById('html-root');
-            htmlRoot.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
-            htmlRoot.setAttribute('lang', currentLang);
+            document.getElementById('html-root').setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.getElementById('html-root').setAttribute('lang', currentLang);
+            
+            document.getElementById('app-title').innerText = translations[currentLang].title;
+            document.getElementById('search-input').placeholder = translations[currentLang].searchPlaceholder;
+            document.getElementById('view-cart-btn').innerText = translations[currentLang].viewCart;
+            document.getElementById('cart-title').innerText = translations[currentLang].cartTitle;
+            document.getElementById('send-wa-btn').innerText = translations[currentLang].sendWA;
+            document.getElementById('phone-label').innerText = translations[currentLang].phoneLabel;
 
-            const t = translations[currentLang];
-            document.getElementById('app-title').innerText = t.title;
-            document.getElementById('search-input').placeholder = t.searchPlaceholder;
-            document.getElementById('phone-label').innerText = t.phoneLabel;
-            document.getElementById('email-label').innerText = t.emailLabel;
-            document.getElementById('footer-rights').innerText = t.rights;
-            document.getElementById('modal-title').innerText = t.modalTitle;
-            document.getElementById('admin-email').placeholder = t.emailPlaceholder;
-            document.getElementById('admin-password').placeholder = t.passPlaceholder;
-            document.getElementById('login-btn').innerText = t.loginText;
-            document.getElementById('close-btn').innerText = t.closeText;
-            document.getElementById('admin-panel-title').innerText = t.adminTitle;
-            document.getElementById('new-phone-input').placeholder = t.phoneInputPlaceholder;
-            document.getElementById('update-phone-btn').innerText = t.updateBtn;
-            document.getElementById('logout-btn').innerText = t.logoutText;
+            renderProducts(allProducts);
+            updateCartUI();
         }
 
+        // --- ARAMA & ADMIN GİRİŞİ ---
         function checkSearchInput(event) {
             const input = document.getElementById('search-input');
             const val = input.value.trim().toLowerCase();
@@ -170,66 +234,81 @@
             }
         }
 
-        function closeAdminModal() {
-            document.getElementById('admin-modal').style.display = 'none';
-        }
+        function closeAdminModal() { document.getElementById('admin-modal').style.display = 'none'; }
 
         async function loginAdmin() {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
             if (error) {
                 alert('Giriş başarısız: ' + error.message);
             } else {
-                alert('Giriş başarılı! Admin paneli açılıyor...');
+                alert('Admin girişi başarılı!');
+                isAdmin = true;
                 closeAdminModal();
-                document.getElementById('admin-panel').style.display = 'block'; // Admin panelini aç
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('setting-phone').value = settings.phone;
+                document.getElementById('setting-template').value = settings.whatsapp_template;
+                renderProducts(allProducts);
             }
         }
 
         async function logoutAdmin() {
             await supabaseClient.auth.signOut();
+            isAdmin = false;
             document.getElementById('admin-panel').style.display = 'none';
+            renderProducts(allProducts);
             alert('Çıkış yapıldı.');
         }
 
-        async function updatePhoneInSupabase() {
-            const newPhone = document.getElementById('new-phone-input').value;
-            if (!newPhone) return alert('Lütfen bir numara girin.');
+        // --- ÜRÜN İŞLEMLERİ ---
+        function renderProducts(products) {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
 
-            const { error } = await supabaseClient
-                .from('settings')
-                .update({ phone: newPhone })
-                .eq('id', 1); // Tablonuzdaki ID yapısına göre değişebilir
+            products.forEach(p => {
+                const name = currentLang === 'ar' ? p.name_ar : p.name_tr;
+                const desc = currentLang === 'ar' ? p.desc_ar : p.desc_tr;
 
-            if (error) {
-                alert('Güncellenemedi: ' + error.message);
-            } else {
-                alert('Telefon numarası başarıyla güncellendi!');
-                document.getElementById('footer-phone').innerText = newPhone;
-                document.getElementById('new-phone-input').value = '';
-            }
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${p.image_url || 'https://picsum.photos/300/200'}" alt="${name}">
+                    <div class="product-info">
+                        <div>
+                            <div class="product-title">${name}</div>
+                            <div class="product-desc">${desc}</div>
+                        </div>
+                        <div>
+                            <div class="product-price">${p.price} TL</div>
+                            <button class="add-cart-btn" onclick="addToCart('${p.id}')">${translations[currentLang].addToCart}</button>
+                            ${isAdmin ? `<button class="delete-prod-btn" onclick="deleteProduct('${p.id}')">${translations[currentLang].deleteProd}</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        async function init() {
-            try {
-                const { data, error } = await supabaseClient.from('settings').select('*').limit(1);
-                if (!error && data && data.length > 0) {
-                    if (data[0].phone) {
-                        document.getElementById('footer-phone').innerText = data[0].phone;
-                    }
-                }
-            } catch (err) {
-                console.error("Veri çekme hatası:", err);
-            }
+        function filterProducts(query) {
+            const q = query.toLowerCase();
+            const filtered = allProducts.filter(p => 
+                (p.name_tr && p.name_tr.toLowerCase().includes(q)) ||
+                (p.name_ar && p.name_ar.toLowerCase().includes(q))
+            );
+            renderProducts(filtered);
         }
 
-        window.onload = init;
-    </script>
-</body>
-</html>
+        async function addNewProduct() {
+            const name_ar = document.getElementById('prod-name-ar').value.trim();
+            const desc_ar = document.getElementById('prod-desc-ar').value.trim();
+            const name_tr = document.getElementById('prod-name-tr').value.trim();
+            const desc_tr = document.getElementById('prod-desc-tr').value.trim();
+            const price = parseFloat(document.getElementById('prod-price').value);
+            let image_url = document.getElementById('prod-image').value.trim();
+
+            if (!name_ar || !name_tr || isNaN(price)) {
+                return alert('Lütfen ürün adlarını ve fiyatı eksiksiz girin.');
+            }
