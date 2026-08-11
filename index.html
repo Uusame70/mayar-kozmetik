@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Katalog</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -220,9 +220,13 @@
 
     <script>
         // ================= SUPABASE BAĞLANTISI =================
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
+        
+        let supabaseClient = null;
+        if (window.supabase && window.supabase.createClient) {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
         // =========================================================
 
         let settings = {
@@ -231,7 +235,7 @@
         };
         let groups = [];
         let products = [];
-        let cart = JSON.parse(localStorage.getItem('catalog_cart')) || []; // Sepet hala localStorage'da kalmalı (ziyaretçiye özeldir).
+        let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         
         let isAdmin = false;
         let currentBase64Image = '';
@@ -268,19 +272,18 @@
             }
         };
 
-        // Sayfa Açıldığında Verileri Supabase'den Çek
         async function init() {
-            try {
-                const { data: sData } = await supabase.from('settings').select('*').limit(1);
-                if (sData && sData.length > 0) settings = sData[0];
-
-                const { data: gData } = await supabase.from('groups').select('*');
-                if (gData) groups = gData;
-
-                const { data: pData } = await supabase.from('products').select('*');
-                if (pData) products = pData;
-            } catch (error) {
-                console.error("Supabase veri çekme hatası:", error);
+            if (supabaseClient) {
+                try {
+                    const { data: sData } = await supabaseClient.from('settings').select('*').limit(1);
+                    if (sData && sData.length > 0) settings = sData[0];
+                    const { data: gData } = await supabaseClient.from('groups').select('*');
+                    if (gData) groups = gData;
+                    const { data: pData } = await supabaseClient.from('products').select('*');
+                    if (pData) products = pData;
+                } catch (error) {
+                    console.error("Supabase veri çekme hatası:", error);
+                }
             }
 
             changeLanguage(settings.lang || 'ar', false);
@@ -293,7 +296,9 @@
         async function toggleLanguage() {
             const nextLang = settings.lang === 'ar' ? 'tr' : 'ar';
             settings.lang = nextLang;
-            await supabase.from('settings').upsert({ id: 1, ...settings });
+            if (supabaseClient) {
+                await supabaseClient.from('settings').upsert({ id: 1, ...settings });
+            }
             changeLanguage(nextLang);
         }
 
@@ -412,7 +417,9 @@
             settings.customAddText = document.getElementById('new-add-text').value.trim();
             settings.customCheckoutText = document.getElementById('new-checkout-text').value.trim();
 
-            await supabase.from('settings').upsert({ id: 1, ...settings });
+            if (supabaseClient) {
+                await supabaseClient.from('settings').upsert({ id: 1, ...settings });
+            }
             changeLanguage(settings.lang);
             alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
         }
@@ -450,7 +457,9 @@
             const newId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
             const newGroup = { id: newId, name_ar: name_ar || name_tr, name_tr: name_tr || name_ar };
             
-            await supabase.from('groups').insert([newGroup]);
+            if (supabaseClient) {
+                await supabaseClient.from('groups').insert([newGroup]);
+            }
             groups.push(newGroup);
 
             renderGroupsList();
@@ -462,7 +471,9 @@
 
         async function deleteGroup(id) {
             if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) {
-                await supabase.from('groups').delete().eq('id', id);
+                if (supabaseClient) {
+                    await supabaseClient.from('groups').delete().eq('id', id);
+                }
                 groups = groups.filter(g => g.id !== id);
                 renderGroupsList();
                 renderGroupSelect();
@@ -635,13 +646,13 @@
 
             if (id) {
                 payload.id = Number(id);
-                await supabase.from('products').upsert([payload]);
+                if (supabaseClient) await supabaseClient.from('products').upsert([payload]);
                 const index = products.findIndex(x => x.id == id);
                 if (index !== -1) products[index] = payload;
             } else {
                 const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
                 payload.id = newId;
-                await supabase.from('products').insert([payload]);
+                if (supabaseClient) await supabaseClient.from('products').insert([payload]);
                 products.push(payload);
             }
 
@@ -652,7 +663,7 @@
 
         async function deleteProduct(id) {
             if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) {
-                await supabase.from('products').delete().eq('id', id);
+                if (supabaseClient) await supabaseClient.from('products').delete().eq('id', id);
                 products = products.filter(p => p.id !== id);
                 cart = cart.filter(c => c.id !== id);
                 localStorage.setItem('catalog_cart', JSON.stringify(cart));
