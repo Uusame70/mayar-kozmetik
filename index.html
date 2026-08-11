@@ -76,14 +76,14 @@
     </footer>
 
     <script>
-        // ==================== SUPABASE BAĞLANTISI ====================
+        // ==================== SUPABASE BAĞLANTISI (TEK VE DOĞRU TANIM) ====================
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
+        
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let settings = { phone: 'Belirtilmedi' };
 
-        // Arama kutusuna "admin log in" yazıp Enter'a basınca çalışır
         function checkSearchInput(event) {
             const input = document.getElementById('search-input');
             const val = input.value.trim().toLowerCase();
@@ -94,11 +94,14 @@
             }
         }
 
+        function handleSearch(val) {
+            console.log("Aranan:", val);
+        }
+
         function closeAdminModal() {
             document.getElementById('admin-modal').style.display = 'none';
         }
 
-        // Supabase ile Admin Giriş İşlemi
         async function loginAdmin() {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
@@ -113,12 +116,7 @@
             } else {
                 alert('Giriş başarılı! Hoş geldiniz.');
                 closeAdminModal();
-                // Buraya ürün ekleme / yönetim ekranları eklenebilir
             }
-        }
-
-        function handleSearch(val) {
-            console.log("Aranan:", val);
         }
 
         async function init() {
