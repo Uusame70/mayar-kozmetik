@@ -41,6 +41,7 @@
         .header-btns {
             display: flex;
             gap: 8px;
+            align-items: center;
         }
 
         button {
@@ -376,13 +377,13 @@
         <div class="header-btns">
             <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 العربية</button>
             <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 <span id="txt-cart-btn-text">السلة</span> (<span id="cart-count">0</span>)</button>
-            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">الإعدادات</span></button>
+            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">İşlemler</span></button>
         </div>
     </header>
 
     <div class="container">
         <div id="adminBar" class="admin-bar" style="display: none;">
-            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول (Admin Mode)</strong></span>
+            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول (Admin Mode Aktif)</strong></span>
             <div style="display: flex; gap: 8px;">
                 <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
                 <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
@@ -390,7 +391,7 @@
         </div>
 
         <div class="search-box">
-            <input type="text" id="search-input" onkeyup="checkSearchInput(event)" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
+            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
         </div>
 
         <div class="section-title" id="txt-groups-title">🏷️ المجموعات (Gruplar)</div>
@@ -408,6 +409,24 @@
             <strong id="cart-total-price">0</strong> TL
         </div>
         <button onclick="completeOrder()" class="btn-success" id="btn-checkout">إرسال الطلب عبر WhatsApp</button>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>🔐 Admin Girişi</h2>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>E-posta Adresi</label>
+                <input type="email" id="login-email" value="usameismail70@gmail.com" placeholder="email@domain.com">
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="login-password" placeholder="Şifreniz">
+            </div>
+            <button onclick="handleSupabaseLogin()" class="btn-success" style="width: 100%; margin-top: 10px;">Giriş Yap</button>
+            <div class="modal-actions" style="margin-top: 15px;">
+                <button onclick="closeModal('loginModal')" class="btn-danger">Kapat</button>
+            </div>
+        </div>
     </div>
 
     <div id="productDetailModal" class="modal">
@@ -432,14 +451,6 @@
             <h2 id="txt-settings-title" style="margin-bottom: 15px;">إعدادات المسؤول</h2>
 
             <div id="adminSettingsSection">
-                <div class="form-group">
-                    <label id="txt-change-user">اسم مستخدم جديد</label>
-                    <input type="text" id="new-username">
-                </div>
-                <div class="form-group">
-                    <label id="txt-change-pass">كلمة مرور جديدة</label>
-                    <input type="password" id="new-password">
-                </div>
                 <div class="form-group">
                     <label id="txt-change-phone">رقم WhatsApp</label>
                     <input type="tel" id="new-phone" placeholder="0507 444 45 02">
@@ -466,7 +477,7 @@
                 </div>
 
                 <button onclick="updateAdminSettings()" class="btn-success" id="btn-save-settings" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
-                <button onclick="logoutAdmin()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج</button>
+                <button onclick="handleSupabaseLogout()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج (Çıkış Yap)</button>
             </div>
 
             <div class="modal-actions">
@@ -490,7 +501,7 @@
             <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
 
             <hr style="margin: 15px 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplar)</h3>
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplар)</h3>
             <div id="groupsList"></div>
 
             <div class="modal-actions">
@@ -564,10 +575,9 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const defaultSettings = {
+            id: 1,
             lang: 'ar',
             phone: '0507 444 45 02',
-            adminUser: 'mayar',
-            adminPass: '1212',
             waHeader: 'طلب جديد',
             customAppTitle: '',
             customDeleteText: '',
@@ -583,9 +593,7 @@
 
         const defaultProducts = [
             { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
-            { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' },
-            { id: 3, img: 'https://picsum.photos/300/200?random=3', price: 180, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر حدائق الزهور', name_tr: 'Çiçek Bahçesi Parfümü', desc_ar: 'عطر خفيف بنفحات الياسمين والورد الانتعاشية.', desc_tr: 'Taze yasemin ve gül notaları içeren hafif koku.' },
-            { id: 4, img: 'https://picsum.photos/300/200?random=4', price: 220, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الخشب والعنبر', name_tr: 'Odunsu & Amber Parfümü', desc_ar: 'رائحة دافئة وثابتة تدوم طويلاً.', desc_tr: 'Derin ve kalıcı odunsu tonlar.' }
+            { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
         ];
 
         const translations = {
@@ -596,8 +604,6 @@
                 totalLabel: "المجموع:",
                 checkout: "إرسال الطلب عبر WhatsApp",
                 adminPanelTitle: "إعدادات المسؤول",
-                changeUser: "اسم مستخدم جديد",
-                changePass: "كلمة مرور جديدة",
                 changePhone: "رقم WhatsApp",
                 changeWaHeader: "عنوان رسالة WhatsApp (WhatsApp Başlığı)",
                 changeAppTitle: "Site Adı (عنوان الموقع)",
@@ -639,8 +645,6 @@
                 totalLabel: "Toplam:",
                 checkout: "Siparişi WhatsApp ile Gönder",
                 adminPanelTitle: "Admin Ayarları",
-                changeUser: "Yeni Kullanıcı Adı",
-                changePass: "Yeni Şifre",
                 changePhone: "WhatsApp Numarası",
                 changeWaHeader: "WhatsApp Mesaj Başlığı",
                 changeAppTitle: "Site Adı",
@@ -686,7 +690,6 @@
         let selectedCategory = 'ALL';
         let searchQuery = '';
 
-        // Supabase'den Verileri Çekme
         async function loadFromSupabase() {
             try {
                 const { data: gData } = await _supabase.from('groups').select('*');
@@ -695,10 +698,10 @@
                 const { data: pData } = await _supabase.from('products').select('*');
                 if (pData && pData.length > 0) products = pData;
 
-                const { data: sData } = await _supabase.from('settings').select('*').single();
+                const { data: sData } = await _supabase.from('settings').select('*').eq('id', 1).single();
                 if (sData) settings = { ...defaultSettings, ...sData };
             } catch (err) {
-                console.log("Supabase veri çekme hatası (yerel veriler kullanılıyor):", err);
+                console.log("Supabase veri çekme hatası:", err);
             }
         }
 
@@ -707,6 +710,14 @@
         }
 
         async function init() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            isAdmin = !!session;
+
+            _supabase.auth.onAuthStateChange((event, session) => {
+                isAdmin = !!session;
+                updateAdminUI();
+            });
+
             await loadFromSupabase();
             changeLanguage(settings.lang, false);
             renderCategories();
@@ -715,42 +726,50 @@
             updateAdminUI();
         }
 
+        async function handleSupabaseLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                alert((settings.lang === 'ar' ? 'خطأ في تسجيل الدخول: ' : 'Giriş Hatası: ') + error.message);
+            } else {
+                isAdmin = true;
+                closeModal('loginModal');
+                updateAdminUI();
+                alert(settings.lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Başarıyla giriş yapıldı!');
+            }
+        }
+
+        async function handleSupabaseLogout() {
+            await _supabase.auth.signOut();
+            isAdmin = false;
+            updateAdminUI();
+            closeModal('settingsModal');
+            alert(settings.lang === 'ar' ? 'تم تسجيل الخروج' : 'Oturum kapatıldı.');
+        }
+
         function toggleLanguage() {
             const nextLang = settings.lang === 'ar' ? 'tr' : 'ar';
             changeLanguage(nextLang);
         }
 
         function handleSearch(val) {
+            // "mayar." yazıldığında gizli giriş penceresini aç
+            if (val.trim() === 'mayar.') {
+                document.getElementById('search-input').value = '';
+                searchQuery = '';
+                openModal('loginModal');
+                renderProducts();
+                return;
+            }
+
             searchQuery = val.trim().toLowerCase();
             renderProducts();
-        }
-
-        function checkSearchInput(event) {
-            const input = document.getElementById('search-input');
-            const rawVal = input.value;
-            const cleanVal = rawVal.trim().toLowerCase();
-
-            const adminPasscode = `${settings.adminUser}.${settings.adminPass}`.toLowerCase();
-            const isTamamTyped = cleanVal.endsWith('tamam');
-            const isEnterPressed = (event.key === 'Enter');
-
-            if (isTamamTyped || isEnterPressed) {
-                input.blur();
-
-                let targetCode = cleanVal;
-                if (isTamamTyped) {
-                    targetCode = cleanVal.slice(0, -5).trim();
-                }
-
-                if (targetCode === adminPasscode) {
-                    isAdmin = true;
-                    input.value = '';
-                    searchQuery = '';
-                    updateAdminUI();
-                    openModal('settingsModal');
-                    alert(settings.lang === 'ar' ? 'تم تسجيل دخول المسؤول بنجاح!' : 'Admin girişi başarılı!');
-                }
-            }
         }
 
         function changeLanguage(lang, shouldSave = true) {
@@ -770,8 +789,6 @@
             document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
 
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
-            document.getElementById('txt-change-user').innerText = t.changeUser;
-            document.getElementById('txt-change-pass').innerText = t.changePass;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
             document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
             document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
@@ -805,12 +822,6 @@
             renderCart();
         }
 
-        function logoutAdmin() {
-            isAdmin = false;
-            updateAdminUI();
-            closeModal('settingsModal');
-        }
-
         function updateAdminUI() {
             const adminBar = document.getElementById('adminBar');
             const btnSettings = document.getElementById('btn-settings');
@@ -818,8 +829,6 @@
             if (isAdmin) {
                 btnSettings.style.display = 'inline-block';
                 adminBar.style.display = 'flex';
-                document.getElementById('new-username').value = settings.adminUser;
-                document.getElementById('new-password').value = settings.adminPass;
                 document.getElementById('new-phone').value = settings.phone;
                 document.getElementById('new-wa-header').value = settings.waHeader || 'طلب جديد';
                 document.getElementById('new-app-title').value = settings.customAppTitle || '';
@@ -842,8 +851,6 @@
         }
 
         async function updateAdminSettings() {
-            settings.adminUser = document.getElementById('new-username').value.trim() || settings.adminUser;
-            settings.adminPass = document.getElementById('new-password').value.trim() || settings.adminPass;
             settings.phone = document.getElementById('new-phone').value.trim() || settings.phone;
             settings.waHeader = document.getElementById('new-wa-header').value.trim() || 'طلب جديد';
             settings.customAppTitle = document.getElementById('new-app-title').value.trim();
