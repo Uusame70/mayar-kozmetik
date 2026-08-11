@@ -21,6 +21,21 @@
         .search-box { margin-bottom: 20px; }
         .search-box input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; outline: none; }
         
+        /* Admin Giriş Modalı (Gizli Başlar) */
+        #admin-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center;
+        }
+        .modal-content h3 { margin-bottom: 15px; color: #2c3e50; }
+        .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .modal-content button { background: #2c3e50; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+        .modal-content button:hover { background: #34495e; }
+        .close-btn { background: #e74c3c !important; margin-top: 10px; }
+
         /* Footer / İletişim Alanı (En altta) */
         footer {
             background: #2c3e50; color: #fff; text-align: center;
@@ -44,6 +59,16 @@
             </div>
     </div>
 
+    <div id="admin-modal">
+        <div class="modal-content">
+            <h3>🔒 Admin Girişi</h3>
+            <input type="email" id="admin-email" placeholder="E-posta adresiniz">
+            <input type="password" id="admin-password" placeholder="Şifreniz">
+            <button onclick="loginAdmin()">Giriş Yap</button>
+            <button class="close-btn" onclick="closeAdminModal()">Kapat</button>
+        </div>
+    </div>
+
     <footer>
         <p>📞 Telefon: <span id="footer-phone">-</span></p>
         <p>✉️ E-posta: <span id="footer-email">info@ornek.com</span></p>
@@ -51,22 +76,44 @@
     </footer>
 
     <script>
-        // ==================== SUPABASE BAĞLANTISI (TEK VE DOĞRU TANIM) ====================
+        // ==================== SUPABASE BAĞLANTISI ====================
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtcmRxZXBqdGZ5Y3Z0Z2Nia3l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzkwOTAsImV4cCI6MjEwMTk1NTA5MH0.fDrMNun9fMaFj1PqAkZRpmOF17r0GCWGZNu0mc5k0dU';
-        
-        // Tek bir kez client oluşturuluyor
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let settings = { phone: 'Belirtilmedi' };
 
+        // Arama kutusuna "admin log in" yazıp Enter'a basınca çalışır
         function checkSearchInput(event) {
             const input = document.getElementById('search-input');
             const val = input.value.trim().toLowerCase();
             if ((event.key === 'Enter' || event.keyCode === 13) && val === 'admin log in') {
                 input.value = '';
-                alert('Admin giriş paneli açılıyor...');
+                document.getElementById('admin-modal').style.display = 'flex';
                 event.preventDefault();
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').style.display = 'none';
+        }
+
+        // Supabase ile Admin Giriş İşlemi
+        async function loginAdmin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                alert('Giriş başarısız: ' + error.message);
+            } else {
+                alert('Giriş başarılı! Hoş geldiniz.');
+                closeAdminModal();
+                // Buraya ürün ekleme / yönetim ekranları eklenebilir
             }
         }
 
@@ -74,7 +121,6 @@
             console.log("Aranan:", val);
         }
 
-        // Sayfa açıldığında verileri güvenli çekme
         async function init() {
             try {
                 const { data, error } = await supabase.from('settings').select('*').limit(1);
