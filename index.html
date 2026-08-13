@@ -591,10 +591,8 @@
             { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
         ];
 
-        const defaultProducts = [
-            { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
-            { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
-        ];
+        // Sahte ürünler tamamen kaldırıldı, artık tamamen Supabase'den gelecek:
+        const defaultProducts = [];
 
         const translations = {
             ar: {
@@ -759,7 +757,6 @@
         }
 
         function handleSearch(val) {
-            // "mayar." yazıldığında gizli giriş penceresini aç
             if (val.trim() === 'mayar.') {
                 document.getElementById('search-input').value = '';
                 searchQuery = '';
