@@ -204,10 +204,11 @@
                 font-size: 0.95rem !important;
             }
             .product-actions {
-                flex-direction: row;
+                flex-direction: column;
             }
             .product-actions button {
-                padding: 6px 4px;
+                width: 100%;
+                padding: 8px 5px;
             }
         }
 
@@ -470,7 +471,7 @@
 
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align: center;">
-            <img id="detail-img" src="" style="width: 100%; max-height: 380px; object-fit: contain; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;">
+            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
             <div style="margin-bottom: 10px;">
                 <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
             </div>
@@ -480,9 +481,8 @@
 
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
-                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 12px;">💬 Paylaş</button>
-                <button id="detail-copy-btn" class="btn-warning" style="padding: 10px 12px;">🔗 Link Kopyala</button>
-                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 12px;">إغلاق</button>
+                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
+                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
             </div>
         </div>
     </div>
@@ -542,7 +542,7 @@
             <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
 
             <hr style="margin: 15px 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplار)</h3>
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplар)</h3>
             <div id="groupsList"></div>
 
             <div class="modal-actions">
@@ -662,8 +662,6 @@
                 existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
                 addToCart: "إضافة للسلة",
                 share: "مشاركة",
-                copyLink: "نسخ الرابط",
-                linkCopied: "تم نسخ رابط المنتج بنجاح!",
                 edit: "تعديل",
                 delete: "حذف",
                 prodImg: "صورة المنتج (Fotoğraf Seç)",
@@ -708,8 +706,6 @@
                 existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
                 addToCart: "Sepete Ekle",
                 share: "Paylaş",
-                copyLink: "Link Kopyala",
-                linkCopied: "Ürün bağlantısı başarıyla kopyalandı!",
                 edit: "Düzenle",
                 delete: "Sil",
                 prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
@@ -782,6 +778,7 @@
                 loadingScreen.style.display = 'none';
             }, 300);
 
+            // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
             if (productIdParam) {
@@ -856,7 +853,7 @@
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
             document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
-            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
+            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle || "Site Adı";
             document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
             document.getElementById('txt-change-add-text').innerText = t.changeAddText;
             document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
@@ -1012,7 +1009,7 @@
             groups.forEach(g => {
                 const item = document.createElement('div');
                 item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
-                const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
+                const name = settings.lang === 'ar' ? `${g.name_ar} /${g.name_tr}` : `${g.name_tr} /${g.name_ar}`;
                 const deleteText = settings.customDeleteText || translations[settings.lang].delete;
                 item.innerHTML = `
                     <span>${name}</span>
@@ -1077,7 +1074,6 @@
 
             const addText = settings.customAddText || t.addToCart;
             const shareText = t.share;
-            const copyText = t.copyLink;
             const editText = settings.customEditText || t.edit;
             const deleteText = settings.customDeleteText || t.delete;
 
@@ -1116,7 +1112,6 @@
                         <div class="product-actions">
                             <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
                             <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
-                            <button onclick="copyProductLink(${p.id})" class="btn-warning" title="${copyText}">🔗</button>
                             ${isAdmin ? `
                                 <button onclick="editProduct(${p.id})">${editText}</button>
                                 <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
@@ -1128,50 +1123,18 @@
             });
         }
 
-        // WhatsApp ile Link Paylaşma
+        // Ürünü WhatsApp Linki ile Paylaş
         function shareProduct(id) {
             const p = products.find(x => x.id === id);
             if (!p) return;
 
             const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-            const baseUrl = window.location.origin + window.location.pathname;
+            const baseUrl = window.location.href.split('?')[0];
             const productUrl = `${baseUrl}?product=${p.id}`;
 
-            const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
-            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            const message = `🛍️ *${name}*\n💰 ${p.price} TL\n🔗 ${productUrl}`;
+            const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
             window.open(waUrl, '_blank');
-        }
-
-        // Doğrudan Ürün Linkini Kopyalama Fonksiyonu
-        function copyProductLink(id) {
-            const baseUrl = window.location.origin + window.location.pathname;
-            const productUrl = `${baseUrl}?product=${id}`;
-
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(productUrl).then(() => {
-                    alert(translations[settings.lang].linkCopied);
-                }).catch(() => {
-                    fallbackCopyText(productUrl);
-                });
-            } else {
-                fallbackCopyText(productUrl);
-            }
-        }
-
-        function fallbackCopyText(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                alert(translations[settings.lang].linkCopied);
-            } catch (err) {
-                prompt(settings.lang === 'ar' ? 'انسخ الرابط:' : 'Bağlantıyı kopyalayın:', text);
-            }
-            document.body.removeChild(textArea);
         }
 
         function openProductDetail(id) {
@@ -1208,14 +1171,6 @@
             shareBtn.onclick = function() {
                 shareProduct(p.id);
             };
-
-            const copyBtn = document.getElementById('detail-copy-btn');
-            if (copyBtn) {
-                copyBtn.innerText = `🔗 ${translations[settings.lang].copyLink}`;
-                copyBtn.onclick = function() {
-                    copyProductLink(p.id);
-                };
-            }
 
             openModal('productDetailModal');
         }
@@ -1388,97 +1343,4 @@
             let totalPrice = 0;
 
             if (cart.length === 0) {
-                cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty}</p>`;
-            } else {
-                cart.forEach(c => {
-                    const prod = products.find(p => p.id === c.id);
-                    if (prod) {
-                        const name = settings.lang === 'ar' ? prod.name_ar : prod.name_tr;
-                        const itemTotal = prod.price * c.qty;
-                        totalQty += c.qty;
-                        totalPrice += itemTotal;
-                        const deleteText = settings.customDeleteText || translations[settings.lang].delete;
-
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'cart-item';
-                        itemDiv.innerHTML = `
-                            <div class="cart-item-details">
-                                <strong>${name}</strong><br>
-                                <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
-                            </div>
-                            <div class="qty-btns">
-                                <button onclick="updateQty(${prod.id}, -1)">-</button>
-                                <span>${c.qty}</span>
-                                <button onclick="updateQty(${prod.id}, 1)">+</button>
-                            </div>
-                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="${deleteText}">🗑️</button>
-                        `;
-                        cartList.appendChild(itemDiv);
-                    }
-                });
-            }
-
-            document.getElementById('cart-count').innerText = totalQty;
-            document.getElementById('cart-total-price').innerText = totalPrice;
-        }
-
-        function formatPhoneForWa(phoneStr) {
-            let digits = phoneStr.replace(/[^0-9]/g, '');
-            if (digits.startsWith('0')) {
-                digits = '9' + digits;
-            } else if (digits.length === 10 && digits.startsWith('5')) {
-                digits = '90' + digits;
-            }
-            return digits;
-        }
-
-        function completeOrder() {
-            if (cart.length === 0) {
-                alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
-                return;
-            }
-
-            let messageLines = [];
-            let totalQty = 0;
-            let grandTotal = 0;
-
-            const customHeader = settings.waHeader || 'طلب جديد';
-            const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
-
-            messageLines.push(`${customHeader} (${activeLangText})`);
-
-            cart.forEach(c => {
-                const prod = products.find(p => p.id === c.id);
-                if (prod) {
-                    const name = prod.name_ar || prod.name_tr; 
-                    const itemTotal = prod.price * c.qty;
-                    totalQty += c.qty;
-                    grandTotal += itemTotal;
-
-                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
-                }
-            });
-
-            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
-
-            const fullMessage = messageLines.join('\n');
-            const encodedMessage = encodeURIComponent(fullMessage);
-
-            const cleanPhone = formatPhoneForWa(settings.phone);
-            const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-
-            window.open(waUrl, '_blank');
-        }
-
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        window.onload = init;
-    </script>
-</body>
-</html>
+                cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty
