@@ -479,7 +479,6 @@
             <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
             <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
 
-            <div style="display: flex; gap: 8px;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
                 <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
@@ -633,7 +632,6 @@
             { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
         ];
 
-        const defaultProducts = [];
         const defaultProducts = [
             { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
             { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
@@ -682,7 +680,6 @@
                 noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
                 langBtnText: "🌐 Türkçe",
                 loadingText: "جاري التحميل..."
-                langBtnText: "🌐 Türkçe"
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
@@ -727,7 +724,6 @@
                 noProductsFound: "Aramanıza uygun ürün bulunamadı.",
                 langBtnText: "🌐 العربية",
                 loadingText: "Yükleniyor..."
-                langBtnText: "🌐 العربية"
             }
         };
 
@@ -740,16 +736,18 @@
         let selectedCategory = 'ALL';
         let searchQuery = '';
 
+        // HIZLANDIRILDI: Tüm istekler eş zamanlı (paralel) yapılıyor
         async function loadFromSupabase() {
             try {
-                const { data: gData } = await _supabase.from('groups').select('*');
-                if (gData && gData.length > 0) groups = gData;
+                const [gRes, pRes, sRes] = await Promise.all([
+                    _supabase.from('groups').select('*'),
+                    _supabase.from('products').select('*'),
+                    _supabase.from('settings').select('*').eq('id', 1).single()
+                ]);
 
-                const { data: pData } = await _supabase.from('products').select('*');
-                if (pData && pData.length > 0) products = pData;
-
-                const { data: sData } = await _supabase.from('settings').select('*').eq('id', 1).single();
-                if (sData) settings = { ...defaultSettings, ...sData };
+                if (gRes.data && gRes.data.length > 0) groups = gRes.data;
+                if (pRes.data && pRes.data.length > 0) products = pRes.data;
+                if (sRes.data) settings = { ...defaultSettings, ...sRes.data };
             } catch (err) {
                 console.log("Supabase veri çekme hatası:", err);
             }
@@ -759,8 +757,13 @@
             localStorage.setItem('catalog_cart', JSON.stringify(cart));
         }
 
+        // HIZLANDIRILDI: Auth kontrolü ve veri çekme paralel çalışır
         async function init() {
-            const { data: { session } } = await _supabase.auth.getSession();
+            const sessionPromise = _supabase.auth.getSession();
+            const dataPromise = loadFromSupabase();
+
+            const [{ data: { session } }] = await Promise.all([sessionPromise, dataPromise]);
+
             isAdmin = !!session;
 
             _supabase.auth.onAuthStateChange((event, session) => {
@@ -768,22 +771,22 @@
                 updateAdminUI();
             });
 
-            // Veriler buluttan çekilirken yükleniyor ekranı açık kalır
-            await loadFromSupabase();
-
             changeLanguage(settings.lang, false);
             renderCategories();
             renderProducts();
             renderCart();
             updateAdminUI();
 
-            // Veriler yüklendikten sonra yükleniyor ekranını gizle
+            // Yükleniyor ekranını hızlıca kapat
             const loadingScreen = document.getElementById('loadingScreen');
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => {
-                loadingScreen.style.display = 'none';
-            }, 300);
-            // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 300);
+            }
+
+            // URL'de ürün ID parametresi kontrolü
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
             if (productIdParam) {
@@ -858,7 +861,6 @@
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
             document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
-            document.getElementById('txt-change-app-title').innerText = t.changeSiteName || "Site Adı";
             document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
             document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
             document.getElementById('txt-change-add-text').innerText = t.changeAddText;
@@ -1107,9 +1109,10 @@
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
+                // Resimlere loading="lazy" eklendi (Performans İyileştirmesi)
                 card.innerHTML = `
                     ${catName ? `<span class="product-badge">${catName}</span>` : ''}
-                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
+                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" loading="lazy" onclick="openProductDetail(${p.id})">
                     <div class="product-info">
                         <div>
                             <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
@@ -1180,6 +1183,7 @@
             openModal('productDetailModal');
         }
 
+        // OTOMATİK RESİM SIKIŞTIRMA: Resimler Canvas ile maksimum 800px ve %70 kaliteye düşürülür
         function previewSelectedImage(input) {
             const file = input.files[0];
             const preview = document.getElementById('img-preview');
@@ -1187,9 +1191,33 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    currentBase64Image = e.target.result;
-                    preview.src = currentBase64Image;
-                    preview.style.display = 'block';
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 800;
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        currentBase64Image = canvas.toDataURL('image/jpeg', 0.7);
+                        preview.src = currentBase64Image;
+                        preview.style.display = 'block';
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
