@@ -204,11 +204,10 @@
                 font-size: 0.95rem !important;
             }
             .product-actions {
-                flex-direction: column;
+                flex-direction: row;
             }
             .product-actions button {
-                width: 100%;
-                padding: 8px 5px;
+                padding: 6px 4px;
             }
         }
 
@@ -327,8 +326,6 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 8px;
         }
 
         .modal-content h2 {
@@ -411,37 +408,37 @@
 
     <div id="loadingScreen">
         <div class="spinner"></div>
-        <span id="txt-loading">جاري التحميل...</span>
+        <span id="txt-loading">جاري التحميل... / Yükleniyor...</span>
     </div>
 
     <header>
-        <h1 id="txt-app-title">المتجر الإلكتروني</h1>
+        <h1 id="txt-app-title">المتجر (Katalog)</h1>
         <div class="header-btns">
-            <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 Türkçe</button>
+            <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 العربية</button>
             <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 <span id="txt-cart-btn-text">السلة</span> (<span id="cart-count">0</span>)</button>
-            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">الإعدادات</span></button>
+            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">İşlemler</span></button>
         </div>
     </header>
 
     <div class="container">
         <div id="adminBar" class="admin-bar" style="display: none;">
-            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول مفعل</strong></span>
+            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول (Admin Mode Aktif)</strong></span>
             <div style="display: flex; gap: 8px;">
                 <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
-                <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج جديد</button>
+                <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
             </div>
         </div>
 
         <div class="search-box">
-            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج...">
+            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
         </div>
 
-        <div class="section-title" id="txt-groups-title">🏷️ المجموعات</div>
+        <div class="section-title" id="txt-groups-title">🏷️ المجموعات (Gruplar)</div>
         <div id="categoriesBar" class="categories-bar"></div>
 
         <hr style="margin: 10px 0 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
 
-        <div class="section-title" id="txt-all-products-title">📦 كل المنتجات</div>
+        <div class="section-title" id="txt-all-products-title">📦 كل المنتجات (Tüm Ürünler)</div>
         <div id="productsGrid" class="products-grid"></div>
     </div>
 
@@ -473,7 +470,7 @@
 
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align: center;">
-            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <img id="detail-img" src="" style="width: 100%; max-height: 380px; object-fit: contain; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;">
             <div style="margin-bottom: 10px;">
                 <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
             </div>
@@ -483,8 +480,9 @@
 
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
-                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
-                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
+                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 12px;">💬 Paylaş</button>
+                <button id="detail-copy-btn" class="btn-warning" style="padding: 10px 12px;">🔗 Link Kopyala</button>
+                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 12px;">إغلاق</button>
             </div>
         </div>
     </div>
@@ -499,28 +497,28 @@
                     <input type="tel" id="new-phone" placeholder="0507 444 45 02">
                 </div>
                 <div class="form-group">
-                    <label id="txt-change-wa-header">عنوان رسالة WhatsApp</label>
+                    <label id="txt-change-wa-header">عنوان رسالة WhatsApp (WhatsApp Başlığı)</label>
                     <input type="text" id="new-wa-header" placeholder="طلب جديد">
                 </div>
                 <div class="form-group">
-                    <label id="txt-change-app-title">عنوان الموقع</label>
-                    <input type="text" id="new-app-title" placeholder="المتجر الإلكتروني">
+                    <label id="txt-change-app-title">Site Adı (عنوان الموقع)</label>
+                    <input type="text" id="new-app-title" placeholder="Ürün Kataloğu">
                 </div>
                 <div class="form-group">
-                    <label id="txt-change-delete-text">نص زر الحذف</label>
-                    <input type="text" id="new-delete-text" placeholder="حذف">
+                    <label id="txt-change-delete-text">"Sil" Butonu Yazısı (نص زر الحذف)</label>
+                    <input type="text" id="new-delete-text" placeholder="Sil">
                 </div>
                 <div class="form-group">
-                    <label id="txt-change-add-text">نص زر الإضافة للسلة</label>
-                    <input type="text" id="new-add-text" placeholder="إضافة للسلة">
+                    <label id="txt-change-add-text">"Sepete Ekle" Butonu Yazısı (نص زر الإضافة)</label>
+                    <input type="text" id="new-add-text" placeholder="Sepete Ekle">
                 </div>
                 <div class="form-group">
-                    <label id="txt-change-checkout-text">نص زر إرسال الطلب عبر WhatsApp</label>
-                    <input type="text" id="new-checkout-text" placeholder="إرسال الطلب عبر WhatsApp">
+                    <label id="txt-change-checkout-text">"WhatsApp Sipariş" Butonu Yazısı (نص زر إرسال الطلب)</label>
+                    <input type="text" id="new-checkout-text" placeholder="Siparişi WhatsApp ile Gönder">
                 </div>
 
                 <button onclick="updateAdminSettings()" class="btn-success" id="btn-save-settings" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
-                <button onclick="handleSupabaseLogout()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج</button>
+                <button onclick="handleSupabaseLogout()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج (Çıkış Yap)</button>
             </div>
 
             <div class="modal-actions">
@@ -531,20 +529,20 @@
 
     <div id="groupModal" class="modal">
         <div class="modal-content">
-            <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات</h2>
+            <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات (Grup Yönetimi)</h2>
 
             <div class="form-group">
                 <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
                 <input type="text" id="new-group-ar" placeholder="مثال: عطور">
             </div>
             <div class="form-group">
-                <label id="lbl-group-tr">اسم المجموعة (بالتركية)</label>
+                <label id="lbl-group-tr">Grup Adı (Türkçe)</label>
                 <input type="text" id="new-group-tr" placeholder="Örn: Parfümler">
             </div>
             <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
 
             <hr style="margin: 15px 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية</h3>
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplار)</h3>
             <div id="groupsList"></div>
 
             <div class="modal-actions">
@@ -559,18 +557,18 @@
             <input type="hidden" id="prod-id">
 
             <div class="form-group">
-                <label id="lbl-prod-img">صورة المنتج (اختر ملف)</label>
+                <label id="lbl-prod-img">صورة المنتج (Fotoğraf Seç)</label>
                 <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
                 <img id="img-preview" class="img-preview" alt="Önizleme">
             </div>
 
             <div class="form-group">
-                <label id="lbl-prod-price">السعر (TL)</label>
+                <label id="lbl-prod-price">السعر (Fiyat)</label>
                 <input type="number" id="prod-price">
             </div>
 
             <div class="form-group">
-                <label id="lbl-prod-group">المجموعة</label>
+                <label id="lbl-prod-group">المجموعة (Grup Seçin)</label>
                 <select id="prod-group-select"></select>
             </div>
 
@@ -579,7 +577,7 @@
                 <input type="text" id="prod-name-ar">
             </div>
             <div class="form-group">
-                <label id="lbl-pname-tr">اسم المنتج (بالتركية)</label>
+                <label id="lbl-pname-tr">اسم المنتج (Türkçe)</label>
                 <input type="text" id="prod-name-tr">
             </div>
             <div class="form-group">
@@ -587,7 +585,7 @@
                 <textarea id="prod-desc-ar" rows="2"></textarea>
             </div>
             <div class="form-group">
-                <label id="lbl-pdesc-tr">وصف المنتج (بالتركية)</label>
+                <label id="lbl-pdesc-tr">وصف المنتج (Türkçe)</label>
                 <textarea id="prod-desc-tr" rows="2"></textarea>
             </div>
 
@@ -602,10 +600,7 @@
         <div class="modal-content">
             <div class="modal-header-row">
                 <h2 id="txt-cart-title">سلة التسوق</h2>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <button onclick="shareCart()" class="btn-whatsapp" id="btn-share-cart" style="font-size: 0.8rem; padding: 6px 10px;">📲 مشاركة السلة</button>
-                    <button onclick="clearCart()" class="btn-danger" id="btn-clear-cart" style="font-size: 0.8rem; padding: 6px 10px;">🗑️ تفريغ السلة</button>
-                </div>
+                <button onclick="clearCart()" class="btn-danger" id="btn-clear-cart" style="font-size: 0.8rem; padding: 6px 10px;">🗑️ تفريغ السلة</button>
             </div>
             <div id="cartList"></div>
             <div class="modal-actions">
@@ -651,44 +646,45 @@
                 checkout: "إرسال الطلب عبر WhatsApp",
                 adminPanelTitle: "إعدادات المسؤول",
                 changePhone: "رقم WhatsApp",
-                changeWaHeader: "عنوان رسالة WhatsApp",
-                changeAppTitle: "اسم الموقع",
-                changeDeleteText: "نص زر الحذف",
-                changeAddText: "نص زر الإضافة للسلة",
-                changeCheckoutText: "نص زر إرسال الطلب",
+                changeWaHeader: "عنوان رسالة WhatsApp (WhatsApp Başlığı)",
+                changeAppTitle: "Site Adı (عنوان الموقع)",
+                changeDeleteText: "\"Sil\" Butonu Yazısı (نص زر الحذف)",
+                changeAddText: "\"Sepete Ekle\" Butonu Yazısı (نص زر الإضافة)",
+                changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Yazısı",
                 saveSettings: "حفظ التغييرات",
                 logout: "تسجيل الخروج",
                 close: "إغلاق",
                 addProduct: "+ إضافة منتج جديد",
                 manageGroups: "+ إدارة المجموعات",
-                selectGroup: "اختر المجموعة",
-                groupModalTitle: "إدارة المجموعات",
+                selectGroup: "اختر المجموعة (Grup Seçin)",
+                groupModalTitle: "إدارة المجموعات (Grup Yönetimi)",
                 addGroupBtn: "+ إضافة مجموعة",
-                existingGroups: "المجموعات الحالية",
+                existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
                 addToCart: "إضافة للسلة",
                 share: "مشاركة",
-                shareCart: "📲 مشاركة السلة",
+                copyLink: "نسخ الرابط",
+                linkCopied: "تم نسخ رابط المنتج بنجاح!",
                 edit: "تعديل",
                 delete: "حذف",
-                prodImg: "صورة المنتج (اختر ملف)",
+                prodImg: "صورة المنتج (Fotoğraf Seç)",
                 prodPrice: "السعر (TL)",
                 save: "حفظ",
                 cancel: "إلغاء",
                 cartTitle: "سلة التسوق",
                 cartEmpty: "السلة فارغة",
                 adminMode: "وضع المسؤول مفعل",
-                groupsTitle: "🏷️ المجموعات",
-                allProductsTitle: "📦 كل المنتجات",
-                allBtn: "الكل",
+                groupsTitle: "🏷️ المجموعات (Gruplar)",
+                allProductsTitle: "📦 كل المنتجات (Tüm Ürünler)",
+                allBtn: "الكل (Tümü)",
                 clearCart: "🗑️ تفريغ السلة",
                 clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
-                searchPlaceholder: "🔍 بحث عن منتج...",
-                noProductsFound: "لم يتم العثور على منتجات مطابقة للبحث.",
+                searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
+                noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
                 langBtnText: "🌐 Türkçe",
                 loadingText: "جاري التحميل..."
             },
             tr: {
-                appTitle: "Mayar Ürün Kataloğu",
+                appTitle: "Ürün Kataloğu",
                 viewCart: "Sepet",
                 settings: "Ayarlar",
                 totalLabel: "Toplam:",
@@ -696,6 +692,7 @@
                 adminPanelTitle: "Admin Ayarları",
                 changePhone: "WhatsApp Numarası",
                 changeWaHeader: "WhatsApp Mesaj Başlığı",
+                changeSiteName: "Site Adı",
                 changeAppTitle: "Site Adı",
                 changeDeleteText: "\"Sil\" Butonu Metni",
                 changeAddText: "\"Sepete Ekle\" Butonu Metni",
@@ -705,13 +702,14 @@
                 close: "Kapat",
                 addProduct: "+ Ürün Ekle",
                 manageGroups: "+ Grup Yönetimi",
-                selectGroup: "Grup Seçin",
-                groupModalTitle: "Grup Yönetimi",
+                selectGroup: "Grup Seçin (اختر المجموعة)",
+                groupModalTitle: "Grup Yönetimi (إدارة المجموعات)",
                 addGroupBtn: "+ Grup Ekle",
-                existingGroups: "Mevcut Gruplar",
+                existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
                 addToCart: "Sepete Ekle",
                 share: "Paylaş",
-                shareCart: "📲 Sepeti Paylaş",
+                copyLink: "Link Kopyala",
+                linkCopied: "Ürün bağlantısı başarıyla kopyalandı!",
                 edit: "Düzenle",
                 delete: "Sil",
                 prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
@@ -721,12 +719,12 @@
                 cartTitle: "Alışveriş Sepeti",
                 cartEmpty: "Sepetiniz boş",
                 adminMode: "Admin Modu Aktif",
-                groupsTitle: "🏷️ Gruplar",
-                allProductsTitle: "📦 Tüm Ürünler",
-                allBtn: "Tümü",
+                groupsTitle: "🏷️ Gruplar (المجموعات)",
+                allProductsTitle: "📦 Tüm Ürünler (كل المنتجات)",
+                allBtn: "Tümü (الكل)",
                 clearCart: "🗑️ Sepeti Boşalt",
                 clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
-                searchPlaceholder: "🔍 Ürün ara...",
+                searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
                 noProductsFound: "Aramanıza uygun ürün bulunamadı.",
                 langBtnText: "🌐 العربية",
                 loadingText: "Yükleniyor..."
@@ -854,7 +852,6 @@
             document.getElementById('txt-total-label').innerText = t.totalLabel;
             document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
             document.getElementById('txt-loading').innerText = t.loadingText;
-            document.getElementById('txt-admin-mode-text').innerText = t.adminMode;
 
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
@@ -879,7 +876,6 @@
             document.getElementById('btn-save-prod').innerText = t.save;
             document.getElementById('btn-cancel-prod').innerText = t.cancel;
             document.getElementById('txt-cart-title').innerText = t.cartTitle;
-            document.getElementById('btn-share-cart').innerText = t.shareCart;
             document.getElementById('btn-clear-cart').innerText = t.clearCart;
             document.getElementById('btn-close-cart').innerText = t.close;
             document.getElementById('txt-groups-title').innerText = t.groupsTitle;
@@ -1081,6 +1077,7 @@
 
             const addText = settings.customAddText || t.addToCart;
             const shareText = t.share;
+            const copyText = t.copyLink;
             const editText = settings.customEditText || t.edit;
             const deleteText = settings.customDeleteText || t.delete;
 
@@ -1119,6 +1116,7 @@
                         <div class="product-actions">
                             <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
                             <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
+                            <button onclick="copyProductLink(${p.id})" class="btn-warning" title="${copyText}">🔗</button>
                             ${isAdmin ? `
                                 <button onclick="editProduct(${p.id})">${editText}</button>
                                 <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
@@ -1130,19 +1128,50 @@
             });
         }
 
+        // WhatsApp ile Link Paylaşma
         function shareProduct(id) {
             const p = products.find(x => x.id === id);
             if (!p) return;
 
-            const name = settings.lang === 'ar' ? (p.name_ar || p.name_tr) : (p.name_tr || p.name_ar);
-            const priceLabel = settings.lang === 'ar' ? 'السعر' : 'Fiyat';
-            const linkLabel = settings.lang === 'ar' ? 'رابط المنتج' : 'Ürün Linki';
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
             const baseUrl = window.location.origin + window.location.pathname;
             const productUrl = `${baseUrl}?product=${p.id}`;
 
-            const message = `${name}\n💰 ${priceLabel}: ${p.price} TL\n🔗 ${linkLabel}: ${productUrl}`;
+            const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
             const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(waUrl, '_blank');
+        }
+
+        // Doğrudan Ürün Linkini Kopyalama Fonksiyonu
+        function copyProductLink(id) {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const productUrl = `${baseUrl}?product=${id}`;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(productUrl).then(() => {
+                    alert(translations[settings.lang].linkCopied);
+                }).catch(() => {
+                    fallbackCopyText(productUrl);
+                });
+            } else {
+                fallbackCopyText(productUrl);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert(translations[settings.lang].linkCopied);
+            } catch (err) {
+                prompt(settings.lang === 'ar' ? 'انسخ الرابط:' : 'Bağlantıyı kopyalayın:', text);
+            }
+            document.body.removeChild(textArea);
         }
 
         function openProductDetail(id) {
@@ -1180,7 +1209,13 @@
                 shareProduct(p.id);
             };
 
-            document.getElementById('detail-close-btn').innerText = translations[settings.lang].close;
+            const copyBtn = document.getElementById('detail-copy-btn');
+            if (copyBtn) {
+                copyBtn.innerText = `🔗 ${translations[settings.lang].copyLink}`;
+                copyBtn.onclick = function() {
+                    copyProductLink(p.id);
+                };
+            }
 
             openModal('productDetailModal');
         }
@@ -1345,53 +1380,6 @@
             }
         }
 
-        function shareCart() {
-            if (cart.length === 0) {
-                alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
-                return;
-            }
-
-            let messageLines = [];
-            let totalQty = 0;
-            let grandTotal = 0;
-
-            const header = settings.lang === 'ar' ? '🛒 محتويات سلة التسوق:' : '🛒 Alışveriş Sepeti İçeriği:';
-            messageLines.push(header);
-
-            cart.forEach(c => {
-                const prod = products.find(p => p.id === c.id);
-                if (prod) {
-                    const name = settings.lang === 'ar' ? (prod.name_ar || prod.name_tr) : (prod.name_tr || prod.name_ar);
-                    const itemTotal = prod.price * c.qty;
-                    totalQty += c.qty;
-                    grandTotal += itemTotal;
-
-                    messageLines.push(`• ${name} x${c.qty} - ${itemTotal} TL`);
-                }
-            });
-
-            const totalText = settings.lang === 'ar'
-                ? `\n📦 إجمالي القطع: ${totalQty}\n💰 المجموع الكلي: ${grandTotal} TL`
-                : `\n📦 Toplam Ürün: ${totalQty}\n💰 Toplam Tutar: ${grandTotal} TL`;
-
-            messageLines.push(totalText);
-
-            const fullMessage = messageLines.join('\n');
-
-            if (navigator.share) {
-                navigator.share({
-                    title: settings.lang === 'ar' ? 'سلة التسوق' : 'Alışveriş Sepeti',
-                    text: fullMessage
-                }).catch(() => {
-                    const waUrl = `https://wa.me/?text=${encodeURIComponent(fullMessage)}`;
-                    window.open(waUrl, '_blank');
-                });
-            } else {
-                const waUrl = `https://wa.me/?text=${encodeURIComponent(fullMessage)}`;
-                window.open(waUrl, '_blank');
-            }
-        }
-
         function renderCart() {
             const cartList = document.getElementById('cartList');
             cartList.innerHTML = '';
@@ -1454,7 +1442,7 @@
             let totalQty = 0;
             let grandTotal = 0;
 
-            const customHeader = settings.waHeader || (settings.lang === 'ar' ? 'طلب جديد' : 'Yeni Sipariş');
+            const customHeader = settings.waHeader || 'طلب جديد';
             const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
 
             messageLines.push(`${customHeader} (${activeLangText})`);
@@ -1462,21 +1450,16 @@
             cart.forEach(c => {
                 const prod = products.find(p => p.id === c.id);
                 if (prod) {
-                    const name = settings.lang === 'ar' ? (prod.name_ar || prod.name_tr) : (prod.name_tr || prod.name_ar);
+                    const name = prod.name_ar || prod.name_tr; 
                     const itemTotal = prod.price * c.qty;
                     totalQty += c.qty;
                     grandTotal += itemTotal;
 
-                    const qtyUnit = settings.lang === 'ar' ? 'عدد' : 'Adet';
-                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} ${qtyUnit} ) ( ${itemTotal} TL )`);
+                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
                 }
             });
 
-            const totalText = settings.lang === 'ar'
-                ? `( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`
-                : `( Toplam Ürün: ${totalQty} ) ( Toplam Tutar: ${grandTotal} TL )`;
-
-            messageLines.push(totalText);
+            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
 
             const fullMessage = messageLines.join('\n');
             const encodedMessage = encodeURIComponent(fullMessage);
