@@ -74,9 +74,6 @@
         button.btn-warning { background-color: #f39c12; }
         button.btn-warning:hover { background-color: #d68910; }
 
-        button.btn-whatsapp { background-color: #25d366; }
-        button.btn-whatsapp:hover { background-color: #1ebd59; }
-
         .container {
             max-width: 1200px;
             margin: 15px auto;
@@ -242,7 +239,6 @@
         .product-actions {
             display: flex;
             gap: 5px;
-            flex-wrap: wrap;
         }
 
         .cart-bar {
@@ -444,8 +440,8 @@
             <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
             
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
-                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
+                <button id="detail-add-btn" class="btn-success" style="flex: 1; padding: 10px;">إضافة للسلة</button>
+                <button id="detail-wa-btn" class="btn-warning" style="padding: 10px;">📲 WhatsApp</button>
                 <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
             </div>
         </div>
@@ -506,7 +502,7 @@
             <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
 
             <hr style="margin: 15px 0;">
-            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplар)</h3>
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplار)</h3>
             <div id="groupsList"></div>
 
             <div class="modal-actions">
@@ -625,7 +621,6 @@
                 addGroupBtn: "+ إضافة مجموعة",
                 existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
                 addToCart: "إضافة للسلة",
-                share: "مشاركة",
                 edit: "تعديل",
                 delete: "حذف",
                 prodImg: "صورة المنتج (Fotoğraf Seç)",
@@ -667,7 +662,6 @@
                 addGroupBtn: "+ Grup Ekle",
                 existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
                 addToCart: "Sepete Ekle",
-                share: "Paylaş",
                 edit: "Düzenle",
                 delete: "Sil",
                 prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
@@ -732,12 +726,12 @@
             renderCart();
             updateAdminUI();
 
-            // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
+            // 🔗 WHATSAPP LİNKİNDEN GELEN ÜRÜNÜ OTOMATİK AÇMA KONTROLÜ
             const urlParams = new URLSearchParams(window.location.search);
-            const productIdParam = urlParams.get('product');
-            if (productIdParam) {
+            const prodId = urlParams.get('prod');
+            if (prodId) {
                 setTimeout(() => {
-                    openProductDetail(Number(productIdParam));
+                    openProductDetail(parseInt(prodId));
                 }, 300);
             }
         }
@@ -1026,7 +1020,6 @@
             const t = translations[settings.lang];
 
             const addText = settings.customAddText || t.addToCart;
-            const shareText = t.share;
             const editText = settings.customEditText || t.edit;
             const deleteText = settings.customDeleteText || t.delete;
 
@@ -1064,7 +1057,6 @@
                         </div>
                         <div class="product-actions">
                             <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
-                            <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
                             ${isAdmin ? `
                                 <button onclick="editProduct(${p.id})">${editText}</button>
                                 <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
@@ -1074,19 +1066,6 @@
                 `;
                 grid.appendChild(card);
             });
-        }
-
-        function shareProduct(id) {
-            const p = products.find(x => x.id === id);
-            if (!p) return;
-
-            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-            const baseUrl = window.location.origin + window.location.pathname;
-            const productUrl = `${baseUrl}?product=${p.id}`;
-
-            const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
-            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(waUrl, '_blank');
         }
 
         function openProductDetail(id) {
@@ -1118,11 +1097,12 @@
                 closeModal('productDetailModal');
             };
 
-            const shareBtn = document.getElementById('detail-share-btn');
-            shareBtn.innerText = `💬 ${translations[settings.lang].share}`;
-            shareBtn.onclick = function() {
-                shareProduct(p.id);
-            };
+            const waBtn = document.getElementById('detail-wa-btn');
+            if (waBtn) {
+                waBtn.onclick = function() {
+                    sendSingleProductToWa(p.id);
+                };
+            }
 
             openModal('productDetailModal');
         }
@@ -1329,6 +1309,10 @@
             document.getElementById('cart-total-price').innerText = totalPrice;
         }
 
+        // ==========================================
+        // WHATSAPP İŞLEMLERİ (SEPET + TEK ÜRÜN LİNKİ)
+        // ==========================================
+
         function formatPhoneForWa(phoneStr) {
             let digits = phoneStr.replace(/[^0-9]/g, '');
             if (digits.startsWith('0')) {
@@ -1339,6 +1323,7 @@
             return digits;
         }
 
+        // Tüm Sepeti WhatsApp'a Gönderme
         function completeOrder() {
             if (cart.length === 0) {
                 alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
@@ -1350,29 +1335,58 @@
             let grandTotal = 0;
 
             const customHeader = settings.waHeader || 'طلب جديد';
-            const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
-            
-            messageLines.push(`${customHeader} (${activeLangText})`);
+            const isAr = settings.lang === 'ar';
+            const baseUrl = window.location.origin + window.location.pathname;
+
+            messageLines.push(`🛍️ *${customHeader}*`);
+            messageLines.push(`----------------------------------`);
 
             cart.forEach(c => {
                 const prod = products.find(p => p.id === c.id);
                 if (prod) {
-                    const name = prod.name_ar || prod.name_tr; 
+                    const name = isAr ? (prod.name_ar || prod.name_tr) : (prod.name_tr || prod.name_ar); 
                     const itemTotal = prod.price * c.qty;
                     totalQty += c.qty;
                     grandTotal += itemTotal;
 
-                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+                    const prodLink = `${baseUrl}?prod=${prod.id}`;
+
+                    messageLines.push(`• *${name}*`);
+                    messageLines.push(`  └ ${c.qty} Adet x ${prod.price} TL = *${itemTotal} TL*`);
+                    messageLines.push(`  🔗 ${prodLink}`);
+                    messageLines.push(``);
                 }
             });
 
-            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
+            messageLines.push(`----------------------------------`);
+            messageLines.push(isAr 
+                ? `📦 *إجمالي القطع:* ${totalQty}\n💰 *المبلغ الإجمالي:* ${grandTotal} TL`
+                : `📦 *Toplam Adet:* ${totalQty}\n💰 *Toplam Tutar:* ${grandTotal} TL`
+            );
 
             const fullMessage = messageLines.join('\n');
-            const encodedMessage = encodeURIComponent(fullMessage);
-            
             const cleanPhone = formatPhoneForWa(settings.phone);
-            const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(fullMessage)}`;
+
+            window.open(waUrl, '_blank');
+        }
+
+        // Tek Ürünü Doğrudan WhatsApp Üzerinden Gönder/Sor
+        function sendSingleProductToWa(id) {
+            const prod = products.find(p => p.id === id);
+            if (!prod) return;
+
+            const isAr = settings.lang === 'ar';
+            const name = isAr ? (prod.name_ar || prod.name_tr) : (prod.name_tr || prod.name_ar);
+            const baseUrl = window.location.origin + window.location.pathname;
+            const prodLink = `${baseUrl}?prod=${prod.id}`;
+
+            const message = isAr 
+                ? `مرحباً، أريد الاستفسار عن هذا المنتج:\n\n📌 *${name}*\n💰 *السعر:* ${prod.price} TL\n🔗 *رابط المنتج:* ${prodLink}`
+                : `Merhaba, bu ürün hakkında bilgi almak / sipariş vermek istiyorum:\n\n📌 *${name}*\n💰 *Fiyat:* ${prod.price} TL\n🔗 *Ürün Linki:* ${prodLink}`;
+
+            const cleanPhone = formatPhoneForWa(settings.phone);
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 
             window.open(waUrl, '_blank');
         }
