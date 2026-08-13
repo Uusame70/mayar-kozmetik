@@ -479,6 +479,7 @@
             <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
             <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
 
+            <div style="display: flex; gap: 8px;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
                 <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
@@ -632,6 +633,7 @@
             { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
         ];
 
+        const defaultProducts = [];
         const defaultProducts = [
             { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
             { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
@@ -680,6 +682,7 @@
                 noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
                 langBtnText: "🌐 Türkçe",
                 loadingText: "جاري التحميل..."
+                langBtnText: "🌐 Türkçe"
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
@@ -724,6 +727,7 @@
                 noProductsFound: "Aramanıza uygun ürün bulunamadı.",
                 langBtnText: "🌐 العربية",
                 loadingText: "Yükleniyor..."
+                langBtnText: "🌐 العربية"
             }
         };
 
@@ -764,6 +768,7 @@
                 updateAdminUI();
             });
 
+            // Veriler buluttan çekilirken yükleniyor ekranı açık kalır
             await loadFromSupabase();
 
             changeLanguage(settings.lang, false);
@@ -772,12 +777,12 @@
             renderCart();
             updateAdminUI();
 
+            // Veriler yüklendikten sonra yükleniyor ekranını gizle
             const loadingScreen = document.getElementById('loadingScreen');
             loadingScreen.style.opacity = '0';
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
             }, 300);
-
             // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
@@ -853,7 +858,8 @@
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
             document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
-            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle || "Site Adı";
+            document.getElementById('txt-change-app-title').innerText = t.changeSiteName || "Site Adı";
+            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
             document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
             document.getElementById('txt-change-add-text').innerText = t.changeAddText;
             document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
@@ -1009,7 +1015,7 @@
             groups.forEach(g => {
                 const item = document.createElement('div');
                 item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
-                const name = settings.lang === 'ar' ? `${g.name_ar} /${g.name_tr}` : `${g.name_tr} /${g.name_ar}`;
+                const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
                 const deleteText = settings.customDeleteText || translations[settings.lang].delete;
                 item.innerHTML = `
                     <span>${name}</span>
@@ -1123,17 +1129,16 @@
             });
         }
 
-        // Ürünü WhatsApp Linki ile Paylaş
         function shareProduct(id) {
             const p = products.find(x => x.id === id);
             if (!p) return;
 
             const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-            const baseUrl = window.location.href.split('?')[0];
+            const baseUrl = window.location.origin + window.location.pathname;
             const productUrl = `${baseUrl}?product=${p.id}`;
 
-            const message = `🛍️ *${name}*\n💰 ${p.price} TL\n🔗 ${productUrl}`;
-            const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+            const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(waUrl, '_blank');
         }
 
@@ -1343,4 +1348,97 @@
             let totalPrice = 0;
 
             if (cart.length === 0) {
-                cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty
+                cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty}</p>`;
+            } else {
+                cart.forEach(c => {
+                    const prod = products.find(p => p.id === c.id);
+                    if (prod) {
+                        const name = settings.lang === 'ar' ? prod.name_ar : prod.name_tr;
+                        const itemTotal = prod.price * c.qty;
+                        totalQty += c.qty;
+                        totalPrice += itemTotal;
+                        const deleteText = settings.customDeleteText || translations[settings.lang].delete;
+
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'cart-item';
+                        itemDiv.innerHTML = `
+                            <div class="cart-item-details">
+                                <strong>${name}</strong><br>
+                                <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
+                            </div>
+                            <div class="qty-btns">
+                                <button onclick="updateQty(${prod.id}, -1)">-</button>
+                                <span>${c.qty}</span>
+                                <button onclick="updateQty(${prod.id}, 1)">+</button>
+                            </div>
+                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="${deleteText}">🗑️</button>
+                        `;
+                        cartList.appendChild(itemDiv);
+                    }
+                });
+            }
+
+            document.getElementById('cart-count').innerText = totalQty;
+            document.getElementById('cart-total-price').innerText = totalPrice;
+        }
+
+        function formatPhoneForWa(phoneStr) {
+            let digits = phoneStr.replace(/[^0-9]/g, '');
+            if (digits.startsWith('0')) {
+                digits = '9' + digits;
+            } else if (digits.length === 10 && digits.startsWith('5')) {
+                digits = '90' + digits;
+            }
+            return digits;
+        }
+
+        function completeOrder() {
+            if (cart.length === 0) {
+                alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
+                return;
+            }
+
+            let messageLines = [];
+            let totalQty = 0;
+            let grandTotal = 0;
+
+            const customHeader = settings.waHeader || 'طلب جديد';
+            const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
+
+            messageLines.push(`${customHeader} (${activeLangText})`);
+
+            cart.forEach(c => {
+                const prod = products.find(p => p.id === c.id);
+                if (prod) {
+                    const name = prod.name_ar || prod.name_tr; 
+                    const itemTotal = prod.price * c.qty;
+                    totalQty += c.qty;
+                    grandTotal += itemTotal;
+
+                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+                }
+            });
+
+            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
+
+            const fullMessage = messageLines.join('\n');
+            const encodedMessage = encodeURIComponent(fullMessage);
+
+            const cleanPhone = formatPhoneForWa(settings.phone);
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+            window.open(waUrl, '_blank');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
