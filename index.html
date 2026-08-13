@@ -20,37 +20,6 @@
             padding-bottom: 90px;
         }
 
-        /* Yükleniyor Ekranı Stili */
-        #loadingScreen {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            font-size: 1.1rem;
-            color: #2c3e50;
-            font-weight: bold;
-            transition: opacity 0.3s ease;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            animation: spin 0.9s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         header {
             background-color: #2c3e50;
             color: white;
@@ -104,6 +73,9 @@
 
         button.btn-warning { background-color: #f39c12; }
         button.btn-warning:hover { background-color: #d68910; }
+
+        button.btn-whatsapp { background-color: #25d366; }
+        button.btn-whatsapp:hover { background-color: #1ebd59; }
 
         .container {
             max-width: 1200px;
@@ -270,6 +242,7 @@
         .product-actions {
             display: flex;
             gap: 5px;
+            flex-wrap: wrap;
         }
 
         .cart-bar {
@@ -403,11 +376,6 @@
 </head>
 <body>
 
-    <div id="loadingScreen">
-        <div class="spinner"></div>
-        <span id="txt-loading">جاري التحميل... / Yükleniyor...</span>
-    </div>
-
     <header>
         <h1 id="txt-app-title">المتجر (Katalog)</h1>
         <div class="header-btns">
@@ -475,8 +443,9 @@
             <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
             <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
             
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
+                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
                 <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
             </div>
         </div>
@@ -627,7 +596,10 @@
             { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
         ];
 
-        const defaultProducts = [];
+        const defaultProducts = [
+            { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
+            { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
+        ];
 
         const translations = {
             ar: {
@@ -653,6 +625,7 @@
                 addGroupBtn: "+ إضافة مجموعة",
                 existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
                 addToCart: "إضافة للسلة",
+                share: "مشاركة",
                 edit: "تعديل",
                 delete: "حذف",
                 prodImg: "صورة المنتج (Fotoğraf Seç)",
@@ -669,8 +642,7 @@
                 clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
                 searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
                 noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
-                langBtnText: "🌐 Türkçe",
-                loadingText: "جاري التحميل..."
+                langBtnText: "🌐 Türkçe"
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
@@ -681,7 +653,7 @@
                 adminPanelTitle: "Admin Ayarları",
                 changePhone: "WhatsApp Numarası",
                 changeWaHeader: "WhatsApp Mesaj Başlığı",
-                changeSiteName: "Site Adı",
+                changeAppTitle: "Site Adı",
                 changeDeleteText: "\"Sil\" Butonu Metni",
                 changeAddText: "\"Sepete Ekle\" Butonu Metni",
                 changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Metni",
@@ -695,6 +667,7 @@
                 addGroupBtn: "+ Grup Ekle",
                 existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
                 addToCart: "Sepete Ekle",
+                share: "Paylaş",
                 edit: "Düzenle",
                 delete: "Sil",
                 prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
@@ -711,8 +684,7 @@
                 clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
                 searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
                 noProductsFound: "Aramanıza uygun ürün bulunamadı.",
-                langBtnText: "🌐 العربية",
-                loadingText: "Yükleniyor..."
+                langBtnText: "🌐 العربية"
             }
         };
 
@@ -753,21 +725,21 @@
                 updateAdminUI();
             });
 
-            // Veriler buluttan çekilirken yükleniyor ekranı açık kalır
             await loadFromSupabase();
-
             changeLanguage(settings.lang, false);
             renderCategories();
             renderProducts();
             renderCart();
             updateAdminUI();
 
-            // Veriler yüklendikten sonra yükleniyor ekranını gizle
-            const loadingScreen = document.getElementById('loadingScreen');
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => {
-                loadingScreen.style.display = 'none';
-            }, 300);
+            // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
+            const urlParams = new URLSearchParams(window.location.search);
+            const productIdParam = urlParams.get('product');
+            if (productIdParam) {
+                setTimeout(() => {
+                    openProductDetail(Number(productIdParam));
+                }, 300);
+            }
         }
 
         async function handleSupabaseLogin() {
@@ -830,12 +802,11 @@
             document.getElementById('txt-settings-btn-text').innerText = t.settings;
             document.getElementById('txt-total-label').innerText = t.totalLabel;
             document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
-            document.getElementById('txt-loading').innerText = t.loadingText;
 
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
             document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
-            document.getElementById('txt-change-app-title').innerText = t.changeSiteName || "Site Adı";
+            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
             document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
             document.getElementById('txt-change-add-text').innerText = t.changeAddText;
             document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
@@ -1055,6 +1026,7 @@
             const t = translations[settings.lang];
 
             const addText = settings.customAddText || t.addToCart;
+            const shareText = t.share;
             const editText = settings.customEditText || t.edit;
             const deleteText = settings.customDeleteText || t.delete;
 
@@ -1092,6 +1064,7 @@
                         </div>
                         <div class="product-actions">
                             <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
+                            <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
                             ${isAdmin ? `
                                 <button onclick="editProduct(${p.id})">${editText}</button>
                                 <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
@@ -1101,6 +1074,19 @@
                 `;
                 grid.appendChild(card);
             });
+        }
+
+        function shareProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+            const baseUrl = window.location.origin + window.location.pathname;
+            const productUrl = `${baseUrl}?product=${p.id}`;
+
+            const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
         }
 
         function openProductDetail(id) {
@@ -1130,6 +1116,12 @@
             addBtn.onclick = function() {
                 addToCart(p.id);
                 closeModal('productDetailModal');
+            };
+
+            const shareBtn = document.getElementById('detail-share-btn');
+            shareBtn.innerText = `💬 ${translations[settings.lang].share}`;
+            shareBtn.onclick = function() {
+                shareProduct(p.id);
             };
 
             openModal('productDetailModal');
