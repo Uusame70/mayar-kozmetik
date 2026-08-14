@@ -20,37 +20,6 @@
             padding-bottom: 90px;
         }
 
-        /* Yükleniyor Ekranı Stili */
-        #loadingScreen {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            font-size: 1.1rem;
-            color: #2c3e50;
-            font-weight: bold;
-            transition: opacity 0.3s ease;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            animation: spin 0.9s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         header {
             background-color: #2c3e50;
             color: white;
@@ -185,7 +154,7 @@
 
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 15px;
         }
 
@@ -243,8 +212,7 @@
         .product-card img {
             width: 100%;
             height: 170px;
-            object-fit: contain;
-            background: #f4f6f9;
+            object-fit: cover;
             cursor: pointer;
         }
 
@@ -356,8 +324,7 @@
         .img-preview {
             width: 100%;
             height: 120px;
-            object-fit: contain;
-            background: #f4f6f9;
+            object-fit: cover;
             border-radius: 6px;
             margin-top: 8px;
             display: none;
@@ -409,11 +376,6 @@
 </head>
 <body>
 
-    <div id="loadingScreen">
-        <div class="spinner"></div>
-        <span id="txt-loading">جاري التحميل... / Yükleniyor...</span>
-    </div>
-
     <header>
         <h1 id="txt-app-title">المتجر (Katalog)</h1>
         <div class="header-btns">
@@ -429,7 +391,6 @@
             <div style="display: flex; gap: 8px;">
                 <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
                 <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
-                <button onclick="compressExistingImages()" class="btn-warning" id="btn-compress-images" title="ضغط الصور القديمة (Eski Fotoğrafları Sıkıştır)">🗜️ ضغط الصور القديمة</button>
             </div>
         </div>
 
@@ -474,19 +435,17 @@
 
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align: center;">
-            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: contain; background: #f4f6f9; border-radius: 8px; margin-bottom: 12px;">
+            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
             <div style="margin-bottom: 10px;">
                 <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
             </div>
             <h2 id="detail-title" style="margin-bottom: 10px; color: #2c3e50;"></h2>
             <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
             <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
-
-            <div style="display: flex; gap: 8px;">
+            
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
                 <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
-                <button id="detail-copy-btn" class="btn-warning" style="padding: 10px 15px;">🔗</button>
                 <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
             </div>
         </div>
@@ -535,7 +494,7 @@
     <div id="groupModal" class="modal">
         <div class="modal-content">
             <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات (Grup Yönetimi)</h2>
-
+            
             <div class="form-group">
                 <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
                 <input type="text" id="new-group-ar" placeholder="مثال: عطور">
@@ -560,7 +519,7 @@
         <div class="modal-content">
             <h2 id="productModalTitle" style="margin-bottom: 15px;">إضافة منتج</h2>
             <input type="hidden" id="prod-id">
-
+            
             <div class="form-group">
                 <label id="lbl-prod-img">صورة المنتج (Fotoğraf Seç)</label>
                 <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
@@ -615,41 +574,6 @@
     </div>
 
     <script>
-        // ============================================================
-        // GÜVENLİK ÖNLEMİ: Bu blok, aşağıda Supabase veya başka bir
-        // yerde hata olsa BİLE, sepet/ayarlar butonlarının çalışmasını
-        // ve yükleme ekranının sonsuza kadar takılı kalmamasını garanti eder.
-        // ============================================================
-        (function() {
-            try {
-                var cartBtn = document.getElementById('btn-view-cart');
-                var settingsBtn = document.getElementById('btn-settings');
-                if (cartBtn) cartBtn.addEventListener('click', function() {
-                    var m = document.getElementById('cartModal');
-                    if (m) m.style.display = 'flex';
-                });
-                if (settingsBtn) settingsBtn.addEventListener('click', function() {
-                    var m = document.getElementById('settingsModal');
-                    if (m) m.style.display = 'flex';
-                });
-            } catch (e) {
-                console.error('Buton bağlama hatası:', e);
-            }
-
-            // Yükleme ekranı ne olursa olsun en fazla 4 saniye sonra kapanır
-            setTimeout(function() {
-                var ls = document.getElementById('loadingScreen');
-                if (ls) {
-                    ls.style.opacity = '0';
-                    ls.style.display = 'none';
-                }
-            }, 4000);
-        })();
-
-        window.addEventListener('error', function(e) {
-            console.error('SAYFA HATASI YAKALANDI:', e.message, '| Satır:', e.lineno, '| Dosya:', e.filename);
-        });
-
         // Supabase Bağlantı Bilgileri
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
@@ -718,9 +642,7 @@
                 clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
                 searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
                 noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
-                langBtnText: "🌐 Türkçe",
-                loadingText: "جاري التحميل...",
-                copyLink: "نسخ الرابط"
+                langBtnText: "🌐 Türkçe"
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
@@ -731,7 +653,6 @@
                 adminPanelTitle: "Admin Ayarları",
                 changePhone: "WhatsApp Numarası",
                 changeWaHeader: "WhatsApp Mesaj Başlığı",
-                changeSiteName: "Site Adı",
                 changeAppTitle: "Site Adı",
                 changeDeleteText: "\"Sil\" Butonu Metni",
                 changeAddText: "\"Sepete Ekle\" Butonu Metni",
@@ -763,93 +684,29 @@
                 clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
                 searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
                 noProductsFound: "Aramanıza uygun ürün bulunamadı.",
-                langBtnText: "🌐 العربية",
-                loadingText: "Yükleniyor...",
-                copyLink: "Bağlantıyı Kopyala"
+                langBtnText: "🌐 العربية"
             }
         };
 
         let settings = defaultSettings;
         let groups = defaultGroups;
-        let products = []; // Artık ekrana gelen ürünler parça parça (sayfa sayfa) buraya dolar
+        let products = defaultProducts;
         let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         let isAdmin = false;
         let currentBase64Image = '';
         let selectedCategory = 'ALL';
         let searchQuery = '';
 
-        // ============================================================
-        // LAZY LOADING (kademeli ürün çekme):
-        // Artık tüm ürünler tek seferde Supabase'den çekilmiyor.
-        // Sadece ekrana gelen ilk PAGE_SIZE kadar ürün çekiliyor.
-        // Kullanıcı "Daha Fazla Ürün Göster" butonuna bastıkça
-        // yeni ürünler yükleniyor. Böylece görünmeyen ürünlerin
-        // resimleri boşuna indirilmiyor VE otomatik/arka planda
-        // sürekli tetiklenen bir yükleme döngüsü oluşmuyor
-        // (önceki "sonsuz kaydırma" yöntemi, ekrana sığan az sayıda
-        // ürün olduğunda arka arkaya kendini tetikleyip tarayıcıyı
-        // meşgul ediyor, bu da tıklamaların geç yanıt vermesine
-        // sebep oluyordu).
-        // ============================================================
-        const PAGE_SIZE = 12;
-        let productsOffset = 0;
-        let hasMoreProducts = true;
-        let isFetchingProducts = false;
-        let searchDebounceTimer = null;
-
-        async function fetchProductsBatch(reset = false) {
-            if (isFetchingProducts) return;
-            if (reset) {
-                productsOffset = 0;
-                hasMoreProducts = true;
-                products = [];
-            }
-            if (!hasMoreProducts) return;
-
-            isFetchingProducts = true;
-            renderProducts(); // "yükleniyor" durumunu göstermek için
-
-            try {
-                let query = _supabase.from('products').select('*').order('id', { ascending: true });
-
-                if (selectedCategory !== 'ALL') {
-                    const [catAr, catTr] = selectedCategory.split('|');
-                    query = query.eq('category_ar', catAr).eq('category_tr', catTr);
-                }
-                if (searchQuery) {
-                    const q = searchQuery.replace(/[%,]/g, '');
-                    query = query.or(`name_ar.ilike.%${q}%,name_tr.ilike.%${q}%`);
-                }
-
-                query = query.range(productsOffset, productsOffset + PAGE_SIZE - 1);
-
-                const { data, error } = await query;
-                if (error) throw error;
-
-                if (data) {
-                    if (data.length < PAGE_SIZE) hasMoreProducts = false;
-                    products = products.concat(data);
-                    productsOffset += data.length;
-                }
-            } catch (err) {
-                console.log("Ürünler çekilemedi:", err);
-                hasMoreProducts = false;
-            } finally {
-                isFetchingProducts = false;
-                renderProducts();
-            }
-        }
-
         async function loadFromSupabase() {
             try {
-                // Gruplar ve ayarlar küçük tablolar, ikisi paralel çekiliyor
-                const [gRes, sRes] = await Promise.all([
-                    _supabase.from('groups').select('*'),
-                    _supabase.from('settings').select('*').eq('id', 1).maybeSingle()
-                ]);
+                const { data: gData } = await _supabase.from('groups').select('*');
+                if (gData && gData.length > 0) groups = gData;
 
-                if (gRes.data && gRes.data.length > 0) groups = gRes.data;
-                if (sRes.data) settings = { ...defaultSettings, ...sRes.data };
+                const { data: pData } = await _supabase.from('products').select('*');
+                if (pData && pData.length > 0) products = pData;
+
+                const { data: sData } = await _supabase.from('settings').select('*').eq('id', 1).single();
+                if (sData) settings = { ...defaultSettings, ...sData };
             } catch (err) {
                 console.log("Supabase veri çekme hatası:", err);
             }
@@ -860,32 +717,8 @@
         }
 
         async function init() {
-            // 1. Önce varsayılan verilerle arayüzü anında çiz, kullanıcı beklemesin
-            changeLanguage(settings.lang, false);
-            renderCategories();
-            renderCart();
-
-            // Sepet / Ayarlar butonlarını garanti altına al (bazı durumlarda
-            // inline onclick tetiklenmeyebiliyor, bu yüzden JS ile de bağlanıyor)
-            const cartBtnEl = document.getElementById('btn-view-cart');
-            if (cartBtnEl) cartBtnEl.addEventListener('click', () => openModal('cartModal'));
-
-            const settingsBtnEl = document.getElementById('btn-settings');
-            if (settingsBtnEl) settingsBtnEl.addEventListener('click', () => openModal('settingsModal'));
-
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 300);
-            }
-
-            // 2. Oturum durumu + küçük tablolar (gruplar/ayarlar) paralel yüklenir
-            _supabase.auth.getSession().then(({ data: { session } }) => {
-                isAdmin = !!session;
-                updateAdminUI();
-            });
+            const { data: { session } } = await _supabase.auth.getSession();
+            isAdmin = !!session;
 
             _supabase.auth.onAuthStateChange((event, session) => {
                 isAdmin = !!session;
@@ -894,15 +727,18 @@
 
             await loadFromSupabase();
             changeLanguage(settings.lang, false);
-
-            // 3. Ürünler artık sadece ilk sayfa kadar (ekrana gelen kadar) çekilir
-            await fetchProductsBatch(true);
+            renderCategories();
+            renderProducts();
+            renderCart();
+            updateAdminUI();
 
             // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
             if (productIdParam) {
-                openProductDetail(Number(productIdParam));
+                setTimeout(() => {
+                    openProductDetail(Number(productIdParam));
+                }, 300);
             }
         }
 
@@ -948,11 +784,7 @@
             }
 
             searchQuery = val.trim().toLowerCase();
-
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => {
-                fetchProductsBatch(true);
-            }, 350);
+            renderProducts();
         }
 
         function changeLanguage(lang, shouldSave = true) {
@@ -970,7 +802,6 @@
             document.getElementById('txt-settings-btn-text').innerText = t.settings;
             document.getElementById('txt-total-label').innerText = t.totalLabel;
             document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
-            document.getElementById('txt-loading').innerText = t.loadingText;
 
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
@@ -1114,9 +945,8 @@
                 }
                 renderGroupsList();
                 renderGroupSelect();
-                selectedCategory = 'ALL'; // silinen kategori seçiliyse listeyi güvenle sıfırla
                 renderCategories();
-                await fetchProductsBatch(true);
+                renderProducts();
             }
         }
 
@@ -1154,16 +984,26 @@
             allBtn.onclick = () => {
                 selectedCategory = 'ALL';
                 renderCategories();
-                fetchProductsBatch(true);
+                renderProducts();
             };
             bar.appendChild(allBtn);
 
-            // Kategoriler artık sadece 'groups' tablosundan geliyor
-            // (tüm ürünleri taramaya gerek yok, groups zaten küçük ve tam yüklü)
             const catMap = new Map();
+
             groups.forEach(g => {
                 const catKey = g.name_ar + '|' + g.name_tr;
                 catMap.set(catKey, { ar: g.name_ar, tr: g.name_tr });
+            });
+
+            products.forEach(p => {
+                const catAr = (p.category_ar || '').trim();
+                const catTr = (p.category_tr || '').trim();
+                if (catAr || catTr) {
+                    const catKey = catAr + '|' + catTr;
+                    if (!catMap.has(catKey)) {
+                        catMap.set(catKey, { ar: catAr || catTr, tr: catTr || catAr });
+                    }
+                }
             });
 
             catMap.forEach((catObj, catKey) => {
@@ -1174,7 +1014,7 @@
                 btn.onclick = () => {
                     selectedCategory = catKey;
                     renderCategories();
-                    fetchProductsBatch(true);
+                    renderProducts();
                 };
                 bar.appendChild(btn);
             });
@@ -1187,17 +1027,28 @@
 
             const addText = settings.customAddText || t.addToCart;
             const shareText = t.share;
-            const copyText = t.copyLink || (settings.lang === 'ar' ? 'نسخ الرابط' : 'Bağlantıyı Kopyala');
             const editText = settings.customEditText || t.edit;
             const deleteText = settings.customDeleteText || t.delete;
 
-            // Filtreleme artık Supabase tarafında yapılıyor, 'products' zaten filtrelenmiş geliyor
-            if (products.length === 0 && !isFetchingProducts) {
+            const filteredProducts = products.filter(p => {
+                let catMatch = selectedCategory === 'ALL' || ((p.category_ar || '').trim() + '|' + (p.category_tr || '').trim()) === selectedCategory;
+
+                let searchMatch = true;
+                if (searchQuery) {
+                    const nameAr = (p.name_ar || '').toLowerCase();
+                    const nameTr = (p.name_tr || '').toLowerCase();
+                    searchMatch = nameAr.includes(searchQuery) || nameTr.includes(searchQuery);
+                }
+
+                return catMatch && searchMatch;
+            });
+
+            if (filteredProducts.length === 0) {
                 grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #777; padding: 20px 0;">${t.noProductsFound}</p>`;
                 return;
             }
 
-            products.forEach(p => {
+            filteredProducts.forEach(p => {
                 const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
                 const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
 
@@ -1205,7 +1056,7 @@
                 card.className = 'product-card';
                 card.innerHTML = `
                     ${catName ? `<span class="product-badge">${catName}</span>` : ''}
-                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" loading="lazy" onclick="openProductDetail(${p.id})">
+                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
                     <div class="product-info">
                         <div>
                             <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
@@ -1214,7 +1065,6 @@
                         <div class="product-actions">
                             <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
                             <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
-                            <button onclick="copyProductLink(${p.id})" class="btn-warning" title="${copyText}">🔗</button>
                             ${isAdmin ? `
                                 <button onclick="editProduct(${p.id})">${editText}</button>
                                 <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
@@ -1224,47 +1074,6 @@
                 `;
                 grid.appendChild(card);
             });
-
-            // Sonraki ürünleri sadece kullanıcı isterse yükleyen buton
-            renderLoadMoreButton();
-        }
-
-        function renderLoadMoreButton() {
-            const existing = document.getElementById('loadMoreWrap');
-            if (existing) existing.remove();
-
-            if (!hasMoreProducts) return;
-
-            const grid = document.getElementById('productsGrid');
-            const wrap = document.createElement('div');
-            wrap.id = 'loadMoreWrap';
-            wrap.style.cssText = 'text-align:center; padding:16px 0;';
-
-            if (isFetchingProducts) {
-                wrap.innerHTML = `<span style="color:#999; font-size:0.9rem;">${settings.lang === 'ar' ? 'جاري التحميل...' : 'Yükleniyor...'}</span>`;
-            } else {
-                const btnText = settings.lang === 'ar' ? 'عرض المزيد من المنتجات' : 'Daha Fazla Ürün Göster';
-                wrap.innerHTML = `<button class="btn-warning" onclick="fetchProductsBatch(false)">${btnText}</button>`;
-            }
-
-            grid.insertAdjacentElement('afterend', wrap);
-        }
-
-        // Ürünün doğrudan linkini panoya kopyalar
-        async function copyProductLink(id) {
-            const p = products.find(x => x.id === id);
-            if (!p) return;
-
-            const baseUrl = window.location.origin + window.location.pathname;
-            const productUrl = `${baseUrl}?product=${p.id}`;
-
-            try {
-                await navigator.clipboard.writeText(productUrl);
-                alert(settings.lang === 'ar' ? 'تم نسخ الرابط!' : 'Bağlantı kopyalandı!');
-            } catch (err) {
-                // Panoya erişim engellenirse kullanıcı linki elle kopyalayabilsin
-                prompt(settings.lang === 'ar' ? 'الرابط (انسخه يدويًا):' : 'Bağlantı (elle kopyalayın):', productUrl);
-            }
         }
 
         function shareProduct(id) {
@@ -1280,22 +1089,8 @@
             window.open(waUrl, '_blank');
         }
 
-        async function openProductDetail(id) {
-            let p = products.find(x => x.id === id);
-
-            // Ürün henüz yüklenen sayfada değilse (örn. paylaşılan link ile
-            // doğrudan geldiyse), sadece o tek ürünü Supabase'den çek
-            if (!p) {
-                try {
-                    const { data } = await _supabase.from('products').select('*').eq('id', id).maybeSingle();
-                    if (data) {
-                        p = data;
-                        if (!products.find(x => x.id === id)) products.push(p);
-                    }
-                } catch (err) {
-                    console.log("Ürün detayı çekilemedi:", err);
-                }
-            }
+        function openProductDetail(id) {
+            const p = products.find(x => x.id === id);
             if (!p) return;
 
             const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
@@ -1303,7 +1098,7 @@
             const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
 
             document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
-
+            
             const catBadge = document.getElementById('detail-category');
             if (catName) {
                 catBadge.innerText = catName;
@@ -1329,138 +1124,21 @@
                 shareProduct(p.id);
             };
 
-            const copyBtn = document.getElementById('detail-copy-btn');
-            copyBtn.title = translations[settings.lang].copyLink || '';
-            copyBtn.onclick = function() {
-                copyProductLink(p.id);
-            };
-
             openModal('productDetailModal');
         }
 
-        // Büyük telefon fotoğrafları (3-8 MB) veritabanına ham haliyle
-        // kaydedilirse site çok yavaşlar. Bu fonksiyon resmi maksimum
-        // 900px genişliğe indirip JPEG %70 kalitede sıkıştırır
-        // (genelde birkaç MB'lık resim 80-150KB civarına düşer).
-        function compressImage(file, maxWidth = 900, quality = 0.7) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        let { width, height } = img;
-                        if (width > maxWidth) {
-                            height = Math.round(height * (maxWidth / width));
-                            width = maxWidth;
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.onerror = reject;
-                    img.src = e.target.result;
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function previewSelectedImage(input) {
+        function previewSelectedImage(input) {
             const file = input.files[0];
             const preview = document.getElementById('img-preview');
-            if (!file) return;
 
-            try {
-                currentBase64Image = await compressImage(file);
-                preview.src = currentBase64Image;
-                preview.style.display = 'block';
-            } catch (err) {
-                console.log('Resim sıkıştırılamadı:', err);
-            }
-        }
-
-        // Zaten kayıtlı olan (eski) resimleri sıkıştırmak için:
-        // hem base64 hem de dış URL kaynaklı resimlerle çalışır.
-        function compressImageFromSrc(src, maxWidth = 900, quality = 0.7) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = 'anonymous'; // dış URL'ler için CORS denemesi
-                img.onload = () => {
-                    try {
-                        let { width, height } = img;
-                        if (width > maxWidth) {
-                            height = Math.round(height * (maxWidth / width));
-                            width = maxWidth;
-                        }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    } catch (err) {
-                        reject(err);
-                    }
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentBase64Image = e.target.result;
+                    preview.src = currentBase64Image;
+                    preview.style.display = 'block';
                 };
-                img.onerror = reject;
-                img.src = src;
-            });
-        }
-
-        // Admin panelinden tek tıkla, veritabanındaki TÜM ürünlerin
-        // resimlerini tek tek küçültüp sıkıştırır ve günceller.
-        async function compressExistingImages() {
-            if (!isAdmin) return;
-
-            const confirmMsg = settings.lang === 'ar'
-                ? 'سيتم ضغط جميع صور المنتجات الموجودة في قاعدة البيانات. قد يستغرق هذا بعض الوقت حسب عدد المنتجات. هل تريد المتابعة؟'
-                : 'Veritabanındaki tüm ürün fotoğrafları sıkıştırılacak. Ürün sayısına göre biraz zaman alabilir. Devam edilsin mi?';
-            if (!confirm(confirmMsg)) return;
-
-            const btn = document.getElementById('btn-compress-images');
-            const originalBtnText = btn ? btn.innerText : '';
-            if (btn) btn.disabled = true;
-
-            try {
-                const { data, error } = await _supabase.from('products').select('id, img');
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    alert(settings.lang === 'ar' ? 'لا توجد منتجات.' : 'Ürün bulunamadı.');
-                    return;
-                }
-
-                let done = 0, skipped = 0;
-                for (const p of data) {
-                    // Placeholder resimleri ve zaten küçük (150KB altı) base64 resimleri atla
-                    const alreadySmall = p.img && p.img.startsWith('data:') && p.img.length < 150000;
-                    if (!p.img || p.img.includes('placeholder.com') || alreadySmall) {
-                        skipped++;
-                    } else {
-                        try {
-                            const compressed = await compressImageFromSrc(p.img);
-                            await _supabase.from('products').update({ img: compressed }).eq('id', p.id);
-                            done++;
-                        } catch (err) {
-                            console.log('Sıkıştırılamadı, atlandı -> ürün #' + p.id, err);
-                            skipped++;
-                        }
-                    }
-                    if (btn) btn.innerText = `🗜️ ${done + skipped}/${data.length}`;
-                }
-
-                alert(
-                    (settings.lang === 'ar' ? 'تم الانتهاء! تم ضغط: ' : 'Tamamlandı! Sıkıştırılan: ') + done +
-                    (settings.lang === 'ar' ? ' — تم تخطي: ' : ' — Atlanan: ') + skipped
-                );
-
-                await fetchProductsBatch(true);
-            } catch (err) {
-                console.error('Toplu sıkıştırma hatası:', err);
-                alert(settings.lang === 'ar' ? 'حدث خطأ أثناء الضغط.' : 'Sıkıştırma sırasında bir hata oluştu.');
-            } finally {
-                if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
+                reader.readAsDataURL(file);
             }
         }
 
@@ -1473,7 +1151,7 @@
             document.getElementById('prod-name-tr').value = '';
             document.getElementById('prod-desc-ar').value = '';
             document.getElementById('prod-desc-tr').value = '';
-
+            
             currentBase64Image = '';
             const preview = document.getElementById('img-preview');
             preview.src = '';
@@ -1519,7 +1197,7 @@
             const id = document.getElementById('prod-id').value;
             const price = parseFloat(document.getElementById('prod-price').value) || 0;
             const selectedGroupId = parseInt(document.getElementById('prod-group-select').value);
-
+            
             const selectedGroup = groups.find(g => g.id === selectedGroupId);
             const category_ar = selectedGroup ? selectedGroup.name_ar : '';
             const category_tr = selectedGroup ? selectedGroup.name_tr : '';
@@ -1530,28 +1208,35 @@
             const desc_tr = document.getElementById('prod-desc-tr').value;
             const img = currentBase64Image || 'https://via.placeholder.com/300x200';
 
-            try {
-                if (id) {
-                    const updated = { id: Number(id), img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
-                    await _supabase.from('products').update(updated).eq('id', id);
-                } else {
-                    // Yeni ID için mevcut en büyük id'yi veritabanından öğren
-                    const { data: maxRow } = await _supabase.from('products').select('id').order('id', { ascending: false }).limit(1).maybeSingle();
-                    const newId = maxRow ? maxRow.id + 1 : 1;
-                    const newProd = { id: newId, img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
-                    await _supabase.from('products').insert([newProd]);
+            if (id) {
+                const index = products.findIndex(x => x.id == id);
+                if (index !== -1) {
+                    products[index] = { id: Number(id), img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
+                    try {
+                        await _supabase.from('products').update(products[index]).eq('id', id);
+                    } catch (err) {
+                        console.error("Ürün güncellenemedi:", err);
+                    }
                 }
-            } catch (err) {
-                console.error("Ürün kaydedilemedi:", err);
+            } else {
+                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                const newProd = { id: newId, img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
+                products.push(newProd);
+                try {
+                    await _supabase.from('products').insert([newProd]);
+                } catch (err) {
+                    console.error("Ürün eklenemedi:", err);
+                }
             }
 
-            closeModal('productModal');
             renderCategories();
-            await fetchProductsBatch(true); // Listeyi baştan (ilk sayfa) yenile
+            renderProducts();
+            closeModal('productModal');
         }
 
         async function deleteProduct(id) {
             if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) {
+                products = products.filter(p => p.id !== id);
                 cart = cart.filter(c => c.id !== id);
                 try {
                     await _supabase.from('products').delete().eq('id', id);
@@ -1559,7 +1244,7 @@
                     console.error("Ürün silinemedi:", err);
                 }
                 renderCategories();
-                await fetchProductsBatch(true);
+                renderProducts();
                 renderCart();
             }
         }
@@ -1605,7 +1290,7 @@
         function renderCart() {
             const cartList = document.getElementById('cartList');
             cartList.innerHTML = '';
-
+            
             let totalQty = 0;
             let totalPrice = 0;
 
@@ -1666,7 +1351,7 @@
 
             const customHeader = settings.waHeader || 'طلب جديد';
             const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
-
+            
             messageLines.push(`${customHeader} (${activeLangText})`);
 
             cart.forEach(c => {
@@ -1685,7 +1370,7 @@
 
             const fullMessage = messageLines.join('\n');
             const encodedMessage = encodeURIComponent(fullMessage);
-
+            
             const cleanPhone = formatPhoneForWa(settings.phone);
             const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
