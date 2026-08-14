@@ -1,836 +1,1706 @@
-<script>
-    // Supabase Bağlantı Bilgileri
-    const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const defaultSettings = {
-        id: 1,
-        lang: 'ar',
-        phone: '0507 444 45 02',
-        waHeader: 'طلب جديد',
-        customAppTitle: '',
-        customDeleteText: '',
-        customAddText: '',
-        customCheckoutText: ''
-    };
-
-    const defaultGroups = [
-        { id: 1, name_ar: 'عطور', name_tr: 'Parfümler' },
-        { id: 2, name_ar: 'العناية بالبشرة', name_tr: 'Cilt Bakımı' },
-        { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
-    ];
-
-    const defaultProducts = [
-        { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
-        { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
-    ];
-
-    const translations = {
-        ar: {
-            appTitle: "المتجر الإلكتروني",
-            viewCart: "السلة",
-            settings: "الإعدادات",
-            totalLabel: "المجموع:",
-            checkout: "إرسال الطلب عبر WhatsApp",
-            adminPanelTitle: "إعدادات المسؤول",
-            changePhone: "رقم WhatsApp",
-            changeWaHeader: "عنوان رسالة WhatsApp (WhatsApp Başlığı)",
-            changeAppTitle: "Site Adı (عنوان الموقع)",
-            changeDeleteText: "\"Sil\" Butonu Yazısı (نص زر الحذف)",
-            changeAddText: "\"Sepete Ekle\" Butonu Yazısı (نص زر الإضافة)",
-            changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Yazısı",
-            saveSettings: "حفظ التغييرات",
-            logout: "تسجيل الخروج",
-            close: "إغلاق",
-            addProduct: "+ إضافة منتج جديد",
-            manageGroups: "+ إدارة المجموعات",
-            selectGroup: "اختر المجموعة (Grup Seçin)",
-            groupModalTitle: "إدارة المجموعات (Grup Yönetimi)",
-            addGroupBtn: "+ إضافة مجموعة",
-            existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
-            addToCart: "إضافة للسلة",
-            share: "مشاركة",
-            edit: "تعديل",
-            delete: "حذف",
-            prodImg: "صورة المنتج (Fotoğraf Seç)",
-            prodPrice: "السعر (TL)",
-            save: "حفظ",
-            cancel: "إلغاء",
-            cartTitle: "سلة التسوق",
-            cartEmpty: "السلة فارغة",
-            adminMode: "وضع المسؤول مفعل",
-            groupsTitle: "🏷️ المجموعات (Gruplar)",
-            allProductsTitle: "📦 كل المنتجات (Tüm Ürünler)",
-            allBtn: "الكل (Tümü)",
-            clearCart: "🗑️ تفريغ السلة",
-            clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
-            searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
-            noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
-            langBtnText: "🌐 Türkçe",
-            loadingText: "جاري التحميل..."
-        },
-        tr: {
-            appTitle: "Ürün Kataloğu",
-            viewCart: "Sepet",
-            settings: "Ayarlar",
-            totalLabel: "Toplam:",
-            checkout: "Siparişi WhatsApp ile Gönder",
-            adminPanelTitle: "Admin Ayarları",
-            changePhone: "WhatsApp Numarası",
-            changeWaHeader: "WhatsApp Mesaj Başlığı",
-            changeSiteName: "Site Adı",
-            changeAppTitle: "Site Adı",
-            changeDeleteText: "\"Sil\" Butonu Metni",
-            changeAddText: "\"Sepete Ekle\" Butonu Metni",
-            changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Metni",
-            saveSettings: "Ayarları Kaydet",
-            logout: "Çıkış Yap",
-            close: "Kapat",
-            addProduct: "+ Ürün Ekle",
-            manageGroups: "+ Grup Yönetimi",
-            selectGroup: "Grup Seçin (اختر المجموعة)",
-            groupModalTitle: "Grup Yönetimi (إدارة المجموعات)",
-            addGroupBtn: "+ Grup Ekle",
-            existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
-            addToCart: "Sepete Ekle",
-            share: "Paylaş",
-            edit: "Düzenle",
-            delete: "Sil",
-            prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
-            prodPrice: "Fiyat (TL)",
-            save: "Kaydet",
-            cancel: "İptal",
-            cartTitle: "Alışveriş Sepeti",
-            cartEmpty: "Sepetiniz boş",
-            adminMode: "Admin Modu Aktif",
-            groupsTitle: "🏷️ Gruplar (المجموعات)",
-            allProductsTitle: "📦 Tüm Ürünler (كل المنتجات)",
-            allBtn: "Tümü (الكل)",
-            clearCart: "🗑️ Sepeti Boşalt",
-            clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
-            searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
-            noProductsFound: "Aramanıza uygun ürün bulunamadı.",
-            langBtnText: "🌐 العربية",
-            loadingText: "Yükleniyor..."
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ميار للتسوق الالكتروني</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
-    };
 
-    let settings = defaultSettings;
-    let groups = defaultGroups;
-    let products = defaultProducts;
-    let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
-    let isAdmin = false;
-    let currentBase64Image = '';
-    let selectedCategory = 'ALL';
-    let searchQuery = '';
+        body {
+            background-color: #f4f6f9;
+            color: #333;
+            padding-bottom: 90px;
+        }
 
-    // HIZLANDIRILMIŞ: Tüm veriler aynı anda (paralel) çekilir
-    async function loadFromSupabase() {
-        try {
-            const [gRes, pRes, sRes] = await Promise.all([
-                _supabase.from('groups').select('*'),
-                _supabase.from('products').select('*'),
-                _supabase.from('settings').select('*').eq('id', 1).maybeSingle()
-            ]);
+        /* Yükleniyor Ekranı Stili */
+        #loadingScreen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: bold;
+            transition: opacity 0.3s ease;
+        }
 
-            if (gRes.data && gRes.data.length > 0) groups = gRes.data;
-            if (pRes.data && pRes.data.length > 0) products = pRes.data;
-            if (sRes.data) settings = { ...defaultSettings, ...sRes.data };
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 0.9s linear infinite;
+            margin-bottom: 12px;
+        }
 
-            // Veriler güncellenince arayüzü sessizce yenile
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .header-btns {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.1s;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.btn-danger { background-color: #e74c3c; }
+        button.btn-danger:hover { background-color: #c0392b; }
+
+        button.btn-success { background-color: #2ecc71; }
+        button.btn-success:hover { background-color: #27ae60; }
+
+        button.btn-warning { background-color: #f39c12; }
+        button.btn-warning:hover { background-color: #d68910; }
+
+        button.btn-whatsapp { background-color: #25d366; }
+        button.btn-whatsapp:hover { background-color: #1ebd59; }
+
+        .container {
+            max-width: 1200px;
+            margin: 15px auto;
+            padding: 0 12px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #3498db;
+        }
+
+        .admin-bar {
+            background-color: #e8f4f8;
+            border: 1px solid #bce8f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .categories-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            scrollbar-width: thin;
+        }
+
+        .cat-btn {
+            background-color: #ffffff;
+            color: #2c3e50;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .cat-btn.active {
+            background-color: #2c3e50;
+            color: #ffffff;
+            border-color: #2c3e50;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        @media (max-width: 500px) {
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .product-card img {
+                height: 130px !important;
+            }
+            .product-info {
+                padding: 10px !important;
+            }
+            .product-title {
+                font-size: 0.95rem !important;
+            }
+            .product-actions {
+                flex-direction: column;
+            }
+            .product-actions button {
+                width: 100%;
+                padding: 8px 5px;
+            }
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: rgba(44, 62, 80, 0.85);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        html[dir="ltr"] .product-badge {
+            right: auto;
+            left: 8px;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 170px;
+            object-fit: contain;
+            background: #f4f6f9;
+            cursor: pointer;
+        }
+
+        .product-info {
+            padding: 12px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-title {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .product-price {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 10px;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .cart-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 90;
+        }
+
+        .cart-bar-info {
+            font-size: 0.95rem;
+        }
+
+        .cart-bar-info strong {
+            color: #2ecc71;
+            font-size: 1.1rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-content h2 {
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .img-preview {
+            width: 100%;
+            height: 120px;
+            object-fit: contain;
+            background: #f4f6f9;
+            border-radius: 6px;
+            margin-top: 8px;
+            display: none;
+            border: 1px solid #ddd;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            gap: 10px;
+        }
+
+        .cart-item-details {
+            flex-grow: 1;
+        }
+
+        .qty-btns {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .qty-btns button {
+            padding: 4px 10px;
+            font-size: 1rem;
+        }
+
+        .btn-remove-item {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            background-color: #ff7675;
+            color: white;
+        }
+
+        .btn-remove-item:hover {
+            background-color: #d63031;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingScreen">
+        <div class="spinner"></div>
+        <span id="txt-loading">جاري التحميل... / Yükleniyor...</span>
+    </div>
+
+    <header>
+        <h1 id="txt-app-title">المتجر (Katalog)</h1>
+        <div class="header-btns">
+            <button onclick="toggleLanguage()" id="btn-lang-toggle">🌐 العربية</button>
+            <button onclick="openModal('cartModal')" id="btn-view-cart">🛒 <span id="txt-cart-btn-text">السلة</span> (<span id="cart-count">0</span>)</button>
+            <button onclick="openModal('settingsModal')" id="btn-settings" style="display: none;">⚙️ <span id="txt-settings-btn-text">İşlemler</span></button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="adminBar" class="admin-bar" style="display: none;">
+            <span>🔐 <strong id="txt-admin-mode-text">وضع المسؤول (Admin Mode Aktif)</strong></span>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="openGroupModal()" class="btn-warning" id="btn-manage-groups">+ إدارة المجموعات</button>
+                <button onclick="openAddProductModal()" class="btn-success" id="btn-add-product">+ إضافة منتج</button>
+                <button onclick="compressExistingImages()" class="btn-warning" id="btn-compress-images" title="ضغط الصور القديمة (Eski Fotoğrafları Sıkıştır)">🗜️ ضغط الصور القديمة</button>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج... / Ürün ara...">
+        </div>
+
+        <div class="section-title" id="txt-groups-title">🏷️ المجموعات (Gruplar)</div>
+        <div id="categoriesBar" class="categories-bar"></div>
+
+        <hr style="margin: 10px 0 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <div class="section-title" id="txt-all-products-title">📦 كل المنتجات (Tüm Ürünler)</div>
+        <div id="productsGrid" class="products-grid"></div>
+    </div>
+
+    <div class="cart-bar">
+        <div class="cart-bar-info">
+            <span id="txt-total-label">المجموع:</span> 
+            <strong id="cart-total-price">0</strong> TL
+        </div>
+        <button onclick="completeOrder()" class="btn-success" id="btn-checkout">إرسال الطلب عبر WhatsApp</button>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>🔐 Admin Girişi</h2>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>E-posta Adresi</label>
+                <input type="email" id="login-email" value="usameismail70@gmail.com" placeholder="email@domain.com">
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="login-password" placeholder="Şifreniz">
+            </div>
+            <button onclick="handleSupabaseLogin()" class="btn-success" style="width: 100%; margin-top: 10px;">Giriş Yap</button>
+            <div class="modal-actions" style="margin-top: 15px;">
+                <button onclick="closeModal('loginModal')" class="btn-danger">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="productDetailModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: contain; background: #f4f6f9; border-radius: 8px; margin-bottom: 12px;">
+            <div style="margin-bottom: 10px;">
+                <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
+            </div>
+            <h2 id="detail-title" style="margin-bottom: 10px; color: #2c3e50;"></h2>
+            <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
+            <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
+
+            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
+                <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
+                <button id="detail-copy-btn" class="btn-warning" style="padding: 10px 15px;">🔗</button>
+                <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2 id="txt-settings-title" style="margin-bottom: 15px;">إعدادات المسؤول</h2>
+
+            <div id="adminSettingsSection">
+                <div class="form-group">
+                    <label id="txt-change-phone">رقم WhatsApp</label>
+                    <input type="tel" id="new-phone" placeholder="0507 444 45 02">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-wa-header">عنوان رسالة WhatsApp (WhatsApp Başlığı)</label>
+                    <input type="text" id="new-wa-header" placeholder="طلب جديد">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-app-title">Site Adı (عنوان الموقع)</label>
+                    <input type="text" id="new-app-title" placeholder="Ürün Kataloğu">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-delete-text">"Sil" Butonu Yazısı (نص زر الحذف)</label>
+                    <input type="text" id="new-delete-text" placeholder="Sil">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-add-text">"Sepete Ekle" Butonu Yazısı (نص زر الإضافة)</label>
+                    <input type="text" id="new-add-text" placeholder="Sepete Ekle">
+                </div>
+                <div class="form-group">
+                    <label id="txt-change-checkout-text">"WhatsApp Sipariş" Butonu Yazısı (نص زر إرسال الطلب)</label>
+                    <input type="text" id="new-checkout-text" placeholder="Siparişi WhatsApp ile Gönder">
+                </div>
+
+                <button onclick="updateAdminSettings()" class="btn-success" id="btn-save-settings" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
+                <button onclick="handleSupabaseLogout()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج (Çıkış Yap)</button>
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="closeModal('settingsModal')" class="btn-danger" id="btn-close-settings">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات (Grup Yönetimi)</h2>
+
+            <div class="form-group">
+                <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
+                <input type="text" id="new-group-ar" placeholder="مثال: عطور">
+            </div>
+            <div class="form-group">
+                <label id="lbl-group-tr">Grup Adı (Türkçe)</label>
+                <input type="text" id="new-group-tr" placeholder="Örn: Parfümler">
+            </div>
+            <button onclick="saveGroup()" class="btn-success" style="width: 100%; margin-bottom: 15px;" id="btn-save-group">+ إضافة مجموعة</button>
+
+            <hr style="margin: 15px 0;">
+            <h3 style="font-size: 1rem; margin-bottom: 10px;" id="txt-existing-groups">المجموعات الحالية (Mevcut Gruplар)</h3>
+            <div id="groupsList"></div>
+
+            <div class="modal-actions">
+                <button onclick="closeModal('groupModal')" class="btn-danger" id="btn-close-group-modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <h2 id="productModalTitle" style="margin-bottom: 15px;">إضافة منتج</h2>
+            <input type="hidden" id="prod-id">
+
+            <div class="form-group">
+                <label id="lbl-prod-img">صورة المنتج (Fotoğraf Seç)</label>
+                <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
+                <img id="img-preview" class="img-preview" alt="Önizleme">
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-prod-price">السعر (Fiyat)</label>
+                <input type="number" id="prod-price">
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-prod-group">المجموعة (Grup Seçin)</label>
+                <select id="prod-group-select"></select>
+            </div>
+
+            <div class="form-group">
+                <label id="lbl-pname-ar">اسم المنتج (بالعربية)</label>
+                <input type="text" id="prod-name-ar">
+            </div>
+            <div class="form-group">
+                <label id="lbl-pname-tr">اسم المنتج (Türkçe)</label>
+                <input type="text" id="prod-name-tr">
+            </div>
+            <div class="form-group">
+                <label id="lbl-pdesc-ar">وصف المنتج (بالعربية)</label>
+                <textarea id="prod-desc-ar" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label id="lbl-pdesc-tr">وصف المنتج (Türkçe)</label>
+                <textarea id="prod-desc-tr" rows="2"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="saveProduct()" class="btn-success" id="btn-save-prod">حفظ</button>
+                <button onclick="closeModal('productModal')" class="btn-danger" id="btn-cancel-prod">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-row">
+                <h2 id="txt-cart-title">سلة التسوق</h2>
+                <button onclick="clearCart()" class="btn-danger" id="btn-clear-cart" style="font-size: 0.8rem; padding: 6px 10px;">🗑️ تفريغ السلة</button>
+            </div>
+            <div id="cartList"></div>
+            <div class="modal-actions">
+                <button onclick="closeModal('cartModal')" class="btn-danger" id="btn-close-cart">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // GÜVENLİK ÖNLEMİ: Bu blok, aşağıda Supabase veya başka bir
+        // yerde hata olsa BİLE, sepet/ayarlar butonlarının çalışmasını
+        // ve yükleme ekranının sonsuza kadar takılı kalmamasını garanti eder.
+        // ============================================================
+        (function() {
+            try {
+                var cartBtn = document.getElementById('btn-view-cart');
+                var settingsBtn = document.getElementById('btn-settings');
+                if (cartBtn) cartBtn.addEventListener('click', function() {
+                    var m = document.getElementById('cartModal');
+                    if (m) m.style.display = 'flex';
+                });
+                if (settingsBtn) settingsBtn.addEventListener('click', function() {
+                    var m = document.getElementById('settingsModal');
+                    if (m) m.style.display = 'flex';
+                });
+            } catch (e) {
+                console.error('Buton bağlama hatası:', e);
+            }
+
+            // Yükleme ekranı ne olursa olsun en fazla 4 saniye sonra kapanır
+            setTimeout(function() {
+                var ls = document.getElementById('loadingScreen');
+                if (ls) {
+                    ls.style.opacity = '0';
+                    ls.style.display = 'none';
+                }
+            }, 4000);
+        })();
+
+        window.addEventListener('error', function(e) {
+            console.error('SAYFA HATASI YAKALANDI:', e.message, '| Satır:', e.lineno, '| Dosya:', e.filename);
+        });
+
+        // Supabase Bağlantı Bilgileri
+        const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const defaultSettings = {
+            id: 1,
+            lang: 'ar',
+            phone: '0507 444 45 02',
+            waHeader: 'طلب جديد',
+            customAppTitle: '',
+            customDeleteText: '',
+            customAddText: '',
+            customCheckoutText: ''
+        };
+
+        const defaultGroups = [
+            { id: 1, name_ar: 'عطور', name_tr: 'Parfümler' },
+            { id: 2, name_ar: 'العناية بالبشرة', name_tr: 'Cilt Bakımı' },
+            { id: 3, name_ar: 'المكياج', name_tr: 'Makyaj' }
+        ];
+
+        const defaultProducts = [
+            { id: 1, img: 'https://picsum.photos/300/200?random=1', price: 150, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر الفانيليا', name_tr: 'Vanilya Parfümü', desc_ar: 'عطر مميز برائحة الفانيليا الجذابة.', desc_tr: 'Çekici vanilya kokulu özel parfüm.' },
+            { id: 2, img: 'https://picsum.photos/300/200?random=2', price: 250, category_ar: 'عطور', category_tr: 'Parfümler', name_ar: 'عطر العود الملكي', name_tr: 'Kraliyet Ud Parfümü', desc_ar: 'رائحة العود الأصيل للرجال والنساء.', desc_tr: 'Kadın ve erkekler için özgün ud kokusu.' }
+        ];
+
+        const translations = {
+            ar: {
+                appTitle: "المتجر الإلكتروني",
+                viewCart: "السلة",
+                settings: "الإعدادات",
+                totalLabel: "المجموع:",
+                checkout: "إرسال الطلب عبر WhatsApp",
+                adminPanelTitle: "إعدادات المسؤول",
+                changePhone: "رقم WhatsApp",
+                changeWaHeader: "عنوان رسالة WhatsApp (WhatsApp Başlığı)",
+                changeAppTitle: "Site Adı (عنوان الموقع)",
+                changeDeleteText: "\"Sil\" Butonu Yazısı (نص زر الحذف)",
+                changeAddText: "\"Sepete Ekle\" Butonu Yazısı (نص زر الإضافة)",
+                changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Yazısı",
+                saveSettings: "حفظ التغييرات",
+                logout: "تسجيل الخروج",
+                close: "إغلاق",
+                addProduct: "+ إضافة منتج جديد",
+                manageGroups: "+ إدارة المجموعات",
+                selectGroup: "اختر المجموعة (Grup Seçin)",
+                groupModalTitle: "إدارة المجموعات (Grup Yönetimi)",
+                addGroupBtn: "+ إضافة مجموعة",
+                existingGroups: "المجموعات الحالية (Mevcut Gruplar)",
+                addToCart: "إضافة للسلة",
+                share: "مشاركة",
+                edit: "تعديل",
+                delete: "حذف",
+                prodImg: "صورة المنتج (Fotoğraf Seç)",
+                prodPrice: "السعر (TL)",
+                save: "حفظ",
+                cancel: "إلغاء",
+                cartTitle: "سلة التسوق",
+                cartEmpty: "السلة فارغة",
+                adminMode: "وضع المسؤول مفعل",
+                groupsTitle: "🏷️ المجموعات (Gruplar)",
+                allProductsTitle: "📦 كل المنتجات (Tüm Ürünler)",
+                allBtn: "الكل (Tümü)",
+                clearCart: "🗑️ تفريغ السلة",
+                clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
+                searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
+                noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
+                langBtnText: "🌐 Türkçe",
+                loadingText: "جاري التحميل...",
+                copyLink: "نسخ الرابط"
+            },
+            tr: {
+                appTitle: "Ürün Kataloğu",
+                viewCart: "Sepet",
+                settings: "Ayarlar",
+                totalLabel: "Toplam:",
+                checkout: "Siparişi WhatsApp ile Gönder",
+                adminPanelTitle: "Admin Ayarları",
+                changePhone: "WhatsApp Numarası",
+                changeWaHeader: "WhatsApp Mesaj Başlığı",
+                changeSiteName: "Site Adı",
+                changeAppTitle: "Site Adı",
+                changeDeleteText: "\"Sil\" Butonu Metni",
+                changeAddText: "\"Sepete Ekle\" Butonu Metni",
+                changeCheckoutText: "\"WhatsApp Sipariş\" Butonu Metni",
+                saveSettings: "Ayarları Kaydet",
+                logout: "Çıkış Yap",
+                close: "Kapat",
+                addProduct: "+ Ürün Ekle",
+                manageGroups: "+ Grup Yönetimi",
+                selectGroup: "Grup Seçin (اختر المجموعة)",
+                groupModalTitle: "Grup Yönetimi (إدارة المجموعات)",
+                addGroupBtn: "+ Grup Ekle",
+                existingGroups: "Mevcut Gruplar (المجموعات الحالية)",
+                addToCart: "Sepete Ekle",
+                share: "Paylaş",
+                edit: "Düzenle",
+                delete: "Sil",
+                prodImg: "Ürün Fotoğrafı (Dosyadan Seç)",
+                prodPrice: "Fiyat (TL)",
+                save: "Kaydet",
+                cancel: "İptal",
+                cartTitle: "Alışveriş Sepeti",
+                cartEmpty: "Sepetiniz boş",
+                adminMode: "Admin Modu Aktif",
+                groupsTitle: "🏷️ Gruplar (المجموعات)",
+                allProductsTitle: "📦 Tüm Ürünler (كل المنتجات)",
+                allBtn: "Tümü (الكل)",
+                clearCart: "🗑️ Sepeti Boşalt",
+                clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
+                searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
+                noProductsFound: "Aramanıza uygun ürün bulunamadı.",
+                langBtnText: "🌐 العربية",
+                loadingText: "Yükleniyor...",
+                copyLink: "Bağlantıyı Kopyala"
+            }
+        };
+
+        let settings = defaultSettings;
+        let groups = defaultGroups;
+        let products = []; // Artık ekrana gelen ürünler parça parça (sayfa sayfa) buraya dolar
+        let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
+        let isAdmin = false;
+        let currentBase64Image = '';
+        let selectedCategory = 'ALL';
+        let searchQuery = '';
+
+        // ============================================================
+        // LAZY LOADING (kademeli ürün çekme):
+        // Artık tüm ürünler tek seferde Supabase'den çekilmiyor.
+        // Sadece ekrana gelen ilk PAGE_SIZE kadar ürün çekiliyor.
+        // Kullanıcı "Daha Fazla Ürün Göster" butonuna bastıkça
+        // yeni ürünler yükleniyor. Böylece görünmeyen ürünlerin
+        // resimleri boşuna indirilmiyor VE otomatik/arka planda
+        // sürekli tetiklenen bir yükleme döngüsü oluşmuyor
+        // (önceki "sonsuz kaydırma" yöntemi, ekrana sığan az sayıda
+        // ürün olduğunda arka arkaya kendini tetikleyip tarayıcıyı
+        // meşgul ediyor, bu da tıklamaların geç yanıt vermesine
+        // sebep oluyordu).
+        // ============================================================
+        const PAGE_SIZE = 12;
+        let productsOffset = 0;
+        let hasMoreProducts = true;
+        let isFetchingProducts = false;
+        let searchDebounceTimer = null;
+
+        async function fetchProductsBatch(reset = false) {
+            if (isFetchingProducts) return;
+            if (reset) {
+                productsOffset = 0;
+                hasMoreProducts = true;
+                products = [];
+            }
+            if (!hasMoreProducts) return;
+
+            isFetchingProducts = true;
+            renderProducts(); // "yükleniyor" durumunu göstermek için
+
+            try {
+                let query = _supabase.from('products').select('*').order('id', { ascending: true });
+
+                if (selectedCategory !== 'ALL') {
+                    const [catAr, catTr] = selectedCategory.split('|');
+                    query = query.eq('category_ar', catAr).eq('category_tr', catTr);
+                }
+                if (searchQuery) {
+                    const q = searchQuery.replace(/[%,]/g, '');
+                    query = query.or(`name_ar.ilike.%${q}%,name_tr.ilike.%${q}%`);
+                }
+
+                query = query.range(productsOffset, productsOffset + PAGE_SIZE - 1);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                if (data) {
+                    if (data.length < PAGE_SIZE) hasMoreProducts = false;
+                    products = products.concat(data);
+                    productsOffset += data.length;
+                }
+            } catch (err) {
+                console.log("Ürünler çekilemedi:", err);
+                hasMoreProducts = false;
+            } finally {
+                isFetchingProducts = false;
+                renderProducts();
+            }
+        }
+
+        async function loadFromSupabase() {
+            try {
+                // Gruplar ve ayarlar küçük tablolar, ikisi paralel çekiliyor
+                const [gRes, sRes] = await Promise.all([
+                    _supabase.from('groups').select('*'),
+                    _supabase.from('settings').select('*').eq('id', 1).maybeSingle()
+                ]);
+
+                if (gRes.data && gRes.data.length > 0) groups = gRes.data;
+                if (sRes.data) settings = { ...defaultSettings, ...sRes.data };
+            } catch (err) {
+                console.log("Supabase veri çekme hatası:", err);
+            }
+        }
+
+        async function saveCart() {
+            localStorage.setItem('catalog_cart', JSON.stringify(cart));
+        }
+
+        async function init() {
+            // 1. Önce varsayılan verilerle arayüzü anında çiz, kullanıcı beklemesin
             changeLanguage(settings.lang, false);
             renderCategories();
-            renderProducts();
             renderCart();
-        } catch (err) {
-            console.log("Supabase veri çekme hatası:", err);
-        }
-    }
 
-    async function saveCart() {
-        localStorage.setItem('catalog_cart', JSON.stringify(cart));
-    }
+            // Sepet / Ayarlar butonlarını garanti altına al (bazı durumlarda
+            // inline onclick tetiklenmeyebiliyor, bu yüzden JS ile de bağlanıyor)
+            const cartBtnEl = document.getElementById('btn-view-cart');
+            if (cartBtnEl) cartBtnEl.addEventListener('click', () => openModal('cartModal'));
 
-    async function init() {
-        // 1. Önce varsayılan verilerle sayfayı anında çiz
-        changeLanguage(settings.lang, false);
-        renderCategories();
-        renderProducts();
-        renderCart();
+            const settingsBtnEl = document.getElementById('btn-settings');
+            if (settingsBtnEl) settingsBtnEl.addEventListener('click', () => openModal('settingsModal'));
 
-        // 2. Yükleme ekranını hemen kaldır (kullanıcı beklemesin)
-        const loadingScreen = document.getElementById('loadingScreen');
-        if (loadingScreen) {
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => { loadingScreen.style.display = 'none'; }, 200);
-        }
-
-        // 3. Arka planda verileri ve oturum durumunu paralel yükle
-        _supabase.auth.getSession().then(({ data: { session } }) => {
-            isAdmin = !!session;
-            updateAdminUI();
-        });
-
-        _supabase.auth.onAuthStateChange((event, session) => {
-            isAdmin = !!session;
-            updateAdminUI();
-        });
-
-        // Verileri arka planda indir
-        loadFromSupabase();
-
-        // URL parametresi kontrolü
-        const urlParams = new URLSearchParams(window.location.search);
-        const productIdParam = urlParams.get('product');
-        if (productIdParam) {
-            openProductDetail(Number(productIdParam));
-        }
-    }
-
-    async function handleSupabaseLogin() {
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value.trim();
-
-        const { data, error } = await _supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            alert((settings.lang === 'ar' ? 'خطأ في تسجيل الدخول: ' : 'Giriş Hatası: ') + error.message);
-        } else {
-            isAdmin = true;
-            closeModal('loginModal');
-            updateAdminUI();
-            alert(settings.lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Başarıyla giriş yapıldı!');
-        }
-    }
-
-    async function handleSupabaseLogout() {
-        await _supabase.auth.signOut();
-        isAdmin = false;
-        updateAdminUI();
-        closeModal('settingsModal');
-        alert(settings.lang === 'ar' ? 'تم تسجيل الخروج' : 'Oturum kapatıldı.');
-    }
-
-    function toggleLanguage() {
-        const nextLang = settings.lang === 'ar' ? 'tr' : 'ar';
-        changeLanguage(nextLang);
-    }
-
-    function handleSearch(val) {
-        if (val.trim() === 'mayar.') {
-            document.getElementById('search-input').value = '';
-            searchQuery = '';
-            openModal('loginModal');
-            renderProducts();
-            return;
-        }
-
-        searchQuery = val.trim().toLowerCase();
-        renderProducts();
-    }
-
-    function changeLanguage(lang, shouldSave = true) {
-        settings.lang = lang;
-        if (shouldSave) updateAdminSettingsToSupabase();
-
-        document.documentElement.lang = lang;
-        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-        const t = translations[lang] || translations.tr;
-
-        document.getElementById('txt-app-title').innerText = settings.customAppTitle || t.appTitle;
-        document.getElementById('btn-lang-toggle').innerText = t.langBtnText;
-        document.getElementById('txt-cart-btn-text').innerText = t.viewCart;
-        document.getElementById('txt-settings-btn-text').innerText = t.settings;
-        document.getElementById('txt-total-label').innerText = t.totalLabel;
-        document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
-        document.getElementById('txt-loading').innerText = t.loadingText;
-
-        document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
-        document.getElementById('txt-change-phone').innerText = t.changePhone;
-        document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
-        document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
-        document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
-        document.getElementById('txt-change-add-text').innerText = t.changeAddText;
-        document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
-
-        document.getElementById('btn-save-settings').innerText = t.saveSettings;
-        document.getElementById('btn-logout').innerText = t.logout;
-        document.getElementById('btn-close-settings').innerText = t.close;
-        document.getElementById('btn-add-product').innerText = t.addProduct;
-        document.getElementById('btn-manage-groups').innerText = t.manageGroups;
-        document.getElementById('lbl-prod-group').innerText = t.selectGroup;
-        document.getElementById('txt-group-modal-title').innerText = t.groupModalTitle;
-        document.getElementById('btn-save-group').innerText = t.addGroupBtn;
-        document.getElementById('txt-existing-groups').innerText = t.existingGroups;
-        document.getElementById('btn-close-group-modal').innerText = t.close;
-        document.getElementById('lbl-prod-img').innerText = t.prodImg;
-        document.getElementById('lbl-prod-price').innerText = t.prodPrice;
-        document.getElementById('btn-save-prod').innerText = t.save;
-        document.getElementById('btn-cancel-prod').innerText = t.cancel;
-        document.getElementById('txt-cart-title').innerText = t.cartTitle;
-        document.getElementById('btn-clear-cart').innerText = t.clearCart;
-        document.getElementById('btn-close-cart').innerText = t.close;
-        document.getElementById('txt-groups-title').innerText = t.groupsTitle;
-        document.getElementById('txt-all-products-title').innerText = t.allProductsTitle;
-        document.getElementById('search-input').placeholder = t.searchPlaceholder;
-
-        renderCategories();
-        renderProducts();
-        renderCart();
-    }
-
-    function updateAdminUI() {
-        const adminBar = document.getElementById('adminBar');
-        const btnSettings = document.getElementById('btn-settings');
-
-        if (isAdmin) {
-            btnSettings.style.display = 'inline-block';
-            adminBar.style.display = 'flex';
-            document.getElementById('new-phone').value = settings.phone;
-            document.getElementById('new-wa-header').value = settings.waHeader || 'طلب جديد';
-            document.getElementById('new-app-title').value = settings.customAppTitle || '';
-            document.getElementById('new-delete-text').value = settings.customDeleteText || '';
-            document.getElementById('new-add-text').value = settings.customAddText || '';
-            document.getElementById('new-checkout-text').value = settings.customCheckoutText || '';
-        } else {
-            btnSettings.style.display = 'none';
-            adminBar.style.display = 'none';
-        }
-        renderProducts();
-    }
-
-    async function updateAdminSettingsToSupabase() {
-        try {
-            await _supabase.from('settings').upsert({ id: 1, ...settings });
-        } catch (err) {
-            console.error("Ayarlar kaydedilemedi:", err);
-        }
-    }
-
-    async function updateAdminSettings() {
-        settings.phone = document.getElementById('new-phone').value.trim() || settings.phone;
-        settings.waHeader = document.getElementById('new-wa-header').value.trim() || 'طلب جديد';
-        settings.customAppTitle = document.getElementById('new-app-title').value.trim();
-        settings.customDeleteText = document.getElementById('new-delete-text').value.trim();
-        settings.customAddText = document.getElementById('new-add-text').value.trim();
-        settings.customCheckoutText = document.getElementById('new-checkout-text').value.trim();
-
-        await updateAdminSettingsToSupabase();
-        changeLanguage(settings.lang, false);
-        alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
-    }
-
-    function renderGroupSelect() {
-        const select = document.getElementById('prod-group-select');
-        select.innerHTML = '';
-
-        if (groups.length === 0) {
-            const opt = document.createElement('option');
-            opt.value = '';
-            opt.innerText = settings.lang === 'ar' ? 'لا توجد مجموعات' : 'Grup yok';
-            select.appendChild(opt);
-            return;
-        }
-
-        groups.forEach(g => {
-            const opt = document.createElement('option');
-            opt.value = g.id;
-            opt.innerText = settings.lang === 'ar' ? `${g.name_ar} (${g.name_tr})` : `${g.name_tr} (${g.name_ar})`;
-            select.appendChild(opt);
-        });
-    }
-
-    function openGroupModal() {
-        document.getElementById('new-group-ar').value = '';
-        document.getElementById('new-group-tr').value = '';
-        renderGroupsList();
-        openModal('groupModal');
-    }
-
-    async function saveGroup() {
-        const name_ar = document.getElementById('new-group-ar').value.trim();
-        const name_tr = document.getElementById('new-group-tr').value.trim();
-
-        if (!name_ar && !name_tr) {
-            alert(settings.lang === 'ar' ? 'يرجى إدخال اسم المجموعة' : 'Lütfen grup adı girin!');
-            return;
-        }
-
-        const newId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
-        const newGroup = {
-            id: newId,
-            name_ar: name_ar || name_tr,
-            name_tr: name_tr || name_ar
-        };
-
-        groups.push(newGroup);
-        try {
-            await _supabase.from('groups').insert([newGroup]);
-        } catch (err) {
-            console.error("Grup eklenemedi:", err);
-        }
-
-        renderGroupsList();
-        renderGroupSelect();
-        renderCategories();
-        document.getElementById('new-group-ar').value = '';
-        document.getElementById('new-group-tr').value = '';
-    }
-
-    async function deleteGroup(id) {
-        if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) {
-            groups = groups.filter(g => g.id !== id);
-            try {
-                await _supabase.from('groups').delete().eq('id', id);
-            } catch (err) {
-                console.error("Grup silinemedi:", err);
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 300);
             }
-            renderGroupsList();
-            renderGroupSelect();
-            renderCategories();
-            renderProducts();
-        }
-    }
 
-    function renderGroupsList() {
-        const list = document.getElementById('groupsList');
-        list.innerHTML = '';
+            // 2. Oturum durumu + küçük tablolar (gruplar/ayarlar) paralel yüklenir
+            _supabase.auth.getSession().then(({ data: { session } }) => {
+                isAdmin = !!session;
+                updateAdminUI();
+            });
 
-        if (groups.length === 0) {
-            list.innerHTML = `<p style="color:#888; text-align:center; padding:10px;">${settings.lang === 'ar' ? 'لا توجد مجموعات' : 'Henüz grup eklenmedi.'}</p>`;
-            return;
-        }
+            _supabase.auth.onAuthStateChange((event, session) => {
+                isAdmin = !!session;
+                updateAdminUI();
+            });
 
-        groups.forEach(g => {
-            const item = document.createElement('div');
-            item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
-            const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
-            const deleteText = settings.customDeleteText || translations[settings.lang].delete;
-            item.innerHTML = `
-                <span>${name}</span>
-                <button onclick="deleteGroup(${g.id})" class="btn-danger" style="padding:4px 8px; font-size:0.8rem;">${deleteText}</button>
-            `;
-            list.appendChild(item);
-        });
-    }
+            await loadFromSupabase();
+            changeLanguage(settings.lang, false);
 
-    function renderCategories() {
-        const bar = document.getElementById('categoriesBar');
-        bar.innerHTML = '';
+            // 3. Ürünler artık sadece ilk sayfa kadar (ekrana gelen kadar) çekilir
+            await fetchProductsBatch(true);
 
-        const t = translations[settings.lang] || translations.tr;
-
-        const allBtn = document.createElement('button');
-        allBtn.className = `cat-btn ${selectedCategory === 'ALL' ? 'active' : ''}`;
-        allBtn.innerText = t.allBtn;
-        allBtn.onclick = () => {
-            selectedCategory = 'ALL';
-            renderCategories();
-            renderProducts();
-        };
-        bar.appendChild(allBtn);
-
-        const catMap = new Map();
-
-        groups.forEach(g => {
-            const catKey = g.name_ar + '|' + g.name_tr;
-            catMap.set(catKey, { ar: g.name_ar, tr: g.name_tr });
-        });
-
-        products.forEach(p => {
-            const catAr = (p.category_ar || '').trim();
-            const catTr = (p.category_tr || '').trim();
-            if (catAr || catTr) {
-                const catKey = catAr + '|' + catTr;
-                if (!catMap.has(catKey)) {
-                    catMap.set(catKey, { ar: catAr || catTr, tr: catTr || catAr });
-                }
+            // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
+            const urlParams = new URLSearchParams(window.location.search);
+            const productIdParam = urlParams.get('product');
+            if (productIdParam) {
+                openProductDetail(Number(productIdParam));
             }
-        });
+        }
 
-        catMap.forEach((catObj, catKey) => {
-            const displayName = settings.lang === 'ar' ? catObj.ar : catObj.tr;
-            const btn = document.createElement('button');
-            btn.className = `cat-btn ${selectedCategory === catKey ? 'active' : ''}`;
-            btn.innerText = displayName;
-            btn.onclick = () => {
-                selectedCategory = catKey;
-                renderCategories();
+        async function handleSupabaseLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                alert((settings.lang === 'ar' ? 'خطأ في تسجيل الدخول: ' : 'Giriş Hatası: ') + error.message);
+            } else {
+                isAdmin = true;
+                closeModal('loginModal');
+                updateAdminUI();
+                alert(settings.lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Başarıyla giriş yapıldı!');
+            }
+        }
+
+        async function handleSupabaseLogout() {
+            await _supabase.auth.signOut();
+            isAdmin = false;
+            updateAdminUI();
+            closeModal('settingsModal');
+            alert(settings.lang === 'ar' ? 'تم تسجيل الخروج' : 'Oturum kapatıldı.');
+        }
+
+        function toggleLanguage() {
+            const nextLang = settings.lang === 'ar' ? 'tr' : 'ar';
+            changeLanguage(nextLang);
+        }
+
+        function handleSearch(val) {
+            if (val.trim() === 'mayar.') {
+                document.getElementById('search-input').value = '';
+                searchQuery = '';
+                openModal('loginModal');
                 renderProducts();
-            };
-            bar.appendChild(btn);
-        });
-    }
-
-    function renderProducts() {
-        const grid = document.getElementById('productsGrid');
-        grid.innerHTML = '';
-        const t = translations[settings.lang] || translations.tr;
-
-        const addText = settings.customAddText || t.addToCart;
-        const shareText = t.share;
-        const editText = t.edit;
-        const deleteText = settings.customDeleteText || t.delete;
-
-        const filteredProducts = products.filter(p => {
-            let catMatch = selectedCategory === 'ALL' || ((p.category_ar || '').trim() + '|' + (p.category_tr || '').trim()) === selectedCategory;
-
-            let searchMatch = true;
-            if (searchQuery) {
-                const nameAr = (p.name_ar || '').toLowerCase();
-                const nameTr = (p.name_tr || '').toLowerCase();
-                searchMatch = nameAr.includes(searchQuery) || nameTr.includes(searchQuery);
+                return;
             }
 
-            return catMatch && searchMatch;
-        });
+            searchQuery = val.trim().toLowerCase();
 
-        if (filteredProducts.length === 0) {
-            grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #777; padding: 20px 0;">${t.noProductsFound}</p>`;
-            return;
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                fetchProductsBatch(true);
+            }, 350);
         }
 
-        filteredProducts.forEach(p => {
-            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-            const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
+        function changeLanguage(lang, shouldSave = true) {
+            settings.lang = lang;
+            if (shouldSave) updateAdminSettingsToSupabase();
 
-            const card = document.createElement('div');
-            card.className = 'product-card';
-            card.innerHTML = `
-                ${catName ? `<span class="product-badge">${catName}</span>` : ''}
-                <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
-                <div class="product-info">
-                    <div>
-                        <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
-                        <div class="product-price">${p.price} TL</div>
-                    </div>
-                    <div class="product-actions">
-                        <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
-                        <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
-                        ${isAdmin ? `
-                            <button onclick="editProduct(${p.id})">${editText}</button>
-                            <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-    }
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
 
-    function shareProduct(id) {
-        const p = products.find(x => x.id === id);
-        if (!p) return;
+            const t = translations[lang];
 
-        const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-        const baseUrl = window.location.origin + window.location.pathname;
-        const productUrl = `${baseUrl}?product=${p.id}`;
+            document.getElementById('txt-app-title').innerText = settings.customAppTitle || t.appTitle;
+            document.getElementById('btn-lang-toggle').innerText = t.langBtnText;
+            document.getElementById('txt-cart-btn-text').innerText = t.viewCart;
+            document.getElementById('txt-settings-btn-text').innerText = t.settings;
+            document.getElementById('txt-total-label').innerText = t.totalLabel;
+            document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
+            document.getElementById('txt-loading').innerText = t.loadingText;
 
-        const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
-        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-        window.open(waUrl, '_blank');
-    }
+            document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
+            document.getElementById('txt-change-phone').innerText = t.changePhone;
+            document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
+            document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
+            document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
+            document.getElementById('txt-change-add-text').innerText = t.changeAddText;
+            document.getElementById('txt-change-checkout-text').innerText = t.changeCheckoutText;
 
-    function openProductDetail(id) {
-        const p = products.find(x => x.id === id);
-        if (!p) return;
+            document.getElementById('btn-save-settings').innerText = t.saveSettings;
+            document.getElementById('btn-logout').innerText = t.logout;
+            document.getElementById('btn-close-settings').innerText = t.close;
+            document.getElementById('btn-add-product').innerText = t.addProduct;
+            document.getElementById('btn-manage-groups').innerText = t.manageGroups;
+            document.getElementById('lbl-prod-group').innerText = t.selectGroup;
+            document.getElementById('txt-group-modal-title').innerText = t.groupModalTitle;
+            document.getElementById('btn-save-group').innerText = t.addGroupBtn;
+            document.getElementById('txt-existing-groups').innerText = t.existingGroups;
+            document.getElementById('btn-close-group-modal').innerText = t.close;
+            document.getElementById('lbl-prod-img').innerText = t.prodImg;
+            document.getElementById('lbl-prod-price').innerText = t.prodPrice;
+            document.getElementById('btn-save-prod').innerText = t.save;
+            document.getElementById('btn-cancel-prod').innerText = t.cancel;
+            document.getElementById('txt-cart-title').innerText = t.cartTitle;
+            document.getElementById('btn-clear-cart').innerText = t.clearCart;
+            document.getElementById('btn-close-cart').innerText = t.close;
+            document.getElementById('txt-groups-title').innerText = t.groupsTitle;
+            document.getElementById('txt-all-products-title').innerText = t.allProductsTitle;
+            document.getElementById('search-input').placeholder = t.searchPlaceholder;
 
-        const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-        const desc = settings.lang === 'ar' ? p.desc_ar : p.desc_tr;
-        const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
-
-        document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
-
-        const catBadge = document.getElementById('detail-category');
-        if (catName) {
-            catBadge.innerText = catName;
-            catBadge.style.display = 'inline-block';
-        } else {
-            catBadge.style.display = 'none';
-        }
-
-        document.getElementById('detail-title').innerText = name;
-        document.getElementById('detail-desc').innerText = desc || (settings.lang === 'ar' ? 'لا يوجد وصف' : 'Açıklama bulunmuyor.');
-        document.getElementById('detail-price').innerText = `${p.price} TL`;
-
-        const addBtn = document.getElementById('detail-add-btn');
-        addBtn.innerText = settings.customAddText || translations[settings.lang].addToCart;
-        addBtn.onclick = function() {
-            addToCart(p.id);
-            closeModal('productDetailModal');
-        };
-
-        const shareBtn = document.getElementById('detail-share-btn');
-        shareBtn.innerText = `💬 ${translations[settings.lang].share}`;
-        shareBtn.onclick = function() {
-            shareProduct(p.id);
-        };
-
-        openModal('productDetailModal');
-    }
-
-    function previewSelectedImage(input) {
-        const file = input.files[0];
-        const preview = document.getElementById('img-preview');
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentBase64Image = e.target.result;
-                preview.src = currentBase64Image;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function openAddProductModal() {
-        renderGroupSelect();
-        document.getElementById('prod-id').value = '';
-        document.getElementById('prod-img-file').value = '';
-        document.getElementById('prod-price').value = '';
-        document.getElementById('prod-name-ar').value = '';
-        document.getElementById('prod-name-tr').value = '';
-        document.getElementById('prod-desc-ar').value = '';
-        document.getElementById('prod-desc-tr').value = '';
-
-        currentBase64Image = '';
-        const preview = document.getElementById('img-preview');
-        preview.src = '';
-        preview.style.display = 'none';
-
-        document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'إضافة منتج' : 'Ürün Ekle';
-        openModal('productModal');
-    }
-
-    function editProduct(id) {
-        const p = products.find(x => x.id === id);
-        if (!p) return;
-
-        renderGroupSelect();
-
-        document.getElementById('prod-id').value = p.id;
-        document.getElementById('prod-img-file').value = '';
-        document.getElementById('prod-price').value = p.price;
-        document.getElementById('prod-name-ar').value = p.name_ar;
-        document.getElementById('prod-name-tr').value = p.name_tr;
-        document.getElementById('prod-desc-ar').value = p.desc_ar;
-        document.getElementById('prod-desc-tr').value = p.desc_tr;
-
-        const matchGroup = groups.find(g => (g.name_ar === p.category_ar && g.name_tr === p.category_tr) || g.name_tr === p.category_tr || g.name_ar === p.category_ar);
-        if (matchGroup) {
-            document.getElementById('prod-group-select').value = matchGroup.id;
-        }
-
-        currentBase64Image = p.img || '';
-        const preview = document.getElementById('img-preview');
-        if (currentBase64Image) {
-            preview.src = currentBase64Image;
-            preview.style.display = 'block';
-        } else {
-            preview.style.display = 'none';
-        }
-
-        document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'تعديل المنتج' : 'Ürünü Düzenle';
-        openModal('productModal');
-    }
-
-    async function saveProduct() {
-        const id = document.getElementById('prod-id').value;
-        const price = parseFloat(document.getElementById('prod-price').value) || 0;
-        const selectedGroupId = parseInt(document.getElementById('prod-group-select').value);
-
-        const selectedGroup = groups.find(g => g.id === selectedGroupId);
-        const category_ar = selectedGroup ? selectedGroup.name_ar : '';
-        const category_tr = selectedGroup ? selectedGroup.name_tr : '';
-
-        const name_ar = document.getElementById('prod-name-ar').value;
-        const name_tr = document.getElementById('prod-name-tr').value;
-        const desc_ar = document.getElementById('prod-desc-ar').value;
-        const desc_tr = document.getElementById('prod-desc-tr').value;
-        const img = currentBase64Image || 'https://via.placeholder.com/300x200';
-
-        if (id) {
-            const index = products.findIndex(x => x.id == id);
-            if (index !== -1) {
-                products[index] = { id: Number(id), img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
-                try {
-                    await _supabase.from('products').update(products[index]).eq('id', id);
-                } catch (err) {
-                    console.error("Ürün güncellenemedi:", err);
-                }
-            }
-        } else {
-            const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-            const newProd = { id: newId, img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
-            products.push(newProd);
-            try {
-                await _supabase.from('products').insert([newProd]);
-            } catch (err) {
-                console.error("Ürün eklenemedi:", err);
-            }
-        }
-
-        renderCategories();
-        renderProducts();
-        closeModal('productModal');
-    }
-
-    async function deleteProduct(id) {
-        if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) {
-            products = products.filter(p => p.id !== id);
-            cart = cart.filter(c => c.id !== id);
-            try {
-                await _supabase.from('products').delete().eq('id', id);
-            } catch (err) {
-                console.error("Ürün silinemedi:", err);
-            }
             renderCategories();
             renderProducts();
             renderCart();
         }
-    }
 
-    function addToCart(id) {
-        const item = cart.find(c => c.id === id);
-        if (item) {
-            item.qty++;
-        } else {
-            cart.push({ id: id, qty: 1 });
+        function updateAdminUI() {
+            const adminBar = document.getElementById('adminBar');
+            const btnSettings = document.getElementById('btn-settings');
+
+            if (isAdmin) {
+                btnSettings.style.display = 'inline-block';
+                adminBar.style.display = 'flex';
+                document.getElementById('new-phone').value = settings.phone;
+                document.getElementById('new-wa-header').value = settings.waHeader || 'طلب جديد';
+                document.getElementById('new-app-title').value = settings.customAppTitle || '';
+                document.getElementById('new-delete-text').value = settings.customDeleteText || '';
+                document.getElementById('new-add-text').value = settings.customAddText || '';
+                document.getElementById('new-checkout-text').value = settings.customCheckoutText || '';
+            } else {
+                btnSettings.style.display = 'none';
+                adminBar.style.display = 'none';
+            }
+            renderProducts();
         }
-        saveCart();
-        renderCart();
-    }
 
-    function updateQty(id, delta) {
-        const item = cart.find(c => c.id === id);
-        if (item) {
-            item.qty += delta;
-            if (item.qty <= 0) {
-                cart = cart.filter(c => c.id !== id);
+        async function updateAdminSettingsToSupabase() {
+            try {
+                await _supabase.from('settings').upsert({ id: 1, ...settings });
+            } catch (err) {
+                console.error("Ayarlar kaydedilemedi:", err);
             }
         }
-        saveCart();
-        renderCart();
-    }
 
-    function removeFromCart(id) {
-        cart = cart.filter(c => c.id !== id);
-        saveCart();
-        renderCart();
-    }
+        async function updateAdminSettings() {
+            settings.phone = document.getElementById('new-phone').value.trim() || settings.phone;
+            settings.waHeader = document.getElementById('new-wa-header').value.trim() || 'طلب جديد';
+            settings.customAppTitle = document.getElementById('new-app-title').value.trim();
+            settings.customDeleteText = document.getElementById('new-delete-text').value.trim();
+            settings.customAddText = document.getElementById('new-add-text').value.trim();
+            settings.customCheckoutText = document.getElementById('new-checkout-text').value.trim();
 
-    function clearCart() {
-        if (cart.length === 0) return;
-        if (confirm(translations[settings.lang].clearCartConfirm)) {
-            cart = [];
-            saveCart();
-            renderCart();
+            await updateAdminSettingsToSupabase();
+            changeLanguage(settings.lang, false);
+            alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
         }
-    }
 
-    function renderCart() {
-        const cartList = document.getElementById('cartList');
-        cartList.innerHTML = '';
+        function renderGroupSelect() {
+            const select = document.getElementById('prod-group-select');
+            select.innerHTML = '';
 
-        let totalQty = 0;
-        let totalPrice = 0;
+            if (groups.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = settings.lang === 'ar' ? 'لا توجد مجموعات' : 'Grup yok';
+                select.appendChild(opt);
+                return;
+            }
 
-        if (cart.length === 0) {
-            cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty}</p>`;
-        } else {
-            cart.forEach(c => {
-                const prod = products.find(p => p.id === c.id);
-                if (prod) {
-                    const name = settings.lang === 'ar' ? prod.name_ar : prod.name_tr;
-                    const itemTotal = prod.price * c.qty;
-                    totalQty += c.qty;
-                    totalPrice += itemTotal;
-                    const deleteText = settings.customDeleteText || translations[settings.lang].delete;
-
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'cart-item';
-                    itemDiv.innerHTML = `
-                        <div class="cart-item-details">
-                            <strong>${name}</strong><br>
-                            <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
-                        </div>
-                        <div class="qty-btns">
-                            <button onclick="updateQty(${prod.id}, -1)">-</button>
-                            <span>${c.qty}</span>
-                            <button onclick="updateQty(${prod.id}, 1)">+</button>
-                        </div>
-                        <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="${deleteText}">🗑️</button>
-                    `;
-                    cartList.appendChild(itemDiv);
-                }
+            groups.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.innerText = settings.lang === 'ar' ? `${g.name_ar} (${g.name_tr})` : `${g.name_tr} (${g.name_ar})`;
+                select.appendChild(opt);
             });
         }
 
-        document.getElementById('cart-count').innerText = totalQty;
-        document.getElementById('cart-total-price').innerText = totalPrice;
-    }
-
-    function formatPhoneForWa(phoneStr) {
-        let digits = phoneStr.replace(/[^0-9]/g, '');
-        if (digits.startsWith('0')) {
-            digits = '9' + digits;
-        } else if (digits.length === 10 && digits.startsWith('5')) {
-            digits = '90' + digits;
-        }
-        return digits;
-    }
-
-    function completeOrder() {
-        if (cart.length === 0) {
-            alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
-            return;
+        function openGroupModal() {
+            document.getElementById('new-group-ar').value = '';
+            document.getElementById('new-group-tr').value = '';
+            renderGroupsList();
+            openModal('groupModal');
         }
 
-        let messageLines = [];
-        let totalQty = 0;
-        let grandTotal = 0;
+        async function saveGroup() {
+            const name_ar = document.getElementById('new-group-ar').value.trim();
+            const name_tr = document.getElementById('new-group-tr').value.trim();
 
-        const customHeader = settings.waHeader || 'طلب جديد';
-        const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
-
-        messageLines.push(`${customHeader} (${activeLangText})`);
-
-        cart.forEach(c => {
-            const prod = products.find(p => p.id === c.id);
-            if (prod) {
-                const name = prod.name_ar || prod.name_tr; 
-                const itemTotal = prod.price * c.qty;
-                totalQty += c.qty;
-                grandTotal += itemTotal;
-
-                messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+            if (!name_ar && !name_tr) {
+                alert(settings.lang === 'ar' ? 'يرجى إدخال اسم المجموعة' : 'Lütfen grup adı girin!');
+                return;
             }
-        });
 
-        messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
+            const newId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
+            const newGroup = {
+                id: newId,
+                name_ar: name_ar || name_tr,
+                name_tr: name_tr || name_ar
+            };
 
-        const fullMessage = messageLines.join('\n');
-        const encodedMessage = encodeURIComponent(fullMessage);
+            groups.push(newGroup);
+            try {
+                await _supabase.from('groups').insert([newGroup]);
+            } catch (err) {
+                console.error("Grup eklenemedi:", err);
+            }
 
-        const cleanPhone = formatPhoneForWa(settings.phone);
-        const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+            renderGroupsList();
+            renderGroupSelect();
+            renderCategories();
+            document.getElementById('new-group-ar').value = '';
+            document.getElementById('new-group-tr').value = '';
+        }
 
-        window.open(waUrl, '_blank');
-    }
+        async function deleteGroup(id) {
+            if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) {
+                groups = groups.filter(g => g.id !== id);
+                try {
+                    await _supabase.from('groups').delete().eq('id', id);
+                } catch (err) {
+                    console.error("Grup silinemedi:", err);
+                }
+                renderGroupsList();
+                renderGroupSelect();
+                selectedCategory = 'ALL'; // silinen kategori seçiliyse listeyi güvenle sıfırla
+                renderCategories();
+                await fetchProductsBatch(true);
+            }
+        }
 
-    function openModal(id) {
-        document.getElementById(id).style.display = 'flex';
-    }
+        function renderGroupsList() {
+            const list = document.getElementById('groupsList');
+            list.innerHTML = '';
 
-    function closeModal(id) {
-        document.getElementById(id).style.display = 'none';
-    }
+            if (groups.length === 0) {
+                list.innerHTML = `<p style="color:#888; text-align:center; padding:10px;">${settings.lang === 'ar' ? 'لا توجد مجموعات' : 'Henüz grup eklenmedi.'}</p>`;
+                return;
+            }
 
-    window.onload = init;
-</script>
+            groups.forEach(g => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;';
+                const name = settings.lang === 'ar' ? `${g.name_ar} / ${g.name_tr}` : `${g.name_tr} / ${g.name_ar}`;
+                const deleteText = settings.customDeleteText || translations[settings.lang].delete;
+                item.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="deleteGroup(${g.id})" class="btn-danger" style="padding:4px 8px; font-size:0.8rem;">${deleteText}</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function renderCategories() {
+            const bar = document.getElementById('categoriesBar');
+            bar.innerHTML = '';
+
+            const t = translations[settings.lang];
+
+            const allBtn = document.createElement('button');
+            allBtn.className = `cat-btn ${selectedCategory === 'ALL' ? 'active' : ''}`;
+            allBtn.innerText = t.allBtn;
+            allBtn.onclick = () => {
+                selectedCategory = 'ALL';
+                renderCategories();
+                fetchProductsBatch(true);
+            };
+            bar.appendChild(allBtn);
+
+            // Kategoriler artık sadece 'groups' tablosundan geliyor
+            // (tüm ürünleri taramaya gerek yok, groups zaten küçük ve tam yüklü)
+            const catMap = new Map();
+            groups.forEach(g => {
+                const catKey = g.name_ar + '|' + g.name_tr;
+                catMap.set(catKey, { ar: g.name_ar, tr: g.name_tr });
+            });
+
+            catMap.forEach((catObj, catKey) => {
+                const displayName = settings.lang === 'ar' ? catObj.ar : catObj.tr;
+                const btn = document.createElement('button');
+                btn.className = `cat-btn ${selectedCategory === catKey ? 'active' : ''}`;
+                btn.innerText = displayName;
+                btn.onclick = () => {
+                    selectedCategory = catKey;
+                    renderCategories();
+                    fetchProductsBatch(true);
+                };
+                bar.appendChild(btn);
+            });
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+            const t = translations[settings.lang];
+
+            const addText = settings.customAddText || t.addToCart;
+            const shareText = t.share;
+            const copyText = t.copyLink || (settings.lang === 'ar' ? 'نسخ الرابط' : 'Bağlantıyı Kopyala');
+            const editText = settings.customEditText || t.edit;
+            const deleteText = settings.customDeleteText || t.delete;
+
+            // Filtreleme artık Supabase tarafında yapılıyor, 'products' zaten filtrelenmiş geliyor
+            if (products.length === 0 && !isFetchingProducts) {
+                grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #777; padding: 20px 0;">${t.noProductsFound}</p>`;
+                return;
+            }
+
+            products.forEach(p => {
+                const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+                const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    ${catName ? `<span class="product-badge">${catName}</span>` : ''}
+                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" loading="lazy" onclick="openProductDetail(${p.id})">
+                    <div class="product-info">
+                        <div>
+                            <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
+                            <div class="product-price">${p.price} TL</div>
+                        </div>
+                        <div class="product-actions">
+                            <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
+                            <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
+                            <button onclick="copyProductLink(${p.id})" class="btn-warning" title="${copyText}">🔗</button>
+                            ${isAdmin ? `
+                                <button onclick="editProduct(${p.id})">${editText}</button>
+                                <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Sonraki ürünleri sadece kullanıcı isterse yükleyen buton
+            renderLoadMoreButton();
+        }
+
+        function renderLoadMoreButton() {
+            const existing = document.getElementById('loadMoreWrap');
+            if (existing) existing.remove();
+
+            if (!hasMoreProducts) return;
+
+            const grid = document.getElementById('productsGrid');
+            const wrap = document.createElement('div');
+            wrap.id = 'loadMoreWrap';
+            wrap.style.cssText = 'text-align:center; padding:16px 0;';
+
+            if (isFetchingProducts) {
+                wrap.innerHTML = `<span style="color:#999; font-size:0.9rem;">${settings.lang === 'ar' ? 'جاري التحميل...' : 'Yükleniyor...'}</span>`;
+            } else {
+                const btnText = settings.lang === 'ar' ? 'عرض المزيد من المنتجات' : 'Daha Fazla Ürün Göster';
+                wrap.innerHTML = `<button class="btn-warning" onclick="fetchProductsBatch(false)">${btnText}</button>`;
+            }
+
+            grid.insertAdjacentElement('afterend', wrap);
+        }
+
+        // Ürünün doğrudan linkini panoya kopyalar
+        async function copyProductLink(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+
+            const baseUrl = window.location.origin + window.location.pathname;
+            const productUrl = `${baseUrl}?product=${p.id}`;
+
+            try {
+                await navigator.clipboard.writeText(productUrl);
+                alert(settings.lang === 'ar' ? 'تم نسخ الرابط!' : 'Bağlantı kopyalandı!');
+            } catch (err) {
+                // Panoya erişim engellenirse kullanıcı linki elle kopyalayabilsin
+                prompt(settings.lang === 'ar' ? 'الرابط (انسخه يدويًا):' : 'Bağlantı (elle kopyalayın):', productUrl);
+            }
+        }
+
+        function shareProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+            const baseUrl = window.location.origin + window.location.pathname;
+            const productUrl = `${baseUrl}?product=${p.id}`;
+
+            const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        async function openProductDetail(id) {
+            let p = products.find(x => x.id === id);
+
+            // Ürün henüz yüklenen sayfada değilse (örn. paylaşılan link ile
+            // doğrudan geldiyse), sadece o tek ürünü Supabase'den çek
+            if (!p) {
+                try {
+                    const { data } = await _supabase.from('products').select('*').eq('id', id).maybeSingle();
+                    if (data) {
+                        p = data;
+                        if (!products.find(x => x.id === id)) products.push(p);
+                    }
+                } catch (err) {
+                    console.log("Ürün detayı çekilemedi:", err);
+                }
+            }
+            if (!p) return;
+
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+            const desc = settings.lang === 'ar' ? p.desc_ar : p.desc_tr;
+            const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
+
+            document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
+
+            const catBadge = document.getElementById('detail-category');
+            if (catName) {
+                catBadge.innerText = catName;
+                catBadge.style.display = 'inline-block';
+            } else {
+                catBadge.style.display = 'none';
+            }
+
+            document.getElementById('detail-title').innerText = name;
+            document.getElementById('detail-desc').innerText = desc || (settings.lang === 'ar' ? 'لا يوجد وصف' : 'Açıklama bulunmuyor.');
+            document.getElementById('detail-price').innerText = `${p.price} TL`;
+
+            const addBtn = document.getElementById('detail-add-btn');
+            addBtn.innerText = settings.customAddText || translations[settings.lang].addToCart;
+            addBtn.onclick = function() {
+                addToCart(p.id);
+                closeModal('productDetailModal');
+            };
+
+            const shareBtn = document.getElementById('detail-share-btn');
+            shareBtn.innerText = `💬 ${translations[settings.lang].share}`;
+            shareBtn.onclick = function() {
+                shareProduct(p.id);
+            };
+
+            const copyBtn = document.getElementById('detail-copy-btn');
+            copyBtn.title = translations[settings.lang].copyLink || '';
+            copyBtn.onclick = function() {
+                copyProductLink(p.id);
+            };
+
+            openModal('productDetailModal');
+        }
+
+        // Büyük telefon fotoğrafları (3-8 MB) veritabanına ham haliyle
+        // kaydedilirse site çok yavaşlar. Bu fonksiyon resmi maksimum
+        // 900px genişliğe indirip JPEG %70 kalitede sıkıştırır
+        // (genelde birkaç MB'lık resim 80-150KB civarına düşer).
+        function compressImage(file, maxWidth = 900, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxWidth) {
+                            height = Math.round(height * (maxWidth / width));
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function previewSelectedImage(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('img-preview');
+            if (!file) return;
+
+            try {
+                currentBase64Image = await compressImage(file);
+                preview.src = currentBase64Image;
+                preview.style.display = 'block';
+            } catch (err) {
+                console.log('Resim sıkıştırılamadı:', err);
+            }
+        }
+
+        // Zaten kayıtlı olan (eski) resimleri sıkıştırmak için:
+        // hem base64 hem de dış URL kaynaklı resimlerle çalışır.
+        function compressImageFromSrc(src, maxWidth = 900, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; // dış URL'ler için CORS denemesi
+                img.onload = () => {
+                    try {
+                        let { width, height } = img;
+                        if (width > maxWidth) {
+                            height = Math.round(height * (maxWidth / width));
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        // Admin panelinden tek tıkla, veritabanındaki TÜM ürünlerin
+        // resimlerini tek tek küçültüp sıkıştırır ve günceller.
+        async function compressExistingImages() {
+            if (!isAdmin) return;
+
+            const confirmMsg = settings.lang === 'ar'
+                ? 'سيتم ضغط جميع صور المنتجات الموجودة في قاعدة البيانات. قد يستغرق هذا بعض الوقت حسب عدد المنتجات. هل تريد المتابعة؟'
+                : 'Veritabanındaki tüm ürün fotoğrafları sıkıştırılacak. Ürün sayısına göre biraz zaman alabilir. Devam edilsin mi?';
+            if (!confirm(confirmMsg)) return;
+
+            const btn = document.getElementById('btn-compress-images');
+            const originalBtnText = btn ? btn.innerText : '';
+            if (btn) btn.disabled = true;
+
+            try {
+                const { data, error } = await _supabase.from('products').select('id, img');
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    alert(settings.lang === 'ar' ? 'لا توجد منتجات.' : 'Ürün bulunamadı.');
+                    return;
+                }
+
+                let done = 0, skipped = 0;
+                for (const p of data) {
+                    // Placeholder resimleri ve zaten küçük (150KB altı) base64 resimleri atla
+                    const alreadySmall = p.img && p.img.startsWith('data:') && p.img.length < 150000;
+                    if (!p.img || p.img.includes('placeholder.com') || alreadySmall) {
+                        skipped++;
+                    } else {
+                        try {
+                            const compressed = await compressImageFromSrc(p.img);
+                            await _supabase.from('products').update({ img: compressed }).eq('id', p.id);
+                            done++;
+                        } catch (err) {
+                            console.log('Sıkıştırılamadı, atlandı -> ürün #' + p.id, err);
+                            skipped++;
+                        }
+                    }
+                    if (btn) btn.innerText = `🗜️ ${done + skipped}/${data.length}`;
+                }
+
+                alert(
+                    (settings.lang === 'ar' ? 'تم الانتهاء! تم ضغط: ' : 'Tamamlandı! Sıkıştırılan: ') + done +
+                    (settings.lang === 'ar' ? ' — تم تخطي: ' : ' — Atlanan: ') + skipped
+                );
+
+                await fetchProductsBatch(true);
+            } catch (err) {
+                console.error('Toplu sıkıştırma hatası:', err);
+                alert(settings.lang === 'ar' ? 'حدث خطأ أثناء الضغط.' : 'Sıkıştırma sırasında bir hata oluştu.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
+            }
+        }
+
+        function openAddProductModal() {
+            renderGroupSelect();
+            document.getElementById('prod-id').value = '';
+            document.getElementById('prod-img-file').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-name-ar').value = '';
+            document.getElementById('prod-name-tr').value = '';
+            document.getElementById('prod-desc-ar').value = '';
+            document.getElementById('prod-desc-tr').value = '';
+
+            currentBase64Image = '';
+            const preview = document.getElementById('img-preview');
+            preview.src = '';
+            preview.style.display = 'none';
+
+            document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'إضافة منتج' : 'Ürün Ekle';
+            openModal('productModal');
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+
+            renderGroupSelect();
+
+            document.getElementById('prod-id').value = p.id;
+            document.getElementById('prod-img-file').value = '';
+            document.getElementById('prod-price').value = p.price;
+            document.getElementById('prod-name-ar').value = p.name_ar;
+            document.getElementById('prod-name-tr').value = p.name_tr;
+            document.getElementById('prod-desc-ar').value = p.desc_ar;
+            document.getElementById('prod-desc-tr').value = p.desc_tr;
+
+            const matchGroup = groups.find(g => (g.name_ar === p.category_ar && g.name_tr === p.category_tr) || g.name_tr === p.category_tr || g.name_ar === p.category_ar);
+            if (matchGroup) {
+                document.getElementById('prod-group-select').value = matchGroup.id;
+            }
+
+            currentBase64Image = p.img || '';
+            const preview = document.getElementById('img-preview');
+            if (currentBase64Image) {
+                preview.src = currentBase64Image;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+
+            document.getElementById('productModalTitle').innerText = settings.lang === 'ar' ? 'تعديل المنتج' : 'Ürünü Düzenle';
+            openModal('productModal');
+        }
+
+        async function saveProduct() {
+            const id = document.getElementById('prod-id').value;
+            const price = parseFloat(document.getElementById('prod-price').value) || 0;
+            const selectedGroupId = parseInt(document.getElementById('prod-group-select').value);
+
+            const selectedGroup = groups.find(g => g.id === selectedGroupId);
+            const category_ar = selectedGroup ? selectedGroup.name_ar : '';
+            const category_tr = selectedGroup ? selectedGroup.name_tr : '';
+
+            const name_ar = document.getElementById('prod-name-ar').value;
+            const name_tr = document.getElementById('prod-name-tr').value;
+            const desc_ar = document.getElementById('prod-desc-ar').value;
+            const desc_tr = document.getElementById('prod-desc-tr').value;
+            const img = currentBase64Image || 'https://via.placeholder.com/300x200';
+
+            try {
+                if (id) {
+                    const updated = { id: Number(id), img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
+                    await _supabase.from('products').update(updated).eq('id', id);
+                } else {
+                    // Yeni ID için mevcut en büyük id'yi veritabanından öğren
+                    const { data: maxRow } = await _supabase.from('products').select('id').order('id', { ascending: false }).limit(1).maybeSingle();
+                    const newId = maxRow ? maxRow.id + 1 : 1;
+                    const newProd = { id: newId, img, price, category_ar, category_tr, name_ar, name_tr, desc_ar, desc_tr };
+                    await _supabase.from('products').insert([newProd]);
+                }
+            } catch (err) {
+                console.error("Ürün kaydedilemedi:", err);
+            }
+
+            closeModal('productModal');
+            renderCategories();
+            await fetchProductsBatch(true); // Listeyi baştan (ilk sayfa) yenile
+        }
+
+        async function deleteProduct(id) {
+            if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) {
+                cart = cart.filter(c => c.id !== id);
+                try {
+                    await _supabase.from('products').delete().eq('id', id);
+                } catch (err) {
+                    console.error("Ürün silinemedi:", err);
+                }
+                renderCategories();
+                await fetchProductsBatch(true);
+                renderCart();
+            }
+        }
+
+        function addToCart(id) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.qty++;
+            } else {
+                cart.push({ id: id, qty: 1 });
+            }
+            saveCart();
+            renderCart();
+        }
+
+        function updateQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    cart = cart.filter(c => c.id !== id);
+                }
+            }
+            saveCart();
+            renderCart();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(c => c.id !== id);
+            saveCart();
+            renderCart();
+        }
+
+        function clearCart() {
+            if (cart.length === 0) return;
+            if (confirm(translations[settings.lang].clearCartConfirm)) {
+                cart = [];
+                saveCart();
+                renderCart();
+            }
+        }
+
+        function renderCart() {
+            const cartList = document.getElementById('cartList');
+            cartList.innerHTML = '';
+
+            let totalQty = 0;
+            let totalPrice = 0;
+
+            if (cart.length === 0) {
+                cartList.innerHTML = `<p style="text-align: center; color: #888; padding: 20px 0;">${translations[settings.lang].cartEmpty}</p>`;
+            } else {
+                cart.forEach(c => {
+                    const prod = products.find(p => p.id === c.id);
+                    if (prod) {
+                        const name = settings.lang === 'ar' ? prod.name_ar : prod.name_tr;
+                        const itemTotal = prod.price * c.qty;
+                        totalQty += c.qty;
+                        totalPrice += itemTotal;
+                        const deleteText = settings.customDeleteText || translations[settings.lang].delete;
+
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'cart-item';
+                        itemDiv.innerHTML = `
+                            <div class="cart-item-details">
+                                <strong>${name}</strong><br>
+                                <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
+                            </div>
+                            <div class="qty-btns">
+                                <button onclick="updateQty(${prod.id}, -1)">-</button>
+                                <span>${c.qty}</span>
+                                <button onclick="updateQty(${prod.id}, 1)">+</button>
+                            </div>
+                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item" title="${deleteText}">🗑️</button>
+                        `;
+                        cartList.appendChild(itemDiv);
+                    }
+                });
+            }
+
+            document.getElementById('cart-count').innerText = totalQty;
+            document.getElementById('cart-total-price').innerText = totalPrice;
+        }
+
+        function formatPhoneForWa(phoneStr) {
+            let digits = phoneStr.replace(/[^0-9]/g, '');
+            if (digits.startsWith('0')) {
+                digits = '9' + digits;
+            } else if (digits.length === 10 && digits.startsWith('5')) {
+                digits = '90' + digits;
+            }
+            return digits;
+        }
+
+        function completeOrder() {
+            if (cart.length === 0) {
+                alert(settings.lang === 'ar' ? 'السلة فارغة!' : 'Sepetiniz boş!');
+                return;
+            }
+
+            let messageLines = [];
+            let totalQty = 0;
+            let grandTotal = 0;
+
+            const customHeader = settings.waHeader || 'طلب جديد';
+            const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
+
+            messageLines.push(`${customHeader} (${activeLangText})`);
+
+            cart.forEach(c => {
+                const prod = products.find(p => p.id === c.id);
+                if (prod) {
+                    const name = prod.name_ar || prod.name_tr; 
+                    const itemTotal = prod.price * c.qty;
+                    totalQty += c.qty;
+                    grandTotal += itemTotal;
+
+                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+                }
+            });
+
+            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
+
+            const fullMessage = messageLines.join('\n');
+            const encodedMessage = encodeURIComponent(fullMessage);
+
+            const cleanPhone = formatPhoneForWa(settings.phone);
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+            window.open(waUrl, '_blank');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
