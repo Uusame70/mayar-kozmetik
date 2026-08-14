@@ -20,6 +20,37 @@
             padding-bottom: 90px;
         }
 
+        /* Yükleniyor Ekranı Stili */
+        #loadingScreen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: bold;
+            transition: opacity 0.3s ease;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 0.9s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         header {
             background-color: #2c3e50;
             color: white;
@@ -154,8 +185,15 @@
 
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
+        }
+
+        @media (max-width: 900px) {
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
         }
 
         @media (max-width: 500px) {
@@ -179,6 +217,11 @@
                 width: 100%;
                 padding: 8px 5px;
             }
+        }
+
+        .product-actions button {
+            font-size: 0.78rem;
+            padding: 8px 6px;
         }
 
         .product-card {
@@ -211,8 +254,9 @@
 
         .product-card img {
             width: 100%;
-            height: 170px;
-            object-fit: cover;
+            height: 200px;
+            object-fit: contain;
+            background: #f1f4f8;
             cursor: pointer;
         }
 
@@ -376,6 +420,11 @@
 </head>
 <body>
 
+    <div id="loadingScreen">
+        <div class="spinner"></div>
+        <span id="txt-loading">جاري التحميل... / Yükleniyor...</span>
+    </div>
+
     <header>
         <h1 id="txt-app-title">المتجر (Katalog)</h1>
         <div class="header-btns">
@@ -435,17 +484,18 @@
 
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align: center;">
-            <img id="detail-img" src="" style="width: 100%; height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <img id="detail-img" src="" style="width: 100%; max-height: 420px; height: auto; object-fit: contain; background: #f1f4f8; border-radius: 8px; margin-bottom: 12px;">
             <div style="margin-bottom: 10px;">
                 <span id="detail-category" class="product-badge" style="position: static; display: inline-block;"></span>
             </div>
             <h2 id="detail-title" style="margin-bottom: 10px; color: #2c3e50;"></h2>
             <p id="detail-desc" style="color: #555; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; text-align: start; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"></p>
             <div id="detail-price" style="font-size: 1.3rem; font-weight: bold; color: #27ae60; margin-bottom: 15px;"></div>
-            
+
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow: 1; padding: 10px;">إضافة للسلة</button>
                 <button id="detail-share-btn" class="btn-whatsapp" style="padding: 10px 15px;">💬 Paylaş</button>
+                <button id="detail-copy-link-btn" class="btn-warning" style="padding: 10px 15px;">🔗 Link Kopyala</button>
                 <button onclick="closeModal('productDetailModal')" class="btn-danger" id="detail-close-btn" style="padding: 10px 15px;">إغلاق</button>
             </div>
         </div>
@@ -494,7 +544,7 @@
     <div id="groupModal" class="modal">
         <div class="modal-content">
             <h2 id="txt-group-modal-title" style="margin-bottom: 15px;">إدارة المجموعات (Grup Yönetimi)</h2>
-            
+
             <div class="form-group">
                 <label id="lbl-group-ar">اسم المجموعة (بالعربية)</label>
                 <input type="text" id="new-group-ar" placeholder="مثال: عطور">
@@ -519,10 +569,13 @@
         <div class="modal-content">
             <h2 id="productModalTitle" style="margin-bottom: 15px;">إضافة منتج</h2>
             <input type="hidden" id="prod-id">
-            
+
             <div class="form-group">
                 <label id="lbl-prod-img">صورة المنتج (Fotoğraf Seç)</label>
                 <input type="file" id="prod-img-file" accept="image/*" onchange="previewSelectedImage(this)">
+                <div id="paste-area" tabindex="0" style="margin-top:8px; padding:12px; border:2px dashed #cbd5e1; border-radius:8px; text-align:center; cursor:pointer; font-size:0.85rem; color:#64748b; background:#f8fafc;" onclick="this.focus()">
+                    <span id="txt-paste-hint">📋 انقر هنا ثم الصق الصورة (Ctrl+V)</span>
+                </div>
                 <img id="img-preview" class="img-preview" alt="Önizleme">
             </div>
 
@@ -642,7 +695,12 @@
                 clearCartConfirm: "هل أنت تأكد من تفريغ السلة بالكامل؟",
                 searchPlaceholder: "🔍 بحث عن منتج... (Ürün Ara...)",
                 noProductsFound: "لم يتم العثور على منتجات مطابق للبحث.",
-                langBtnText: "🌐 Türkçe"
+                langBtnText: "🌐 Türkçe",
+                loadingText: "جاري التحميل...",
+                copyLink: "نسخ الرابط",
+                linkCopied: "تم نسخ الرابط بنجاح!",
+                cartEmptyAlert: "السلة فارغة!",
+                pasteHint: "📋 انقر هنا ثم الصق الصورة (Ctrl+V)"
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
@@ -653,6 +711,7 @@
                 adminPanelTitle: "Admin Ayarları",
                 changePhone: "WhatsApp Numarası",
                 changeWaHeader: "WhatsApp Mesaj Başlığı",
+                changeSiteName: "Site Adı",
                 changeAppTitle: "Site Adı",
                 changeDeleteText: "\"Sil\" Butonu Metni",
                 changeAddText: "\"Sepete Ekle\" Butonu Metni",
@@ -684,7 +743,12 @@
                 clearCartConfirm: "Sepetteki tüm ürünleri silmek istediğinize emin misiniz?",
                 searchPlaceholder: "🔍 Ürün ara... (بحث عن منتج...)",
                 noProductsFound: "Aramanıza uygun ürün bulunamadı.",
-                langBtnText: "🌐 العربية"
+                langBtnText: "🌐 العربية",
+                loadingText: "Yükleniyor...",
+                copyLink: "Link Kopyala",
+                linkCopied: "Link kopyalandı!",
+                cartEmptyAlert: "Sepetiniz boş!",
+                pasteHint: "📋 Buraya tıklayıp fotoğrafı yapıştırın (Ctrl+V)"
             }
         };
 
@@ -696,6 +760,12 @@
         let currentBase64Image = '';
         let selectedCategory = 'ALL';
         let searchQuery = '';
+
+        // Infinite scroll durumu
+        const PRODUCTS_PAGE_SIZE = 12;
+        let currentFilteredProducts = [];
+        let renderedProductCount = 0;
+        let isLoadingMoreProducts = false;
 
         async function loadFromSupabase() {
             try {
@@ -725,13 +795,22 @@
                 updateAdminUI();
             });
 
+            // Veriler buluttan çekilirken yükleniyor ekranı açık kalır
             await loadFromSupabase();
+
             changeLanguage(settings.lang, false);
             renderCategories();
             renderProducts();
             renderCart();
             updateAdminUI();
 
+            // Veriler yüklendikten sonra yükleniyor ekranını gizle
+            const loadingScreen = document.getElementById('loadingScreen');
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 300);
+            
             // URL'de ürün ID parametresi var mı kontrol et (Örn: ?product=3)
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
@@ -739,6 +818,25 @@
                 setTimeout(() => {
                     openProductDetail(Number(productIdParam));
                 }, 300);
+            }
+
+            // Paylaşılan sepet linki ile açıldıysa sepeti doldur (?cart=1:2,3:1)
+            const cartParam = urlParams.get('cart');
+            if (cartParam) {
+                try {
+                    const items = cartParam.split(',').map(pair => {
+                        const [pid, qty] = pair.split(':');
+                        return { id: Number(pid), qty: Number(qty) || 1 };
+                    }).filter(it => products.some(p => p.id === it.id));
+
+                    if (items.length > 0) {
+                        cart = items;
+                        saveCart();
+                        renderCart();
+                    }
+                } catch (err) {
+                    console.log('Sepet linki okunamadı:', err);
+                }
             }
         }
 
@@ -802,10 +900,12 @@
             document.getElementById('txt-settings-btn-text').innerText = t.settings;
             document.getElementById('txt-total-label').innerText = t.totalLabel;
             document.getElementById('btn-checkout').innerText = settings.customCheckoutText || t.checkout;
+            document.getElementById('txt-loading').innerText = t.loadingText;
 
             document.getElementById('txt-settings-title').innerText = t.adminPanelTitle;
             document.getElementById('txt-change-phone').innerText = t.changePhone;
             document.getElementById('txt-change-wa-header').innerText = t.changeWaHeader;
+            document.getElementById('txt-change-app-title').innerText = t.changeSiteName || "Site Adı";
             document.getElementById('txt-change-app-title').innerText = t.changeAppTitle;
             document.getElementById('txt-change-delete-text').innerText = t.changeDeleteText;
             document.getElementById('txt-change-add-text').innerText = t.changeAddText;
@@ -831,6 +931,7 @@
             document.getElementById('txt-groups-title').innerText = t.groupsTitle;
             document.getElementById('txt-all-products-title').innerText = t.allProductsTitle;
             document.getElementById('search-input').placeholder = t.searchPlaceholder;
+            document.getElementById('txt-paste-hint').innerText = t.pasteHint;
 
             renderCategories();
             renderProducts();
@@ -1020,17 +1121,8 @@
             });
         }
 
-        function renderProducts() {
-            const grid = document.getElementById('productsGrid');
-            grid.innerHTML = '';
-            const t = translations[settings.lang];
-
-            const addText = settings.customAddText || t.addToCart;
-            const shareText = t.share;
-            const editText = settings.customEditText || t.edit;
-            const deleteText = settings.customDeleteText || t.delete;
-
-            const filteredProducts = products.filter(p => {
+        function getFilteredProducts() {
+            return products.filter(p => {
                 let catMatch = selectedCategory === 'ALL' || ((p.category_ar || '').trim() + '|' + (p.category_tr || '').trim()) === selectedCategory;
 
                 let searchMatch = true;
@@ -1042,51 +1134,132 @@
 
                 return catMatch && searchMatch;
             });
+        }
 
-            if (filteredProducts.length === 0) {
+        function createProductCardElement(p) {
+            const t = translations[settings.lang];
+            const addText = settings.customAddText || t.addToCart;
+            const shareText = t.share;
+            const copyLinkText = t.copyLink;
+            const editText = settings.customEditText || t.edit;
+            const deleteText = settings.customDeleteText || t.delete;
+
+            const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
+            const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
+
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                ${catName ? `<span class="product-badge">${catName}</span>` : ''}
+                <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
+                <div class="product-info">
+                    <div>
+                        <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
+                        <div class="product-price">${p.price} TL</div>
+                    </div>
+                    <div class="product-actions">
+                        <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
+                        <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬 ${shareText}</button>
+                        <button onclick="copyProductLink(${p.id})" class="btn-warning" title="${copyLinkText}">🔗 ${copyLinkText}</button>
+                        ${isAdmin ? `
+                            <button onclick="editProduct(${p.id})">${editText}</button>
+                            <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+            const t = translations[settings.lang];
+
+            currentFilteredProducts = getFilteredProducts();
+            renderedProductCount = 0;
+
+            if (currentFilteredProducts.length === 0) {
                 grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #777; padding: 20px 0;">${t.noProductsFound}</p>`;
                 return;
             }
 
-            filteredProducts.forEach(p => {
-                const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-                const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
-
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.innerHTML = `
-                    ${catName ? `<span class="product-badge">${catName}</span>` : ''}
-                    <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${name}" onclick="openProductDetail(${p.id})">
-                    <div class="product-info">
-                        <div>
-                            <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
-                            <div class="product-price">${p.price} TL</div>
-                        </div>
-                        <div class="product-actions">
-                            <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">${addText}</button>
-                            <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="${shareText}">💬</button>
-                            ${isAdmin ? `
-                                <button onclick="editProduct(${p.id})">${editText}</button>
-                                <button onclick="deleteProduct(${p.id})" class="btn-danger">${deleteText}</button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+            loadMoreProducts();
         }
+
+        function loadMoreProducts() {
+            if (isLoadingMoreProducts) return;
+            if (renderedProductCount >= currentFilteredProducts.length) return;
+
+            isLoadingMoreProducts = true;
+            const grid = document.getElementById('productsGrid');
+            const nextBatch = currentFilteredProducts.slice(renderedProductCount, renderedProductCount + PRODUCTS_PAGE_SIZE);
+
+            nextBatch.forEach(p => {
+                grid.appendChild(createProductCardElement(p));
+            });
+
+            renderedProductCount += nextBatch.length;
+            isLoadingMoreProducts = false;
+        }
+
+        window.addEventListener('scroll', function() {
+            const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 500);
+            if (nearBottom && renderedProductCount < currentFilteredProducts.length) {
+                loadMoreProducts();
+            }
+        });
 
         function shareProduct(id) {
             const p = products.find(x => x.id === id);
             if (!p) return;
 
             const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
-            const baseUrl = window.location.origin + window.location.pathname;
-            const productUrl = `${baseUrl}?product=${p.id}`;
+            const productUrl = getProductLink(id);
 
             const message = `${name}\n💰 Fiyat: ${p.price} TL\n🔗 Ürün Linki: ${productUrl}`;
             const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(waUrl, '_blank');
+        }
+
+        function getProductLink(id) {
+            const baseUrl = window.location.origin + window.location.pathname;
+            return `${baseUrl}?product=${id}`;
+        }
+
+        function copyProductLink(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            const t = translations[settings.lang];
+            copyTextToClipboard(getProductLink(id), t.linkCopied);
+        }
+
+        function copyTextToClipboard(text, successMsg) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert(successMsg);
+                }).catch(() => {
+                    fallbackCopyText(text, successMsg);
+                });
+            } else {
+                fallbackCopyText(text, successMsg);
+            }
+        }
+
+        function fallbackCopyText(text, successMsg) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                alert(successMsg);
+            } catch (e) {
+                // sessizce yoksay
+            }
+            document.body.removeChild(ta);
         }
 
         function openProductDetail(id) {
@@ -1098,7 +1271,7 @@
             const catName = settings.lang === 'ar' ? (p.category_ar || '') : (p.category_tr || '');
 
             document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
-            
+
             const catBadge = document.getElementById('detail-category');
             if (catName) {
                 catBadge.innerText = catName;
@@ -1124,6 +1297,12 @@
                 shareProduct(p.id);
             };
 
+            const copyLinkBtn = document.getElementById('detail-copy-link-btn');
+            copyLinkBtn.innerText = `🔗 ${translations[settings.lang].copyLink}`;
+            copyLinkBtn.onclick = function() {
+                copyProductLink(p.id);
+            };
+
             openModal('productDetailModal');
         }
 
@@ -1142,6 +1321,37 @@
             }
         }
 
+        function setImageFromBlob(blob) {
+            const preview = document.getElementById('img-preview');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentBase64Image = e.target.result;
+                preview.src = currentBase64Image;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        // Ürün resmini kopyala-yapıştır (Ctrl+V) ile eklemeyi sağlar
+        document.addEventListener('paste', function(e) {
+            const productModal = document.getElementById('productModal');
+            if (!productModal || productModal.style.display !== 'flex') return;
+
+            const items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        setImageFromBlob(blob);
+                        e.preventDefault();
+                    }
+                    break;
+                }
+            }
+        });
+
         function openAddProductModal() {
             renderGroupSelect();
             document.getElementById('prod-id').value = '';
@@ -1151,7 +1361,7 @@
             document.getElementById('prod-name-tr').value = '';
             document.getElementById('prod-desc-ar').value = '';
             document.getElementById('prod-desc-tr').value = '';
-            
+
             currentBase64Image = '';
             const preview = document.getElementById('img-preview');
             preview.src = '';
@@ -1197,7 +1407,7 @@
             const id = document.getElementById('prod-id').value;
             const price = parseFloat(document.getElementById('prod-price').value) || 0;
             const selectedGroupId = parseInt(document.getElementById('prod-group-select').value);
-            
+
             const selectedGroup = groups.find(g => g.id === selectedGroupId);
             const category_ar = selectedGroup ? selectedGroup.name_ar : '';
             const category_tr = selectedGroup ? selectedGroup.name_tr : '';
@@ -1290,7 +1500,7 @@
         function renderCart() {
             const cartList = document.getElementById('cartList');
             cartList.innerHTML = '';
-            
+
             let totalQty = 0;
             let totalPrice = 0;
 
@@ -1351,7 +1561,7 @@
 
             const customHeader = settings.waHeader || 'طلب جديد';
             const activeLangText = settings.lang === 'ar' ? 'العربية' : 'Türkçe';
-            
+
             messageLines.push(`${customHeader} (${activeLangText})`);
 
             cart.forEach(c => {
@@ -1370,7 +1580,7 @@
 
             const fullMessage = messageLines.join('\n');
             const encodedMessage = encodeURIComponent(fullMessage);
-            
+
             const cleanPhone = formatPhoneForWa(settings.phone);
             const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
