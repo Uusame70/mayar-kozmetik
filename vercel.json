@@ -4,5 +4,16 @@
       "source": "/storage-img/:path*",
       "destination": "https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images/:path*"
     }
+  ],
+  "headers": [
+    {
+      "source": "/storage-img/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
   ]
 }
