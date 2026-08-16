@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/storage-img/:path*",
+      "destination": "https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images/:path*"
+    }
+  ]
+}
