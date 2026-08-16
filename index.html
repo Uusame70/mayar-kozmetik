@@ -439,6 +439,22 @@
         .btn-remove-item:hover {
             background-color: #d63031;
         }
+        /* Yeni eklenen account güncelleme bölümü için ayraç */
+        .account-update-section {
+            border-top: 2px dashed #e2e8f0;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .account-update-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+        .readonly-input {
+            background-color: #f1f4f8;
+            color: #555;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -561,6 +577,33 @@
                 </div>
 
                 <button onclick="updateAdminSettings()" class="btn-success" id="btn-save-settings" style="width: 100%; margin-bottom: 8px;">حفظ التغييرات</button>
+                
+                <!-- YENİ: HESAP BİLGİLERİNİ GÜNCELLE BÖLÜMÜ -->
+                <div class="account-update-section" id="accountUpdateSection">
+                    <h3 id="txt-account-update-title">🔐 Hesap Bilgilerini Güncelle</h3>
+                    <div class="form-group">
+                        <label id="txt-current-email">Mevcut E-posta (Geçerli e-posta)</label>
+                        <input type="email" id="current-email-display" class="readonly-input" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label id="txt-new-email">Yeni E-posta (البريد الإلكتروني الجديد)</label>
+                        <input type="email" id="new-email-input" placeholder="yeni@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label id="txt-current-password">Mevcut Şifre (Doğrulama için)</label>
+                        <input type="password" id="current-password-input" placeholder="Mevcut şifreniz">
+                    </div>
+                    <div class="form-group">
+                        <label id="txt-new-password">Yeni Şifre (كلمة المرور الجديدة)</label>
+                        <input type="password" id="new-password-input" placeholder="Yeni şifre (en az 6 karakter)">
+                    </div>
+                    <div class="form-group">
+                        <label id="txt-confirm-password">Yeni Şifre Tekrar (تأكيد كلمة المرور)</label>
+                        <input type="password" id="confirm-password-input" placeholder="Yeni şifreyi tekrar girin">
+                    </div>
+                    <button onclick="updateAccountInfo()" class="btn-success" id="btn-update-account" style="width: 100%; margin-bottom: 8px;">🔁 Bilgileri Güncelle</button>
+                </div>
+
                 <button onclick="handleSupabaseLogout()" class="btn-danger" id="btn-logout" style="width: 100%;">تسجيل الخروج (Çıkış Yap)</button>
             </div>
 
@@ -742,7 +785,22 @@
                 copyLink: "نسخ الرابط",
                 linkCopied: "تم نسخ الرابط بنجاح!",
                 cartEmptyAlert: "السلة فارغة!",
-                pasteHint: "📋 انقر هنا ثم الصق الصورة (Ctrl+V)"
+                pasteHint: "📋 انقر هنا ثم الصق الصورة (Ctrl+V)",
+                // Yeni eklenen çeviriler (Hesap Güncelleme)
+                accountUpdateTitle: "🔐 تحديث معلومات الحساب",
+                currentEmail: "البريد الإلكتروني الحالي",
+                newEmail: "البريد الإلكتروني الجديد",
+                currentPassword: "كلمة المرور الحالية (للتأكيد)",
+                newPassword: "كلمة المرور الجديدة",
+                confirmPassword: "تأكيد كلمة المرور الجديدة",
+                updateAccountBtn: "🔁 تحديث المعلومات",
+                updateSuccessEmail: "تم تحديث البريد الإلكتروني بنجاح! يرجى تسجيل الدخول مجدداً.",
+                updateSuccessPassword: "تم تحديث كلمة المرور بنجاح!",
+                updateSuccessBoth: "تم تحديث البريد الإلكتروني وكلمة المرور بنجاح! يرجى تسجيل الدخول مجدداً.",
+                updateError: "حدث خطأ أثناء التحديث: ",
+                passwordMismatch: "كلمة المرور الجديدة وتأكيدها غير متطابقتين.",
+                currentPasswordRequired: "يرجى إدخال كلمة المرور الحالية للتأكيد.",
+                passwordLength: "يجب أن تكون كلمة المرور الجديدة 6 أحرف على الأقل."
             },
             tr: {
                 appTitle: "Ürün Kataloğu",
@@ -787,7 +845,22 @@
                 copyLink: "Link Kopyala",
                 linkCopied: "Link kopyalandı!",
                 cartEmptyAlert: "Sepetiniz boş!",
-                pasteHint: "📋 Buraya tıklayıp fotoğrafı yapıştırın (Ctrl+V)"
+                pasteHint: "📋 Buraya tıklayıp fotoğrafı yapıştırın (Ctrl+V)",
+                // Yeni eklenen çeviriler (Hesap Güncelleme)
+                accountUpdateTitle: "🔐 Hesap Bilgilerini Güncelle",
+                currentEmail: "Mevcut E-posta",
+                newEmail: "Yeni E-posta",
+                currentPassword: "Mevcut Şifre (Doğrulama için)",
+                newPassword: "Yeni Şifre",
+                confirmPassword: "Yeni Şifre Tekrar",
+                updateAccountBtn: "🔁 Bilgileri Güncelle",
+                updateSuccessEmail: "E-posta başarıyla güncellendi! Lütfen tekrar giriş yapın.",
+                updateSuccessPassword: "Şifre başarıyla güncellendi!",
+                updateSuccessBoth: "E-posta ve şifre başarıyla güncellendi! Lütfen tekrar giriş yapın.",
+                updateError: "Güncelleme sırasında hata oluştu: ",
+                passwordMismatch: "Yeni şifre ve tekrarı eşleşmiyor.",
+                currentPasswordRequired: "Lütfen mevcut şifrenizi doğrulama için girin.",
+                passwordLength: "Yeni şifre en az 6 karakter olmalıdır."
             }
         };
 
@@ -1132,7 +1205,8 @@
             });
         }
 
-        function updateAdminUI() {
+        // ============ GÜNCELLENMİŞ ADMIN UI (Hesap bilgilerini gösterir) ============
+        async function updateAdminUI() {
             const adminBar = document.getElementById('adminBar');
             const btnSettings = document.getElementById('btn-settings');
 
@@ -1145,12 +1219,128 @@
                 document.getElementById('new-delete-text').value = settings.customDeleteText || '';
                 document.getElementById('new-add-text').value = settings.customAddText || '';
                 document.getElementById('new-checkout-text').value = settings.customCheckoutText || '';
+
+                // Mevcut kullanıcı e-postasını göster
+                if (_supabase) {
+                    try {
+                        const { data: { user }, error } = await _supabase.auth.getUser();
+                        if (user && user.email) {
+                            document.getElementById('current-email-display').value = user.email;
+                        } else {
+                            document.getElementById('current-email-display').value = '';
+                        }
+                    } catch (e) {
+                        document.getElementById('current-email-display').value = '';
+                    }
+                }
             } else {
                 btnSettings.style.display = 'none';
                 adminBar.style.display = 'none';
             }
         }
 
+        // ============ HESAP BİLGİLERİNİ GÜNCELLEME FONKSİYONU ============
+        async function updateAccountInfo() {
+            if (!_supabase) {
+                alert('Supabase bağlantısı yok.');
+                return;
+            }
+            const t = translations[settings.lang];
+
+            const newEmail = document.getElementById('new-email-input').value.trim();
+            const currentPassword = document.getElementById('current-password-input').value;
+            const newPassword = document.getElementById('new-password-input').value;
+            const confirmPassword = document.getElementById('confirm-password-input').value;
+
+            // Doğrulamalar
+            if (!currentPassword) {
+                alert(t.currentPasswordRequired);
+                return;
+            }
+            if (newPassword && newPassword.length < 6) {
+                alert(t.passwordLength);
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                alert(t.passwordMismatch);
+                return;
+            }
+
+            // Eğer sadece şifre değişecekse, email boş bırakılabilir.
+            // Eğer email değişecekse, yeni email geçerli olmalı.
+            let updateEmail = false;
+            let updatePass = false;
+            const updates = {};
+
+            if (newEmail && newEmail !== document.getElementById('current-email-display').value) {
+                updateEmail = true;
+                updates.email = newEmail;
+            }
+            if (newPassword) {
+                updatePass = true;
+                updates.password = newPassword;
+            }
+
+            if (!updateEmail && !updatePass) {
+                alert(settings.lang === 'ar' ? 'لم تقم بتغيير أي معلومات.' : 'Hiçbir bilgiyi değiştirmediniz.');
+                return;
+            }
+
+            try {
+                // Önce mevcut şifre ile doğrulama yapalım (re-authenticate)
+                const { error: signInError } = await _supabase.auth.signInWithPassword({
+                    email: document.getElementById('current-email-display').value,
+                    password: currentPassword
+                });
+
+                if (signInError) {
+                    alert(t.updateError + (signInError.message || 'Mevcut şifre yanlış.'));
+                    return;
+                }
+
+                // Şimdi güncellemeyi yap
+                const { data: updateData, error: updateError } = await _supabase.auth.updateUser(updates);
+
+                if (updateError) {
+                    alert(t.updateError + updateError.message);
+                    return;
+                }
+
+                // Başarılı mesajı
+                if (updateEmail && updatePass) {
+                    alert(t.updateSuccessBoth);
+                } else if (updateEmail) {
+                    alert(t.updateSuccessEmail);
+                } else if (updatePass) {
+                    alert(t.updateSuccessPassword);
+                }
+
+                // Inputları temizle
+                document.getElementById('new-email-input').value = '';
+                document.getElementById('current-password-input').value = '';
+                document.getElementById('new-password-input').value = '';
+                document.getElementById('confirm-password-input').value = '';
+
+                // Admin UI'ı güncelle (yeni emaili göster)
+                await updateAdminUI();
+
+                // Eğer email değiştiyse oturum yenilenir, admin durumunu kontrol et
+                if (updateEmail) {
+                    // Kullanıcıyı yeniden doğrulamak için logout yapıp tekrar giriş isteyebiliriz, ama şimdilik UI'ı güncelle.
+                    // Supabase oturumu yeni email ile devam eder, fakat biz admin olarak kalırız.
+                    // Tekrar giriş yapmasını önermek iyi olur.
+                    if (confirm(settings.lang === 'ar' ? 'تم تغيير البريد الإلكتروني. هل تريد تسجيل الخروج الآن وإعادة تسجيل الدخول بالبريد الجديد؟' : 'E-posta değiştirildi. Şimdi çıkış yapıp yeni e-posta ile tekrar giriş yapmak ister misiniz?')) {
+                        await handleSupabaseLogout();
+                    }
+                }
+
+            } catch (err) {
+                alert(t.updateError + (err.message || 'Beklenmeyen hata.'));
+                console.error(err);
+            }
+        }
+
+        // ============ DİL DEĞİŞTİRME ============
         function changeLanguage(lang, shouldSave = true) {
             settings.lang = lang;
             if (shouldSave) updateAdminSettingsToSupabase();
@@ -1195,6 +1385,15 @@
             document.getElementById('btn-close-cart').innerText = t.close;
             document.getElementById('search-input').placeholder = t.searchPlaceholder;
             document.getElementById('txt-paste-hint').innerText = t.pasteHint;
+
+            // Yeni hesap güncelleme metinleri
+            document.getElementById('txt-account-update-title').innerText = t.accountUpdateTitle;
+            document.getElementById('txt-current-email').innerText = t.currentEmail;
+            document.getElementById('txt-new-email').innerText = t.newEmail;
+            document.getElementById('txt-current-password').innerText = t.currentPassword;
+            document.getElementById('txt-new-password').innerText = t.newPassword;
+            document.getElementById('txt-confirm-password').innerText = t.confirmPassword;
+            document.getElementById('btn-update-account').innerText = t.updateAccountBtn;
 
             renderCategories();
             renderProducts(true);
@@ -1385,7 +1584,7 @@
             } else {
                 isAdmin = true;
                 closeModal('loginModal');
-                updateAdminUI();
+                await updateAdminUI();
                 renderProducts(true);
                 alert(settings.lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Başarıyla giriş yapıldı!');
             }
@@ -1395,7 +1594,7 @@
             if (!_supabase) return;
             await _supabase.auth.signOut();
             isAdmin = false;
-            updateAdminUI();
+            await updateAdminUI();
             closeModal('settingsModal');
             renderProducts(true);
             alert(settings.lang === 'ar' ? 'تم تسجيل الخروج' : 'Oturum kapatıldı.');
@@ -1703,7 +1902,7 @@
             }
 
             changeLanguage(settings.lang, false);
-            updateAdminUI();
+            await updateAdminUI(); // admin UI'ı güncelle
             renderCategories();
             renderCart();
 
