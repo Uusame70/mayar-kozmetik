@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   try {
     const supabaseUrl = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
-    const supabaseKey = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU'; // Anon/Public key
+    const supabaseKey = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Ürünleri Supabase'den çekiyoruz
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     let xml = `<?xml version="1.0" encoding="UTF-8" ?>`;
     xml += `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`;
     xml += `<channel>`;
-    xml += `<title>Mayar Kozmetik Katalog</title>`;
+    xml += `<title>Mayar Kozmetik Catalog</title>`;
     xml += `<link>https://mayarkozmetik.vercel.app</link>`;
     xml += `<description>WhatsApp ve Meta Katalog Ürün Akışı</description>`;
 
@@ -33,8 +33,9 @@ export default async function handler(req, res) {
           imgUrl = imgUrl.replace(supabaseStorageBase, 'https://mayarkozmetik.vercel.app/storage-img');
         }
 
-        const title = p.name_tr || p.name_ar || 'Ürün';
-        const description = p.desc_tr || p.desc_ar || title;
+        // ÖNCELİK ARAPÇA OLAÇAK ŞEKİLDE DÜZELTİLDİ:
+        const title = p.name_ar || p.name_tr || 'منتج';
+        const description = p.desc_ar || p.desc_tr || title;
         const productLink = `https://mayarkozmetik.vercel.app/?product=${p.id}`;
 
         xml += `<item>`;
