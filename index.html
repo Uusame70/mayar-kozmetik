@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ميار للتسوق الالكتروني</title>
-    <!-- Supabase CDN (alternatif link) -->
+    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
-        /* ----- TÜM STILLER (AYNEN) ----- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -219,13 +218,8 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
             z-index: 90;
         }
-        .cart-bar-info {
-            font-size: 0.95rem;
-        }
-        .cart-bar-info strong {
-            color: #2ecc71;
-            font-size: 1.1rem;
-        }
+        .cart-bar-info { font-size: 0.95rem; }
+        .cart-bar-info strong { color: #2ecc71; font-size: 1.1rem; }
         #scrollTopBtn {
             position: fixed;
             bottom: 80px;
@@ -420,17 +414,22 @@
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <h2>🔐 Admin Girişi</h2>
-            <div class="form-group" style="margin-top:15px;">
-                <label>E-posta Adresi</label>
-                <input type="email" id="login-email" value="" placeholder="email@domain.com">
-            </div>
-            <div class="form-group">
-                <label>Şifre</label>
-                <input type="password" id="login-password" placeholder="Şifreniz">
-            </div>
-            <button onclick="handleSupabaseLogin()" class="btn-success" style="width:100%; margin-top:10px;">Giriş Yap</button>
+            <form onsubmit="event.preventDefault(); handleSupabaseLogin();">
+                <div class="form-group" style="margin-top:15px;">
+                    <label>E-posta Adresi</label>
+                    <input type="email" id="login-email" value="" placeholder="email@domain.com">
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="password" id="login-password" placeholder="Şifreniz" style="flex-grow: 1;">
+                        <button type="button" onclick="togglePasswordVisibility()" id="btn-toggle-pass" style="background: #7f8c8d; padding: 0 12px;">👁️</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-success" style="width:100%; margin-top:10px;">Giriş Yap</button>
+            </form>
             <div class="modal-actions" style="margin-top:15px;">
-                <button onclick="closeModal('loginModal')" class="btn-danger">Kapat</button>
+                <button type="button" onclick="closeModal('loginModal')" class="btn-danger">Kapat</button>
             </div>
         </div>
     </div>
@@ -541,7 +540,7 @@
         </div>
     </div>
 
-    <!-- ÜRÜN EKLE / DÜZENLE MODALI (checkbox ile grup seçimi) -->
+    <!-- ÜRÜN EKLE / DÜZENLE MODALI -->
     <div id="productModal" class="modal">
         <div class="modal-content">
             <h2 id="productModalTitle" style="margin-bottom:15px;">إضافة منتج</h2>
@@ -561,7 +560,6 @@
                 <input type="number" id="prod-price">
             </div>
 
-            <!-- Çoklu grup seçimi (checkbox) -->
             <div class="form-group">
                 <label id="lbl-prod-groups">المجموعات (Gruplar)</label>
                 <div id="prod-groups-container" class="checkbox-group"></div>
@@ -778,6 +776,18 @@
         };
 
         // ===================== YARDIMCI FONKSİYONLAR =====================
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('login-password');
+            const toggleBtn = document.getElementById('btn-toggle-pass');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.innerText = '🙈';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.innerText = '👁️';
+            }
+        }
+
         function getCdnImageUrl(originalUrl) {
             if (!originalUrl) return 'https://via.placeholder.com/300x200';
             const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
@@ -839,11 +849,10 @@
             return publicUrlData.publicUrl;
         }
 
-        // ===================== ÜRÜN YÜKLEME (ÇOKLU GRUP DESTEKLİ) =====================
+        // ===================== ÜRÜN YÜKLEME =====================
         async function loadProducts(page = 0, reset = true) {
             if (isLoadingProducts) return;
 
-            // SUPABASE YOKSA HATA GÖSTER VE YÜKLENMEYİ KAPAT
             if (!_supabase) {
                 hideLoadingScreen();
                 document.getElementById('productsGrid').innerHTML =
@@ -903,17 +912,25 @@
 
                 if (productList.length > 0) {
                     const productIds = productList.map(p => p.id);
-                    const { data: pgData, error: pgError } = await _supabase
-                        .from('product_groups')
-                        .select('product_id, group_id, groups(id, name_ar, name_tr)')
-                        .in('product_id', productIds);
-                    if (pgError) throw pgError;
-                    const groupsMap = {};
-                    pgData.forEach(row => {
-                        if (!groupsMap[row.product_id]) groupsMap[row.product_id] = [];
-                        if (row.groups) groupsMap[row.product_id].push(row.groups);
-                    });
-                    productList.forEach(p => { p.groups = groupsMap[p.id] || []; });
+                    try {
+                        const { data: pgData, error: pgError } = await _supabase
+                            .from('product_groups')
+                            .select('product_id, group_id, groups(id, name_ar, name_tr)')
+                            .in('product_id', productIds);
+                        
+                        if (!pgError && pgData) {
+                            const groupsMap = {};
+                            pgData.forEach(row => {
+                                if (!groupsMap[row.product_id]) groupsMap[row.product_id] = [];
+                                if (row.groups) groupsMap[row.product_id].push(row.groups);
+                            });
+                            productList.forEach(p => { p.groups = groupsMap[p.id] || []; });
+                        } else {
+                            productList.forEach(p => p.groups = []);
+                        }
+                    } catch (e) {
+                        productList.forEach(p => p.groups = []);
+                    }
                 } else {
                     productList.forEach(p => p.groups = []);
                 }
@@ -1154,19 +1171,22 @@
             }
         }
 
-        // ===================== getProductById (grupları da getirir) =====================
         async function getProductById(id) {
             if (!_supabase) return null;
             const { data: product, error } = await _supabase.from('products').select('*').eq('id', id).single();
             if (error || !product) return null;
 
-            const { data: pgData, error: pgError } = await _supabase
-                .from('product_groups')
-                .select('group_id, groups(id, name_ar, name_tr)')
-                .eq('product_id', id);
-            if (!pgError && pgData) {
-                product.groups = pgData.map(row => row.groups).filter(Boolean);
-            } else {
+            try {
+                const { data: pgData, error: pgError } = await _supabase
+                    .from('product_groups')
+                    .select('group_id, groups(id, name_ar, name_tr)')
+                    .eq('product_id', id);
+                if (!pgError && pgData) {
+                    product.groups = pgData.map(row => row.groups).filter(Boolean);
+                } else {
+                    product.groups = [];
+                }
+            } catch (e) {
                 product.groups = [];
             }
             return product;
@@ -1664,9 +1684,19 @@
             }
         });
 
-        // ===================== MODAL AÇ/KAPA =====================
+        // ===================== MODAL AÇ/KAPA & KISAYOLLAR =====================
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        document.getElementById('productModal').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Backspace') {
+                e.preventDefault();
+                closeModal('productModal');
+            } else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                saveProduct();
+            }
+        });
 
         // ===================== ÜRÜN SİL =====================
         async function deleteProduct(id) {
@@ -1707,7 +1737,6 @@
 
                     await loadProducts(0, true);
                 } else {
-                    // Supabase yoksa direkt hata mesajı
                     hideLoadingScreen();
                     document.getElementById('productsGrid').innerHTML =
                         `<p style="text-align:center;color:red;">⚠️ Supabase bağlantısı başarısız. Lütfen internet bağlantınızı kontrol edin veya sayfayı yenileyin.</p>`;
