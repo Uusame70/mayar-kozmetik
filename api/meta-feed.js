@@ -8,12 +8,29 @@ export default async function handler(req, res) {
     const supabaseKey = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Ürünleri ve bağlı oldukları grupları ilişkili olarak çekiyoruz
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('*, product_groups(groups(name_ar, name_tr))');
+    // İlişki hatasını önlemek için tabloları ayrı ayrı çekiyoruz
+    const [{ data: products, error: pErr }, { data: productGroups }, { data: groups }] = await Promise.all([
+      supabase.from('products').select('*'),
+      supabase.from('product_groups').select('*'),
+      supabase.from('groups').select('*')
+    ]);
 
-    if (error) throw error;
+    if (pErr) throw pErr;
+
+    // Kategori isimlerini ID'leri ile eşleştiriyoruz
+    const groupMap = new Map((groups || []).map(g => [g.id, g.name_ar || g.name_tr]));
+
+    // Her ürünün dahil olduğu kategorileri topluyoruz
+    const productCategoryMap = new Map();
+    (productGroups || []).forEach(pg => {
+      const catName = groupMap.get(pg.group_id);
+      if (catName) {
+        if (!productCategoryMap.has(pg.product_id)) {
+          productCategoryMap.set(pg.product_id, []);
+        }
+        productCategoryMap.get(pg.product_id).push(catName);
+      }
+    });
 
     let xml = `<?xml version="1.0" encoding="UTF-8" ?>`;
     xml += `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`;
@@ -33,14 +50,8 @@ export default async function handler(req, res) {
         const title = p.name_ar || p.name_tr || 'منتج';
         const description = p.desc_ar || p.desc_tr || title;
 
-        // İlişkili gruplardan Arapça/Türkçe kategori isimlerini topluyoruz
-        let categoryNames = [];
-        if (p.product_groups && p.product_groups.length > 0) {
-          categoryNames = p.product_groups
-            .map(pg => pg.groups?.name_ar || pg.groups?.name_tr)
-            .filter(Boolean);
-        }
-        const category = categoryNames.length > 0 ? categoryNames.join(', ') : 'عام';
+        const categories = productCategoryMap.get(p.id) || [];
+        const category = categories.length > 0 ? categories.join(', ') : 'عام';
         const productLink = `https://mayarkozmetik.vercel.app/?product=${p.id}`;
 
         xml += `<item>`;
