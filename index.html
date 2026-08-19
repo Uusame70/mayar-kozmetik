@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ميار للتسوق الالكتروني</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase CDN (alternatif link) -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         /* ----- TÜM STILLER (AYNEN) ----- */
         * {
@@ -609,8 +610,14 @@
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
         let _supabase;
-        if (typeof supabase !== 'undefined') {
-            _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        try {
+            if (typeof supabase !== 'undefined' && supabase.createClient) {
+                _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.warn('Supabase CDN yüklenemedi, _supabase tanımlı değil.');
+            }
+        } catch (e) {
+            console.error('Supabase oluşturma hatası:', e);
         }
 
         const STORAGE_BUCKET = 'product-images';
@@ -834,7 +841,16 @@
 
         // ===================== ÜRÜN YÜKLEME (ÇOKLU GRUP DESTEKLİ) =====================
         async function loadProducts(page = 0, reset = true) {
-            if (isLoadingProducts || !_supabase) return;
+            if (isLoadingProducts) return;
+
+            // SUPABASE YOKSA HATA GÖSTER VE YÜKLENMEYİ KAPAT
+            if (!_supabase) {
+                hideLoadingScreen();
+                document.getElementById('productsGrid').innerHTML =
+                    `<p style="text-align:center;color:red;">⚠️ Supabase bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin veya sayfayı yenileyin.</p>`;
+                return;
+            }
+
             isLoadingProducts = true;
             const bottomLoader = document.getElementById('bottomLoader');
             if (reset) {
@@ -1052,7 +1068,6 @@
             openModal('productModal');
         }
 
-        // ===== DÜZELTİLMİŞ editProduct (resim korunur) =====
         async function editProduct(id) {
             const p = await getProductById(id);
             if (!p) return;
@@ -1065,9 +1080,8 @@
             document.getElementById('prod-desc-ar').value = p.desc_ar || '';
             document.getElementById('prod-desc-tr').value = p.desc_tr || '';
 
-            // Mevcut resim URL'sini koru
             currentImageUrl = p.img || '';
-            currentImageFile = null;          // Yeni dosya seçilmedi
+            currentImageFile = null;
             currentImagePreview = currentImageUrl;
 
             const preview = document.getElementById('img-preview');
@@ -1079,7 +1093,6 @@
                 preview.style.display = 'none';
             }
 
-            // Seçili grup ID'lerini al
             const selectedIds = p.groups ? p.groups.map(g => g.id) : [];
             renderGroupCheckboxes(selectedIds);
 
@@ -1087,8 +1100,11 @@
             openModal('productModal');
         }
 
-        // ===== DÜZELTİLMİŞ saveProduct (resim korunur) =====
         async function saveProduct() {
+            if (!_supabase) {
+                alert('Supabase bağlantısı yok, ürün kaydedilemiyor.');
+                return;
+            }
             const id = document.getElementById('prod-id').value;
             const price = parseFloat(document.getElementById('prod-price').value) || 0;
             const name_ar = document.getElementById('prod-name-ar').value;
@@ -1099,11 +1115,8 @@
             const checkedBoxes = document.querySelectorAll('#prod-groups-container input[type="checkbox"]:checked');
             const selectedGroupIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
 
-            // Resim URL'sini mevcut değerden başlat
             let imgUrl = currentImageUrl;
-
             if (currentImageFile) {
-                // Yeni dosya seçildiyse yükle
                 try {
                     imgUrl = await uploadImageFile(currentImageFile);
                 } catch (err) {
@@ -1111,7 +1124,6 @@
                     return;
                 }
             } else if (!imgUrl || imgUrl.startsWith('data:image') || imgUrl === '') {
-                // Mevcut resim yoksa veya geçersizse placeholder kullan
                 imgUrl = 'https://via.placeholder.com/300x200';
             }
 
@@ -1128,7 +1140,6 @@
                     productId = data[0].id;
                 }
 
-                // product_groups güncelle
                 await _supabase.from('product_groups').delete().eq('product_id', productId);
                 if (selectedGroupIds.length > 0) {
                     const inserts = selectedGroupIds.map(gid => ({ product_id: productId, group_id: gid }));
@@ -1149,7 +1160,6 @@
             const { data: product, error } = await _supabase.from('products').select('*').eq('id', id).single();
             if (error || !product) return null;
 
-            // Gruplarını da çek
             const { data: pgData, error: pgError } = await _supabase
                 .from('product_groups')
                 .select('group_id, groups(id, name_ar, name_tr)')
@@ -1340,9 +1350,11 @@
             });
         }
 
-        function renderGroupSelect() { /* artık kullanılmıyor, checkbox kullanılıyor */ }
-
         async function saveGroup() {
+            if (!_supabase) {
+                alert('Supabase bağlantısı yok, grup kaydedilemiyor.');
+                return;
+            }
             const name_ar = document.getElementById('new-group-ar').value.trim();
             const name_tr = document.getElementById('new-group-tr').value.trim();
             if (!name_ar && !name_tr) {
@@ -1352,9 +1364,7 @@
             const newId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
             const newGroup = { id: newId, name_ar: name_ar || name_tr, name_tr: name_tr || name_ar };
             groups.push(newGroup);
-            if (_supabase) {
-                try { await _supabase.from('groups').insert([newGroup]); } catch (err) { console.error("Grup eklenemedi:", err); }
-            }
+            try { await _supabase.from('groups').insert([newGroup]); } catch (err) { console.error("Grup eklenemedi:", err); }
             renderGroupsList();
             renderGroupCheckboxes([]);
             renderCategories();
@@ -1363,11 +1373,10 @@
         }
 
         async function deleteGroup(id) {
+            if (!_supabase) return;
             if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) {
                 groups = groups.filter(g => g.id !== id);
-                if (_supabase) {
-                    try { await _supabase.from('groups').delete().eq('id', id); } catch (err) { console.error("Grup silinemedi:", err); }
-                }
+                try { await _supabase.from('groups').delete().eq('id', id); } catch (err) { console.error("Grup silinemedi:", err); }
                 renderGroupsList();
                 renderGroupCheckboxes([]);
                 renderCategories();
@@ -1661,9 +1670,10 @@
 
         // ===================== ÜRÜN SİL =====================
         async function deleteProduct(id) {
+            if (!_supabase) return;
             if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذا المنتج؟' : 'Bu ürünü silmek istediğinize emin misiniz?')) {
                 try {
-                    if (_supabase) await _supabase.from('products').delete().eq('id', id);
+                    await _supabase.from('products').delete().eq('id', id);
                     cart = cart.filter(c => c.id !== id);
                     await saveCart();
                     currentProducts = currentProducts.filter(p => p.id !== id);
@@ -1696,10 +1706,17 @@
                     if (gData && gData.length > 0) groups = gData;
 
                     await loadProducts(0, true);
+                } else {
+                    // Supabase yoksa direkt hata mesajı
+                    hideLoadingScreen();
+                    document.getElementById('productsGrid').innerHTML =
+                        `<p style="text-align:center;color:red;">⚠️ Supabase bağlantısı başarısız. Lütfen internet bağlantınızı kontrol edin veya sayfayı yenileyin.</p>`;
                 }
             } catch (err) {
                 console.error('Başlatma Hatası:', err);
                 hideLoadingScreen();
+                document.getElementById('productsGrid').innerHTML =
+                    `<p style="text-align:center;color:red;">⚠️ Bir hata oluştu: ${err.message}</p>`;
             }
 
             changeLanguage(settings.lang, false);
