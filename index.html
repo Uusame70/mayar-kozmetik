@@ -217,6 +217,23 @@
         let searchQuery = '';
         let searchTimeout = null;
 
+        // ═══════════════════════════════════════════════════════
+        //  Resim URL'sini proxy üzerinden geçir
+        //  (2Chat S3 URL'leri API key gerektirdiği için)
+        // ═══════════════════════════════════════════════════════
+        function proxiedImage(originalUrl) {
+            if (!originalUrl) return 'https://via.placeholder.com/300x200';
+            // Zaten bizim proxy'den geçmişse tekrar geçirme
+            if (originalUrl.startsWith('/api/image-proxy')) return originalUrl;
+            // 2Chat S3 veya benzeri özel URL ise proxy kullan
+            if (originalUrl.includes('2chat-user-data.s3') ||
+                originalUrl.includes('s3.amazonaws.com') ||
+                originalUrl.includes('2chat.io')) {
+                return '/api/image-proxy?url=' + encodeURIComponent(originalUrl);
+            }
+            return originalUrl;
+        }
+
         function showLoadingScreen() {
             document.getElementById('loadingScreen').style.display = 'flex';
         }
@@ -316,11 +333,10 @@
 
         function createProductCardElement(p) {
             const name = p.name_ar || p.name_tr || 'منتج';
-            const img = p.img || 'https://via.placeholder.com/300x200';
+            const img = proxiedImage(p.img);
             const idStr = String(p.id);
             const card = document.createElement('div');
             card.className = 'product-card';
-            // ID'yi tırnak içinde geçiriyoruz — büyük sayı kaybını önler
             card.innerHTML = `
                 <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy">
                 <div class="product-info">
@@ -442,7 +458,7 @@
             if (!p) { alert('لم يتم العثور على المنتج.'); return; }
             const name = p.name_ar || p.name_tr || 'منتج';
             const desc = p.desc_ar || p.desc_tr || '';
-            document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
+            document.getElementById('detail-img').src = proxiedImage(p.img);
             document.getElementById('detail-title').innerText = name;
             document.getElementById('detail-desc').innerText = desc || 'لا يوجد وصف';
             document.getElementById('detail-price').innerText = `${p.price} TL`;
