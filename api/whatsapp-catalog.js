@@ -7,15 +7,16 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
   }
 
-  const API_KEY = req.query.api_key || process.env.TWOCHAT_API_KEY || '';
-  const PHONE = req.query.phone || process.env.TWOCHAT_PHONE || '';
+  // ═══════════════════════════════════════════════════════
+  //  VARSAYILAN DEĞERLER — buradan değiştir
+  //  Admin panelden yeni değer girilirse o öncelik kazanır
+  // ═══════════════════════════════════════════════════════
+  const DEFAULT_API_KEY = 'UAK6f703c42-c939-4575-89cc-35922b2faca9';
+  const DEFAULT_PHONE = '905388444275';
+  // ═══════════════════════════════════════════════════════
 
-  if (!API_KEY || !PHONE) {
-    return res.status(500).json({
-      step: 'config_missing',
-      error: 'API anahtarı veya telefon tanımlı değil.'
-    });
-  }
+  const API_KEY = req.query.api_key || DEFAULT_API_KEY;
+  const PHONE = req.query.phone || DEFAULT_PHONE;
 
   const headers = { 'X-User-API-Key': API_KEY };
 
@@ -41,7 +42,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ── 1. Koleksiyonları çek (içinde ürünler de var) ──
+    // ── 1. Koleksiyonları çek ──
     const colUrl = `https://api.p.2chat.io/open/whatsapp/catalog/collections?from_number=${PHONE}`;
     const colRes = await fetch(colUrl, { headers });
     const colData = await colRes.json();
@@ -61,9 +62,9 @@ export default async function handler(req, res) {
 
     const collections = colData.collections || [];
 
-    // ── 2. Ürünleri koleksiyonlardan çıkar ve grupları eşleştir ──
-    const productMap = new Map(); // productId -> product objesi
-    const productGroupsMap = new Map(); // productId -> [collection, ...]
+    // ── 2. Ürünleri koleksiyonlardan çıkar ──
+    const productMap = new Map();
+    const productGroupsMap = new Map();
 
     for (const col of collections) {
       const colInfo = {
@@ -77,7 +78,6 @@ export default async function handler(req, res) {
         const pid = String(cp.retailer_id || cp.id || '');
         if (!pid) continue;
 
-        // Ürünü ilk kez görüyorsak kaydet
         if (!productMap.has(pid)) {
           productMap.set(pid, {
             id: pid,
@@ -91,7 +91,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Ürünün grup listesine bu koleksiyonu ekle
         if (!productGroupsMap.has(pid)) {
           productGroupsMap.set(pid, []);
         }
@@ -117,10 +116,9 @@ export default async function handler(req, res) {
     });
     const groups = Array.from(groupMap.values());
 
-    // ── 5. Eğer hiç koleksiyon yoksa, düz ürün listesini de dene ──
+    // ── 5. Hiç koleksiyon yoksa eski yönteme düş ──
     let finalProducts = products;
     if (products.length === 0) {
-      // Koleksiyonsuz durum — eski yöntemle ürünleri çek
       const prodUrl = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
       const prodRes = await fetch(prodUrl, { headers });
       const prodData = await prodRes.json();
