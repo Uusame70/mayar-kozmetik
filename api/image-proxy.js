@@ -1,5 +1,5 @@
 // api/image-proxy.js
-import { TWOCHAT_API_KEY } from './config.js';
+import { TWOCHAT_API_KEY as FALLBACK_KEY } from './config.js';
 
 export default async function handler(req, res) {
   const url = req.query.url;
@@ -20,8 +20,7 @@ export default async function handler(req, res) {
     return res.status(403).send('Forbidden host');
   }
 
-  // Öncelik: query param > config.js
-  const API_KEY = req.query.api_key || TWOCHAT_API_KEY;
+  const API_KEY = req.query.api_key || FALLBACK_KEY;
   if (!API_KEY) {
     return res.status(500).send('API key not configured');
   }
