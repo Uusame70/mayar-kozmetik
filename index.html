@@ -235,7 +235,17 @@
 
         function getProductLink(id) {
             const baseUrl = window.location.origin + window.location.pathname;
-            return `${baseUrl}?product=${id}`;
+            return `${baseUrl}?product=${encodeURIComponent(id)}`;
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function copyTextToClipboard(text, successMsg) {
@@ -307,19 +317,21 @@
         function createProductCardElement(p) {
             const name = p.name_ar || p.name_tr || 'منتج';
             const img = p.img || 'https://via.placeholder.com/300x200';
+            const idStr = String(p.id);
             const card = document.createElement('div');
             card.className = 'product-card';
+            // ID'yi tırnak içinde geçiriyoruz — büyük sayı kaybını önler
             card.innerHTML = `
-                <img src="${img}" alt="${name}" onclick="openProductDetail(${p.id})" loading="lazy">
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy">
                 <div class="product-info">
                     <div>
-                        <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
+                        <div class="product-title" onclick="openProductDetail('${idStr}')">${escapeHtml(name)}</div>
                         <div class="product-price">${p.price} TL</div>
                     </div>
                     <div class="product-actions">
-                        <button onclick="addToCart(${p.id})" class="btn-success" style="flex-grow:1;">إضافة للسلة</button>
-                        <button onclick="shareProduct(${p.id})" class="btn-whatsapp" title="مشاركة">💬</button>
-                        <button onclick="copyProductLink(${p.id})" class="btn-warning" title="نسخ الرابط">🔗</button>
+                        <button onclick="addToCart('${idStr}')" class="btn-success" style="flex-grow:1;">إضافة للسلة</button>
+                        <button onclick="shareProduct('${idStr}')" class="btn-whatsapp" title="مشاركة">💬</button>
+                        <button onclick="copyProductLink('${idStr}')" class="btn-warning" title="نسخ الرابط">🔗</button>
                     </div>
                 </div>
             `;
@@ -334,25 +346,26 @@
                 cartList.innerHTML = `<p style="text-align:center; color:#888; padding:20px 0;">السلة فارغة</p>`;
             } else {
                 cart.forEach(c => {
-                    const prod = currentProducts.find(p => p.id === c.id);
+                    const prod = currentProducts.find(p => String(p.id) === String(c.id));
                     if (prod) {
                         const name = prod.name_ar || prod.name_tr || 'منتج';
                         const itemTotal = prod.price * c.qty;
                         totalQty += c.qty;
                         totalPrice += itemTotal;
+                        const idStr = String(prod.id);
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'cart-item';
                         itemDiv.innerHTML = `
                             <div class="cart-item-details">
-                                <strong>${name}</strong><br>
+                                <strong>${escapeHtml(name)}</strong><br>
                                 <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
                             </div>
                             <div class="qty-btns">
-                                <button onclick="updateQty(${prod.id}, -1)">-</button>
+                                <button onclick="updateQty('${idStr}', -1)">-</button>
                                 <span>${c.qty}</span>
-                                <button onclick="updateQty(${prod.id}, 1)">+</button>
+                                <button onclick="updateQty('${idStr}', 1)">+</button>
                             </div>
-                            <button onclick="removeFromCart(${prod.id})" class="btn-remove-item">🗑️</button>
+                            <button onclick="removeFromCart('${idStr}')" class="btn-remove-item">🗑️</button>
                         `;
                         cartList.appendChild(itemDiv);
                     }
@@ -363,23 +376,26 @@
         }
 
         function addToCart(id) {
-            const item = cart.find(c => c.id === id);
+            id = String(id);
+            const item = cart.find(c => String(c.id) === id);
             if (item) item.qty++;
             else cart.push({ id, qty: 1 });
             saveCart();
             renderCart();
         }
         function updateQty(id, delta) {
-            const item = cart.find(c => c.id === id);
+            id = String(id);
+            const item = cart.find(c => String(c.id) === id);
             if (item) {
                 item.qty += delta;
-                if (item.qty <= 0) cart = cart.filter(c => c.id !== id);
+                if (item.qty <= 0) cart = cart.filter(c => String(c.id) !== id);
             }
             saveCart();
             renderCart();
         }
         function removeFromCart(id) {
-            cart = cart.filter(c => c.id !== id);
+            id = String(id);
+            cart = cart.filter(c => String(c.id) !== id);
             saveCart();
             renderCart();
         }
@@ -405,7 +421,7 @@
             const customHeader = settings.wa_header || 'طلب جديد';
             messageLines.push(customHeader);
             cart.forEach(c => {
-                const prod = currentProducts.find(p => p.id === c.id);
+                const prod = currentProducts.find(p => String(p.id) === String(c.id));
                 if (prod) {
                     const name = prod.name_ar || prod.name_tr || `#${c.id}`;
                     const itemTotal = prod.price * c.qty;
@@ -421,7 +437,8 @@
         }
 
         function openProductDetail(id) {
-            const p = currentProducts.find(x => x.id === id);
+            id = String(id);
+            const p = currentProducts.find(x => String(x.id) === id);
             if (!p) { alert('لم يتم العثور على المنتج.'); return; }
             const name = p.name_ar || p.name_tr || 'منتج';
             const desc = p.desc_ar || p.desc_tr || '';
@@ -439,7 +456,8 @@
         }
 
         function shareProduct(id) {
-            const p = currentProducts.find(x => x.id === id);
+            id = String(id);
+            const p = currentProducts.find(x => String(x.id) === id);
             if (!p) return;
             const name = p.name_ar || p.name_tr || 'منتج';
             const productUrl = getProductLink(id);
@@ -448,7 +466,8 @@
         }
 
         function copyProductLink(id) {
-            const p = currentProducts.find(x => x.id === id);
+            id = String(id);
+            const p = currentProducts.find(x => String(x.id) === id);
             if (!p) return;
             copyTextToClipboard(getProductLink(id), 'تم نسخ الرابط بنجاح!');
         }
@@ -472,7 +491,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
             if (productIdParam) {
-                setTimeout(() => openProductDetail(Number(productIdParam)), 400);
+                setTimeout(() => openProductDetail(String(productIdParam)), 400);
             }
 
             const scrollBtn = document.getElementById('scrollTopBtn');
