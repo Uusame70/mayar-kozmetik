@@ -103,6 +103,14 @@
             font-weight: 600; font-size: 0.9rem; color: #2c3e50; }
         .form-group input { width: 100%; padding: 10px;
             border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .password-row { display: flex; gap: 6px; }
+        .password-row input { flex-grow: 1; }
+        .toggle-pass-btn {
+            background-color: #7f8c8d; padding: 0 14px;
+            font-size: 1.1rem; min-width: 48px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .toggle-pass-btn:hover { background-color: #5d6d7e; }
         .cart-item { display: flex; justify-content: space-between;
             align-items: center; padding: 10px 0;
             border-bottom: 1px solid #eee; gap: 10px; }
@@ -201,7 +209,10 @@
                 </div>
                 <div class="form-group">
                     <label>Şifre</label>
-                    <input type="password" id="login-password" placeholder="Şifreniz">
+                    <div class="password-row">
+                        <input type="password" id="login-password" placeholder="Şifreniz">
+                        <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()" id="btn-toggle-pass" title="Şifreyi göster/gizle">👁️</button>
+                    </div>
                 </div>
                 <button type="submit" class="btn-success" style="width:100%; margin-top:8px;">Giriş Yap</button>
             </form>
@@ -257,6 +268,24 @@
             } catch (e) { console.error('Supabase init:', e); }
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  ŞİFRE GÖSTER / GİZLE
+        // ═══════════════════════════════════════════════════════
+        function togglePasswordVisibility() {
+            const inp = document.getElementById('login-password');
+            const btn = document.getElementById('btn-toggle-pass');
+            if (!inp || !btn) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                btn.innerText = '🙈';
+                btn.title = 'Şifreyi gizle';
+            } else {
+                inp.type = 'password';
+                btn.innerText = '👁️';
+                btn.title = 'Şifreyi göster';
+            }
+        }
+
         async function loadCatalogConfig() {
             if (!_supabase) return;
             try {
@@ -281,13 +310,8 @@
             if (error) throw error;
         }
 
-        function getConfigQueryForImages() {
-            return ''; // Artık resimler doğrudan Supabase'den gelir, proxy gerekmez
-        }
-
         function proxiedImage(originalUrl) {
             if (!originalUrl) return 'https://via.placeholder.com/300x200';
-            // 2Chat S3 URL'leri için proxy kullan
             if (originalUrl.includes('2chat-user-data.s3') ||
                 originalUrl.includes('s3.amazonaws.com') ||
                 originalUrl.includes('2chat.io')) {
@@ -335,9 +359,6 @@
             document.body.removeChild(ta);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  KATALOG YÜKLE (Supabase'den — hızlı)
-        // ═══════════════════════════════════════════════════════
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
@@ -348,7 +369,6 @@
 
                 currentProducts = data.products || [];
 
-                // Sync bilgisini göster
                 if (data.lastSync) {
                     const d = new Date(data.lastSync.synced_at);
                     document.getElementById('sync-info').innerText =
@@ -363,9 +383,6 @@
             } finally { hideLoadingScreen(); }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  SENKRONİZASYON
-        // ═══════════════════════════════════════════════════════
         async function syncFromWhatsApp() {
             if (!isAdmin || !sessionToken) {
                 alert('Yetkisiz.');
@@ -404,9 +421,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  FİLTRE & RENDER
-        // ═══════════════════════════════════════════════════════
         function applyLocalFilter() {
             let list = currentProducts.slice();
             if (searchQuery) {
@@ -570,6 +584,11 @@
             if (val.trim() === 'mayar.') {
                 document.getElementById('search-input').value = '';
                 searchQuery = ''; applyLocalFilter();
+                // Şifre alanını her açılışta sıfırla
+                const passInp = document.getElementById('login-password');
+                if (passInp) passInp.type = 'password';
+                const toggleBtn = document.getElementById('btn-toggle-pass');
+                if (toggleBtn) { toggleBtn.innerText = '👁️'; toggleBtn.title = 'Şifreyi göster'; }
                 openModal('loginModal');
                 setTimeout(() => document.getElementById('login-email')?.focus(), 100);
                 return;
@@ -581,9 +600,6 @@
             }, 200);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  AUTH
-        // ═══════════════════════════════════════════════════════
         async function handleSupabaseLogin() {
             if (!_supabase) { alert('Supabase yüklenemedi'); return; }
             const email = document.getElementById('login-email').value.trim();
@@ -598,6 +614,9 @@
             closeModal('loginModal');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
+            // Şifre alanını sıfırla
+            document.getElementById('login-password').type = 'password';
+            document.getElementById('btn-toggle-pass').innerText = '👁️';
             updateAdminUI();
             await loadCatalogConfig();
             alert('✅ Giriş başarılı! Katalogu senkronize etmek için "Senkronize Et" butonuna bas.');
