@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>mayar kozmetik</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -62,6 +63,12 @@
         button.btn-whatsapp { background-color: #25d366; }
         button.btn-whatsapp:hover { background-color: #1ebd59; }
         .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
+        .admin-bar {
+            background-color: #e8f4f8; border: 1px solid #bce8f1;
+            padding: 12px; border-radius: 8px; margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 10px;
+        }
         .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         @media (max-width: 900px) {
             .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -158,11 +165,6 @@
             font-size: 0.85rem; color: #2c3e50;
             margin-bottom: 12px; line-height: 1.5;
         }
-        .info-box code {
-            background: #fff; padding: 2px 6px;
-            border-radius: 4px; font-size: 0.8rem;
-            border: 1px solid #ccc;
-        }
     </style>
 </head>
 <body>
@@ -174,7 +176,7 @@
 
     <header>
         <div class="header-top">
-            <h1>المتجر (Katalog)</h1>
+            <h1 id="app-title">المتجر (Katalog)</h1>
             <div class="header-btns">
                 <button onclick="openModal('cartModal')">🛒 السلة (<span id="cart-count">0</span>)</button>
             </div>
@@ -185,6 +187,13 @@
     </header>
 
     <div class="container">
+        <div id="adminBar" class="admin-bar" style="display: none;">
+            <span>🔐 <strong>وضع المسؤول مفعل</strong></span>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="openConfigModal()" class="btn-warning">⚙️ إعدادات الكتالوج</button>
+                <button onclick="handleSupabaseLogout()" class="btn-danger">🚪 Çıkış Yap</button>
+            </div>
+        </div>
         <div id="productsGrid" class="products-grid"></div>
     </div>
 
@@ -228,31 +237,33 @@
         </div>
     </div>
 
-    <!-- Giriş Modali -->
+    <!-- Supabase Giriş -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
-            <h2 style="margin-bottom:15px;">🔐 Yönetici Girişi</h2>
-            <div class="form-group">
-                <label>Şifre</label>
-                <input type="password" id="admin-password-input" placeholder="Şifrenizi girin" onkeydown="if(event.key==='Enter'){event.preventDefault();handleAdminLogin();}">
-            </div>
+            <h2 style="margin-bottom:15px;">🔐 Admin Girişi</h2>
+            <form onsubmit="event.preventDefault(); handleSupabaseLogin();">
+                <div class="form-group">
+                    <label>E-posta</label>
+                    <input type="email" id="login-email" placeholder="email@domain.com">
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" id="login-password" placeholder="Şifreniz">
+                </div>
+                <button type="submit" class="btn-success" style="width:100%; margin-top:8px;">Giriş Yap</button>
+            </form>
             <div class="modal-actions">
-                <button onclick="handleAdminLogin()" class="btn-success">Giriş Yap</button>
-                <button onclick="closeModal('loginModal')" class="btn-danger">İptal</button>
+                <button onclick="closeModal('loginModal')" class="btn-danger">Kapat</button>
             </div>
         </div>
     </div>
 
-    <!-- Config Modali -->
+    <!-- Katalog Ayarları -->
     <div id="configModal" class="modal">
         <div class="modal-content">
-            <h2 style="margin-bottom:15px;">⚙️ Katalog Ayarları</h2>
+            <h2 style="margin-bottom:15px;">⚙️ إعدادات الكتالوج</h2>
             <div class="info-box">
-                Buradaki değerler <strong>sadece bu tarayıcıda</strong> saklanır. Boş bırakırsan Vercel'deki varsayılan env var kullanılır.
-                <br><br>
-                Varsayılan ayarlar için: <code>Vercel → Project → Settings → Environment Variables</code>
-                <br>
-                <code>TWOCHAT_API_KEY</code> ve <code>TWOCHAT_PHONE</code> ekle.
+                Bu değerler Supabase'deki <strong>settings</strong> tablosuna kaydedilir ve <strong>tüm ziyaretçiler</strong> tarafından görülür.
             </div>
             <div class="form-group">
                 <label>2Chat API Anahtarı</label>
@@ -262,79 +273,87 @@
                 <label>WhatsApp Telefon Numarası (90 ile başlayarak)</label>
                 <input type="tel" id="cfg-phone" placeholder="905388444275">
             </div>
-            <div class="form-group">
-                <label>Yönetici Şifresi</label>
-                <input type="text" id="cfg-admin-pass" placeholder="mayar2024">
-            </div>
             <div class="modal-actions">
                 <button onclick="saveConfig()" class="btn-success">💾 Kaydet</button>
-                <button onclick="resetConfig()" class="btn-warning">🔄 Sıfırla</button>
                 <button onclick="closeModal('configModal')" class="btn-danger">Kapat</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ═══════════════════════════════════════════════════════
-        //  VARSAYILAN AYARLAR (LocalStorage'da override edilebilir)
-        // ═══════════════════════════════════════════════════════
-        const DEFAULT_ADMIN_PASSWORD = 'mayar2024';
-        const LS_KEYS = {
-            apiKey: 'cfg_twochat_api_key',
-            phone: 'cfg_twochat_phone',
-            adminPass: 'cfg_admin_password'
+        const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
+
+        let _supabase = null;
+        let isAdmin = false;
+
+        // Supabase'den çekilen katalog ayarları
+        let catalogConfig = {
+            twochat_api_key: '',
+            twochat_phone: ''
         };
 
-        function getConfig() {
-            return {
-                apiKey: localStorage.getItem(LS_KEYS.apiKey) || '',
-                phone: localStorage.getItem(LS_KEYS.phone) || '',
-                adminPass: localStorage.getItem(LS_KEYS.adminPass) || DEFAULT_ADMIN_PASSWORD
-            };
-        }
-
-        function setConfig(cfg) {
-            if (cfg.apiKey) localStorage.setItem(LS_KEYS.apiKey, cfg.apiKey);
-            else localStorage.removeItem(LS_KEYS.apiKey);
-            if (cfg.phone) localStorage.setItem(LS_KEYS.phone, cfg.phone);
-            else localStorage.removeItem(LS_KEYS.phone);
-            if (cfg.adminPass) localStorage.setItem(LS_KEYS.adminPass, cfg.adminPass);
-        }
-
-        function resetConfig() {
-            if (confirm('Tüm katalog ayarları sıfırlanacak. Vercel varsayılanına dönülecek. Emin misin?')) {
-                localStorage.removeItem(LS_KEYS.apiKey);
-                localStorage.removeItem(LS_KEYS.phone);
-                alert('Ayarlar sıfırlandı! Sayfa yenileniyor...');
-                location.reload();
-            }
-        }
-
-        // API çağrılarına eklenecek query param'ları üret
-        function getConfigQuery() {
-            const cfg = getConfig();
-            const params = [];
-            if (cfg.apiKey) params.push('api_key=' + encodeURIComponent(cfg.apiKey));
-            if (cfg.phone) params.push('phone=' + encodeURIComponent(cfg.phone));
-            return params.length > 0 ? '&' + params.join('&') : '';
-        }
-
-        function getConfigQueryForImages() {
-            const cfg = getConfig();
-            return cfg.apiKey ? '&api_key=' + encodeURIComponent(cfg.apiKey) : '';
-        }
-
-        // ═══════════════════════════════════════════════════════
-
-        let settings = {
-            phone: '0507 444 45 02',
-            wa_header: 'طلب جديد'
-        };
         let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         let currentProducts = [];
         let filteredProducts = [];
         let searchQuery = '';
         let searchTimeout = null;
+
+        function initSupabase() {
+            try {
+                if (typeof supabase !== 'undefined' && supabase.createClient) {
+                    _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+            } catch (e) {
+                console.error('Supabase init hatası:', e);
+            }
+        }
+
+        // Supabase settings tablosundan katalog ayarlarını çek
+        async function loadCatalogConfig() {
+            if (!_supabase) return;
+            try {
+                const { data, error } = await _supabase
+                    .from('settings')
+                    .select('twochat_api_key, twochat_phone')
+                    .eq('id', 1)
+                    .maybeSingle();
+                if (!error && data) {
+                    catalogConfig.twochat_api_key = data.twochat_api_key || '';
+                    catalogConfig.twochat_phone = data.twochat_phone || '';
+                }
+            } catch (e) {
+                console.warn('Katalog config yüklenemedi:', e);
+            }
+        }
+
+        // Katalog ayarlarını Supabase'e kaydet (sadece admin)
+        async function saveCatalogConfig(apiKey, phone) {
+            if (!_supabase) throw new Error('Supabase yok');
+            const { error } = await _supabase
+                .from('settings')
+                .update({ twochat_api_key: apiKey, twochat_phone: phone })
+                .eq('id', 1);
+            if (error) throw error;
+        }
+
+        // API çağrılarına eklenecek query param'ları üret
+        function getConfigQuery() {
+            const params = [];
+            if (catalogConfig.twochat_api_key) {
+                params.push('api_key=' + encodeURIComponent(catalogConfig.twochat_api_key));
+            }
+            if (catalogConfig.twochat_phone) {
+                params.push('phone=' + encodeURIComponent(catalogConfig.twochat_phone));
+            }
+            return params.length > 0 ? '&' + params.join('&') : '';
+        }
+
+        function getConfigQueryForImages() {
+            return catalogConfig.twochat_api_key
+                ? '&api_key=' + encodeURIComponent(catalogConfig.twochat_api_key)
+                : '';
+        }
 
         function proxiedImage(originalUrl) {
             if (!originalUrl) return 'https://via.placeholder.com/300x200';
@@ -405,7 +424,6 @@
                 if (!res.ok) throw new Error('API hatası: ' + res.status);
                 const data = await res.json();
 
-                if (data.settings) settings = { ...settings, ...data.settings };
                 currentProducts = data.products || [];
                 applyLocalFilter();
             } catch (err) {
@@ -548,8 +566,8 @@
             }
             let messageLines = [];
             let totalQty = 0, grandTotal = 0;
-            const customHeader = settings.wa_header || 'طلب جديد';
-            messageLines.push(customHeader);
+            const orderPhone = catalogConfig.twochat_phone || '905388444275';
+            messageLines.push('طلب جديد');
             cart.forEach(c => {
                 const prod = currentProducts.find(p => String(p.id) === String(c.id));
                 if (prod) {
@@ -562,7 +580,7 @@
             });
             messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
             const encodedMessage = encodeURIComponent(messageLines.join('\n'));
-            const cleanPhone = formatPhoneForWa(settings.phone);
+            const cleanPhone = formatPhoneForWa(orderPhone);
             window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
         }
 
@@ -603,17 +621,14 @@
         }
 
         function handleSearch(val) {
-            // ═══════════════════════════════════════════════════════
-            //  KOMUT: "mayar." yazılınca yönetici girişi açılır
-            // ═══════════════════════════════════════════════════════
             if (val.trim() === 'mayar.') {
                 document.getElementById('search-input').value = '';
                 searchQuery = '';
                 applyLocalFilter();
                 openModal('loginModal');
                 setTimeout(() => {
-                    const inp = document.getElementById('admin-password-input');
-                    if (inp) { inp.value = ''; inp.focus(); }
+                    const inp = document.getElementById('login-email');
+                    if (inp) inp.focus();
                 }, 100);
                 return;
             }
@@ -625,40 +640,72 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  YÖNETİCİ GİRİŞ / CONFIG
+        //  SUPABASE AUTH
         // ═══════════════════════════════════════════════════════
-        function handleAdminLogin() {
-            const inp = document.getElementById('admin-password-input');
-            const entered = (inp.value || '').trim();
-            const cfg = getConfig();
-            if (entered === cfg.adminPass) {
-                closeModal('loginModal');
-                inp.value = '';
-                openConfigModal();
+        async function handleSupabaseLogin() {
+            if (!_supabase) { alert('Supabase yüklenemedi'); return; }
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (!email || !password) { alert('E-posta ve şifre gerekli'); return; }
+
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Giriş Hatası: ' + error.message);
             } else {
-                alert('❌ Şifre yanlış!');
-                inp.value = '';
-                inp.focus();
+                isAdmin = true;
+                closeModal('loginModal');
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-password').value = '';
+                updateAdminUI();
+                await loadCatalogConfig();  // Admin girişinde taze config çek
+                await loadCatalog(true);    // Katalogu yenile
+                alert('✅ Giriş başarılı!');
             }
         }
 
+        async function handleSupabaseLogout() {
+            if (!_supabase) return;
+            await _supabase.auth.signOut();
+            isAdmin = false;
+            updateAdminUI();
+            alert('Çıkış yapıldı.');
+        }
+
+        function updateAdminUI() {
+            const adminBar = document.getElementById('adminBar');
+            adminBar.style.display = isAdmin ? 'flex' : 'none';
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  KATALOG AYARLARI (ADMIN)
+        // ═══════════════════════════════════════════════════════
         function openConfigModal() {
-            const cfg = getConfig();
-            document.getElementById('cfg-api-key').value = cfg.apiKey;
-            document.getElementById('cfg-phone').value = cfg.phone;
-            document.getElementById('cfg-admin-pass').value = cfg.adminPass;
+            if (!isAdmin) { alert('Önce giriş yapın.'); return; }
+            document.getElementById('cfg-api-key').value = catalogConfig.twochat_api_key || '';
+            document.getElementById('cfg-phone').value = catalogConfig.twochat_phone || '';
             openModal('configModal');
         }
 
-        function saveConfig() {
+        async function saveConfig() {
+            if (!isAdmin) { alert('Yetkisiz.'); return; }
             const apiKey = document.getElementById('cfg-api-key').value.trim();
             const phone = document.getElementById('cfg-phone').value.trim();
-            const adminPass = document.getElementById('cfg-admin-pass').value.trim() || DEFAULT_ADMIN_PASSWORD;
 
-            setConfig({ apiKey, phone, adminPass });
-            alert('✅ Ayarlar kaydedildi! Katalog yeniden yükleniyor...');
-            closeModal('configModal');
-            loadCatalog(true);
+            if (!apiKey || !phone) {
+                alert('API anahtarı ve telefon gerekli.');
+                return;
+            }
+
+            try {
+                await saveCatalogConfig(apiKey, phone);
+                catalogConfig.twochat_api_key = apiKey;
+                catalogConfig.twochat_phone = phone;
+                alert('✅ Kaydedildi! Katalog yenileniyor...');
+                closeModal('configModal');
+                await loadCatalog(true);
+            } catch (err) {
+                alert('❌ Kaydetme hatası: ' + err.message);
+            }
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -666,13 +713,37 @@
 
         async function init() {
             showLoadingScreen();
-            await loadCatalog();
+            initSupabase();
+
+            try {
+                if (_supabase) {
+                    // Oturum kontrolü
+                    const { data: { session } } = await _supabase.auth.getSession();
+                    isAdmin = !!session;
+
+                    _supabase.auth.onAuthStateChange((event, session) => {
+                        isAdmin = !!session;
+                        updateAdminUI();
+                    });
+                }
+
+                // Supabase settings'ten katalog ayarlarını çek
+                await loadCatalogConfig();
+
+                // Katalogu yükle
+                await loadCatalog();
+            } catch (err) {
+                console.error('Başlatma hatası:', err);
+                hideLoadingScreen();
+            }
+
+            updateAdminUI();
             renderCart();
 
             const urlParams = new URLSearchParams(window.location.search);
             const productIdParam = urlParams.get('product');
             if (productIdParam) {
-                setTimeout(() => openProductDetail(String(productIdParam)), 400);
+                setTimeout(() => openProductDetail(String(productIdParam)), 500);
             }
 
             const scrollBtn = document.getElementById('scrollTopBtn');
