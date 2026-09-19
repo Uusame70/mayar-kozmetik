@@ -1,4 +1,6 @@
 // api/image-proxy.js
+import { TWOCHAT_API_KEY } from './config.js';
+
 export default async function handler(req, res) {
   const url = req.query.url;
   if (!url) return res.status(400).send('Missing url');
@@ -18,8 +20,8 @@ export default async function handler(req, res) {
     return res.status(403).send('Forbidden host');
   }
 
-  // Öncelik: query param > env var
-  const API_KEY = req.query.api_key || process.env.TWOCHAT_API_KEY || '';
+  // Öncelik: query param > config.js
+  const API_KEY = req.query.api_key || TWOCHAT_API_KEY;
   if (!API_KEY) {
     return res.status(500).send('API key not configured');
   }
