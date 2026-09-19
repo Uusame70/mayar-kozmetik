@@ -7,8 +7,17 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
   }
 
-  const API_KEY = 'UAK6f703c42-c939-4575-89cc-35922b2faca9';
-  const PHONE = '905388444275'; // 538 ile başlayan numara, başına 90 eklenmiş hali
+  // Öncelik: query param > env var
+  const API_KEY = req.query.api_key || process.env.TWOCHAT_API_KEY || '';
+  const PHONE = req.query.phone || process.env.TWOCHAT_PHONE || '';
+
+  if (!API_KEY || !PHONE) {
+    return res.status(500).json({
+      step: 'config_missing',
+      error: 'API anahtarı veya telefon numarası tanımlı değil.',
+      hint: 'Vercel → Project → Settings → Environment Variables bölümünden TWOCHAT_API_KEY ve TWOCHAT_PHONE ekleyin. Ya da sitede "mayar." yazıp giriş yaparak override edin.'
+    });
+  }
 
   function pickName(p) {
     return p.name_ar || p.name_tr || p.name || p.product_name || p.productName || p.title || '';
@@ -44,11 +53,7 @@ export default async function handler(req, res) {
     try {
       data = await apiRes.json();
     } catch (jsonErr) {
-      return res.status(500).json({
-        step: '2chat_json_parse',
-        status,
-        error: 'API cevabı JSON değil'
-      });
+      return res.status(500).json({ step: '2chat_json_parse', status, error: 'API cevabı JSON değil' });
     }
 
     if (req.query.debug === '1') {
@@ -65,11 +70,7 @@ export default async function handler(req, res) {
     }
 
     const rawProducts =
-      data.products ||
-      data.data ||
-      data.items ||
-      data.result?.products ||
-      [];
+      data.products || data.data || data.items || data.result?.products || [];
 
     const products = rawProducts.map((p, index) => {
       const name = pickName(p);
@@ -105,9 +106,6 @@ export default async function handler(req, res) {
       cachedAt: new Date().toISOString()
     });
   } catch (err) {
-    res.status(500).json({
-      step: 'unhandled',
-      error: err.message
-    });
+    res.status(500).json({ step: 'unhandled', error: err.message });
   }
 }
