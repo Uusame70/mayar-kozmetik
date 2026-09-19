@@ -1,4 +1,6 @@
 // api/whatsapp-catalog.js
+import { TWOCHAT_API_KEY, TWOCHAT_PHONE } from './config.js';
+
 export default async function handler(req, res) {
   const bust = req.query.bust === '1';
   if (bust) {
@@ -7,15 +9,14 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
   }
 
-  // Öncelik: query param > env var
-  const API_KEY = req.query.api_key || process.env.TWOCHAT_API_KEY || '';
-  const PHONE = req.query.phone || process.env.TWOCHAT_PHONE || '';
+  // Öncelik: query param (localStorage override) > config.js (varsayılan)
+  const API_KEY = req.query.api_key || TWOCHAT_API_KEY;
+  const PHONE = req.query.phone || TWOCHAT_PHONE;
 
   if (!API_KEY || !PHONE) {
     return res.status(500).json({
       step: 'config_missing',
-      error: 'API anahtarı veya telefon numarası tanımlı değil.',
-      hint: 'Vercel → Project → Settings → Environment Variables bölümünden TWOCHAT_API_KEY ve TWOCHAT_PHONE ekleyin. Ya da sitede "mayar." yazıp giriş yaparak override edin.'
+      error: 'API anahtarı veya telefon tanımlı değil. api/config.js dosyasını kontrol edin.'
     });
   }
 
