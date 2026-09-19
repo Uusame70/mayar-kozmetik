@@ -6,21 +6,34 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  // تخزين على Edge: 1 ساعة، stale-while-revalidate لـ 24 ساعة
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+  // لو الأدمن طلب تحديث فوري بعد الحفظ
+  const bust = req.query.bust === '1';
+  if (bust) {
+    res.setHeader('Cache-Control', 'no-store, must-revalidate');
+  } else {
+    res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
 
   try {
-    const [{ data: products }, { data: productGroups }, { data: groups }, { data: settings }] =
-      await Promise.all([
-        supabase.from('products').select('*').order('id', { ascending: true }),
-        supabase.from('product_groups').select('product_id, group_id'),
-        supabase.from('groups').select('*'),
-        supabase.from('settings').select('*').eq('id', 1).maybeSingle()
-      ]);
+    const [
+      { data: products, error: pErr },
+      { data: productGroups },
+      { data: groups },
+      { data: settings }
+    ] = await Promise.all([
+      supabase.from('products').select('*').order('id', { ascending: true }),
+      supabase.from('product_groups').select('product_id, group_id'),
+      supabase.from('groups').select('*').order('id', { ascending: true }),
+      supabase.from('settings').select('*').eq('id', 1).maybeSingle()
+    ]);
 
-    // ندمج المجموعات داخل كل منتج هنا (بدلاً من المتصفح)
+    if (pErr) throw pErr;
+
+    // دمج المجموعات داخل كل منتج
     const groupById = new Map((groups || []).map(g => [g.id, g]));
-    const productMap = new Map((products || []).map(p => [p.id, { ...p, groups: [] }]));
+    const productMap = new Map(
+      (products || []).map(p => [p.id, { ...p, groups: [] }])
+    );
     (productGroups || []).forEach(pg => {
       const p = productMap.get(pg.product_id);
       const g = groupById.get(pg.group_id);
