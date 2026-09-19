@@ -7,10 +7,9 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
   }
 
-  const API_KEY = 'SENIN_2CHAT_API_KEYIN';
-  const PHONE = '905074444502';
+  const API_KEY = 'UAK6f703c42-c939-4575-89cc-35922b2faca9';
+  const PHONE = '905388444275'; // 538 ile başlayan numara, başına 90 eklenmiş hali
 
-  // Yardımcı: ürün alanlarını esnek çıkar
   function pickName(p) {
     return p.name_ar || p.name_tr || p.name || p.product_name || p.productName || p.title || '';
   }
@@ -40,7 +39,6 @@ export default async function handler(req, res) {
       headers: { 'X-User-API-Key': API_KEY }
     });
 
-    // 2Chat cevap kodu
     const status = apiRes.status;
     let data;
     try {
@@ -49,27 +47,23 @@ export default async function handler(req, res) {
       return res.status(500).json({
         step: '2chat_json_parse',
         status,
-        error: 'API cevabı JSON değil',
-        raw: await apiRes.text().catch(() => '')
+        error: 'API cevabı JSON değil'
       });
     }
 
-    // Debug modu
     if (req.query.debug === '1') {
       return res.status(200).json({ step: 'debug', status, data });
     }
 
-    // 2Chat hata döndürdüyse
     if (status !== 200) {
       return res.status(500).json({
         step: '2chat_api',
         status,
-        message: data?.error?.message || data?.message || 'Bilinmeyen 2Chat hatası',
+        message: data?.detail || data?.error?.message || data?.message || 'Bilinmeyen 2Chat hatası',
         raw: data
       });
     }
 
-    // Ürünleri al (farklı sürümler için)
     const rawProducts =
       data.products ||
       data.data ||
@@ -113,8 +107,7 @@ export default async function handler(req, res) {
   } catch (err) {
     res.status(500).json({
       step: 'unhandled',
-      error: err.message,
-      stack: err.stack
+      error: err.message
     });
   }
 }
