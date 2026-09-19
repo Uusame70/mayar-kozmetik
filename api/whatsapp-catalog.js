@@ -1,5 +1,5 @@
 // api/whatsapp-catalog.js
-import { TWOCHAT_API_KEY, TWOCHAT_PHONE } from './config.js';
+import { TWOCHAT_API_KEY as FALLBACK_KEY, TWOCHAT_PHONE as FALLBACK_PHONE } from './config.js';
 
 export default async function handler(req, res) {
   const bust = req.query.bust === '1';
@@ -9,14 +9,14 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
   }
 
-  // Öncelik: query param (localStorage override) > config.js (varsayılan)
-  const API_KEY = req.query.api_key || TWOCHAT_API_KEY;
-  const PHONE = req.query.phone || TWOCHAT_PHONE;
+  // Öncelik: query param (Supabase settings'ten gelir) > config.js fallback
+  const API_KEY = req.query.api_key || FALLBACK_KEY;
+  const PHONE = req.query.phone || FALLBACK_PHONE;
 
   if (!API_KEY || !PHONE) {
     return res.status(500).json({
       step: 'config_missing',
-      error: 'API anahtarı veya telefon tanımlı değil. api/config.js dosyasını kontrol edin.'
+      error: 'API anahtarı veya telefon tanımlı değil. Admin panelden ayarlayın (mayar. yazıp giriş yapın).'
     });
   }
 
