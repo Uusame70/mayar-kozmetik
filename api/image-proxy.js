@@ -3,11 +3,7 @@ export default async function handler(req, res) {
   const url = req.query.url;
   if (!url) return res.status(400).send('Missing url');
 
-  // ═══════════════════════════════════════════════════════
-  //  VARSAYILAN API KEY
-  // ═══════════════════════════════════════════════════════
   const DEFAULT_API_KEY = 'UAK6f703c42-c939-4575-89cc-35922b2faca9';
-  // ═══════════════════════════════════════════════════════
 
   const allowed = [
     '2chat-user-data.s3.amazonaws.com',
