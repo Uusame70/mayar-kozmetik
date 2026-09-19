@@ -46,17 +46,6 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
         .search-box input:focus { border-color: #3498db; }
-        .categories-bar {
-            display: flex; gap: 8px; overflow-x: auto;
-            padding-bottom: 6px; margin-bottom: 2px; scrollbar-width: thin;
-        }
-        .cat-btn {
-            background-color: rgba(255,255,255,0.15); color: #ffffff;
-            border: 1px solid rgba(255,255,255,0.25);
-            padding: 6px 14px; border-radius: 20px; white-space: nowrap;
-            font-size: 0.85rem; font-weight: 600; cursor: pointer;
-        }
-        .cat-btn.active { background-color: #3498db; border-color: #3498db; }
         button {
             cursor: pointer; padding: 8px 12px; border: none; border-radius: 6px;
             background-color: #3498db; color: white; font-weight: bold; font-size: 0.85rem;
@@ -90,12 +79,6 @@
             background: white; border-radius: 10px; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex; flex-direction: column; position: relative;
-        }
-        .product-badge {
-            position: absolute; top: 8px; right: 8px;
-            background-color: rgba(44,62,80,0.85); color: white;
-            padding: 3px 8px; border-radius: 12px;
-            font-size: 0.75rem; font-weight: bold; z-index: 2;
         }
         .product-card img {
             width: 100%; height: 200px; object-fit: contain;
@@ -179,7 +162,6 @@
         <div class="search-box">
             <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 بحث عن منتج...">
         </div>
-        <div id="categoriesBar" class="categories-bar"></div>
     </header>
 
     <div class="container">
@@ -232,7 +214,6 @@
         let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         let currentProducts = [];
         let filteredProducts = [];
-        let selectedCategory = 'ALL';
         let searchQuery = '';
         let searchTimeout = null;
 
@@ -299,10 +280,13 @@
             let list = currentProducts.slice();
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
-                list = list.filter(p =>
-                    (p.name && p.name.toLowerCase().includes(q)) ||
-                    (p.desc && p.desc.toLowerCase().includes(q))
-                );
+                list = list.filter(p => {
+                    const nameAr = (p.name_ar || '').toLowerCase();
+                    const nameTr = (p.name_tr || '').toLowerCase();
+                    const descAr = (p.desc_ar || '').toLowerCase();
+                    const descTr = (p.desc_tr || '').toLowerCase();
+                    return nameAr.includes(q) || nameTr.includes(q) || descAr.includes(q) || descTr.includes(q);
+                });
             }
             filteredProducts = list;
             renderFilteredProducts();
@@ -321,13 +305,15 @@
         }
 
         function createProductCardElement(p) {
+            const name = p.name_ar || p.name_tr || 'منتج';
+            const img = p.img || 'https://via.placeholder.com/300x200';
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
-                <img src="${p.img || 'https://via.placeholder.com/300x200'}" alt="${p.name}" onclick="openProductDetail(${p.id})" loading="lazy">
+                <img src="${img}" alt="${name}" onclick="openProductDetail(${p.id})" loading="lazy">
                 <div class="product-info">
                     <div>
-                        <div class="product-title" onclick="openProductDetail(${p.id})">${p.name || 'منتج'}</div>
+                        <div class="product-title" onclick="openProductDetail(${p.id})">${name}</div>
                         <div class="product-price">${p.price} TL</div>
                     </div>
                     <div class="product-actions">
@@ -350,6 +336,7 @@
                 cart.forEach(c => {
                     const prod = currentProducts.find(p => p.id === c.id);
                     if (prod) {
+                        const name = prod.name_ar || prod.name_tr || 'منتج';
                         const itemTotal = prod.price * c.qty;
                         totalQty += c.qty;
                         totalPrice += itemTotal;
@@ -357,7 +344,7 @@
                         itemDiv.className = 'cart-item';
                         itemDiv.innerHTML = `
                             <div class="cart-item-details">
-                                <strong>${prod.name}</strong><br>
+                                <strong>${name}</strong><br>
                                 <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
                             </div>
                             <div class="qty-btns">
@@ -420,10 +407,11 @@
             cart.forEach(c => {
                 const prod = currentProducts.find(p => p.id === c.id);
                 if (prod) {
+                    const name = prod.name_ar || prod.name_tr || `#${c.id}`;
                     const itemTotal = prod.price * c.qty;
                     totalQty += c.qty;
                     grandTotal += itemTotal;
-                    messageLines.push(`( ${prod.name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
                 }
             });
             messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
@@ -435,9 +423,11 @@
         function openProductDetail(id) {
             const p = currentProducts.find(x => x.id === id);
             if (!p) { alert('لم يتم العثور على المنتج.'); return; }
+            const name = p.name_ar || p.name_tr || 'منتج';
+            const desc = p.desc_ar || p.desc_tr || '';
             document.getElementById('detail-img').src = p.img || 'https://via.placeholder.com/300x200';
-            document.getElementById('detail-title').innerText = p.name || 'منتج';
-            document.getElementById('detail-desc').innerText = p.desc || 'لا يوجد وصف';
+            document.getElementById('detail-title').innerText = name;
+            document.getElementById('detail-desc').innerText = desc || 'لا يوجد وصف';
             document.getElementById('detail-price').innerText = `${p.price} TL`;
             document.getElementById('detail-add-btn').onclick = function() {
                 addToCart(p.id);
@@ -451,8 +441,9 @@
         function shareProduct(id) {
             const p = currentProducts.find(x => x.id === id);
             if (!p) return;
+            const name = p.name_ar || p.name_tr || 'منتج';
             const productUrl = getProductLink(id);
-            const message = `${p.name}\n💰 Fiyat: ${p.price} TL\n🔗 ${productUrl}`;
+            const message = `${name}\n💰 ${p.price} TL\n🔗 ${productUrl}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
         }
 
