@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>mayar kozmetik</title>
-    <!-- Supabase CDN (defer eklendi) -->
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * {
@@ -609,7 +608,6 @@
         }
 
         const STORAGE_BUCKET = 'product-images';
-        const PAGE_SIZE = 12;
 
         const defaultSettings = {
             id: 1,
@@ -627,11 +625,8 @@
         let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         let isAdmin = false;
 
-        let currentProducts = [];
-        let currentPage = 0;
-        let totalProductsCount = 0;
-        let isLoadingProducts = false;
-        let hasMoreProducts = true;
+        let currentProducts = [];  // كل المنتجات محمّلة مرة واحدة
+        let filteredProducts = []; // المنتجات المفلترة حالياً
 
         let selectedCategory = 'ALL';
         let searchQuery = '';
@@ -764,7 +759,7 @@
             }
         };
 
-        // Otomatik Görsel Sıkıştırma Fonksiyonu (Resimleri küçülterek siteyi hızlandırır)
+        // Otomatik Görsel Sıkıştırma Fonksiyonu
         function compressImage(file, maxWidth = 1000, quality = 0.75) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -886,123 +881,70 @@
             return publicUrlData.publicUrl;
         }
 
-        async function loadProducts(page = 0, reset = true) {
-            if (isLoadingProducts) return;
-
-            if (!_supabase) {
-                hideLoadingScreen();
-                document.getElementById('productsGrid').innerHTML =
-                    `<p style="text-align:center;color:red;">⚠️ Supabase bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin veya sayfayı yenileyin.</p>`;
-                return;
-            }
-
-            isLoadingProducts = true;
-            const bottomLoader = document.getElementById('bottomLoader');
-            if (reset) {
-                showLoadingScreen();
-                document.getElementById('productsGrid').innerHTML = '';
-                currentProducts = [];
-                totalProductsCount = 0;
-                hasMoreProducts = true;
-            } else if (bottomLoader) {
-                bottomLoader.style.display = 'block';
-            }
-
+        // ═══════════════════════════════════════════════════════
+        //  البيانات تُحمَّل الآن من /api/products (مخزّن على Vercel)
+        // ═══════════════════════════════════════════════════════
+        async function loadCatalog(bust = false) {
+            showLoadingScreen();
             try {
-                currentPage = page;
-                const from = page * PAGE_SIZE;
-                const to = from + PAGE_SIZE - 1;
+                const url = bust ? '/api/products?bust=1' : '/api/products';
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('API hatası: ' + res.status);
+                const data = await res.json();
 
-                let query = _supabase.from('products').select('*', { count: 'exact' }).range(from, to);
+                if (data.settings) settings = { ...defaultSettings, ...data.settings };
+                groups = data.groups || [];
+                currentProducts = data.products || [];
 
-                if (selectedCategory !== 'ALL') {
-                    const { data: pgData, error: pgError } = await _supabase
-                        .from('product_groups')
-                        .select('product_id')
-                        .eq('group_id', selectedCategory.id);
-                    if (pgError) throw pgError;
-                    const productIds = pgData.map(row => row.product_id);
-                    if (productIds.length === 0) {
-                        currentProducts = [];
-                        totalProductsCount = 0;
-                        hasMoreProducts = false;
-                        renderProducts(true);
-                        hideLoadingScreen();
-                        isLoadingProducts = false;
-                        return;
-                    }
-                    query = query.in('id', productIds);
-                }
-
-                if (searchQuery) {
-                    query = query.or(`name_ar.ilike."%${searchQuery}%",name_tr.ilike."%${searchQuery}%"`);
-                }
-
-                query = query.order('id', { ascending: true });
-
-                const { data: products, count, error } = await query;
-                if (error) throw error;
-
-                const productList = products || [];
-                totalProductsCount = count || 0;
-
-                if (productList.length > 0) {
-                    const productIds = productList.map(p => p.id);
-                    try {
-                        const { data: pgData, error: pgError } = await _supabase
-                            .from('product_groups')
-                            .select('product_id, group_id, groups(id, name_ar, name_tr)')
-                            .in('product_id', productIds);
-                        
-                        if (!pgError && pgData) {
-                            const groupsMap = {};
-                            pgData.forEach(row => {
-                                if (!groupsMap[row.product_id]) groupsMap[row.product_id] = [];
-                                if (row.groups) groupsMap[row.product_id].push(row.groups);
-                            });
-                            productList.forEach(p => { p.groups = groupsMap[p.id] || []; });
-                        } else {
-                            productList.forEach(p => p.groups = []);
-                        }
-                    } catch (e) {
-                        productList.forEach(p => p.groups = []);
-                    }
-                } else {
-                    productList.forEach(p => p.groups = []);
-                }
-
-                if (reset) currentProducts = productList;
-                else currentProducts = currentProducts.concat(productList);
-
-                hasMoreProducts = currentProducts.length < totalProductsCount;
-                renderProducts(reset, productList);
+                applyLocalFilter();
+                renderCategories();
             } catch (err) {
-                console.error('Ürünler yüklenirken hata:', err);
+                console.error('Katalog yüklenemedi:', err);
+                document.getElementById('productsGrid').innerHTML =
+                    `<p style="grid-column:1/-1;text-align:center;color:red;padding:20px 0;">⚠️ Veri yüklenemedi: ${err.message}</p>`;
             } finally {
-                isLoadingProducts = false;
-                if (reset) hideLoadingScreen();
-                else if (bottomLoader) bottomLoader.style.display = 'none';
+                hideLoadingScreen();
             }
         }
 
-        function loadMoreProducts() {
-            if (!hasMoreProducts || isLoadingProducts) return;
-            loadProducts(currentPage + 1, false);
+        // ═══════════════════════════════════════════════════════
+        //  الفلترة والبحث محلياً (0 طلب Supabase)
+        // ═══════════════════════════════════════════════════════
+        function applyLocalFilter() {
+            let list = currentProducts.slice();
+
+            if (selectedCategory !== 'ALL') {
+                const catId = selectedCategory.id;
+                list = list.filter(p =>
+                    p.groups && p.groups.some(g => g.id === catId)
+                );
+            }
+
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                list = list.filter(p =>
+                    (p.name_ar && p.name_ar.toLowerCase().includes(q)) ||
+                    (p.name_tr && p.name_tr.toLowerCase().includes(q))
+                );
+            }
+
+            filteredProducts = list;
+            renderFilteredProducts();
         }
 
-        function renderProducts(reset = true, newItems = []) {
+        function renderFilteredProducts() {
             const grid = document.getElementById('productsGrid');
             const t = translations[settings.lang];
-            if (reset) grid.innerHTML = '';
-            const itemsToRender = reset ? currentProducts : newItems;
-            if (currentProducts.length === 0 && !isLoadingProducts) {
+            grid.innerHTML = '';
+
+            if (filteredProducts.length === 0) {
                 grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:20px 0;">${t.noProductsFound}</p>`;
                 return;
             }
+
             const fragment = document.createDocumentFragment();
-            itemsToRender.forEach(p => {
-                const card = createProductCardElement(p);
-                fragment.appendChild(card);
+            filteredProducts.forEach(p => {
+                fragment.appendChild(createProductCardElement(p));
             });
             grid.appendChild(fragment);
         }
@@ -1058,7 +1000,7 @@
                 if (selectedCategory === 'ALL') return;
                 selectedCategory = 'ALL';
                 renderCategories();
-                loadProducts(0, true);
+                applyLocalFilter();
             };
             bar.appendChild(allBtn);
 
@@ -1072,7 +1014,7 @@
                     if (selectedCategory !== 'ALL' && selectedCategory.id === g.id) return;
                     selectedCategory = g;
                     renderCategories();
-                    loadProducts(0, true);
+                    applyLocalFilter();
                 };
                 bar.appendChild(btn);
             });
@@ -1118,8 +1060,12 @@
             openModal('productModal');
         }
 
-        async function editProduct(id) {
-            const p = await getProductById(id);
+        function getProductById(id) {
+            return currentProducts.find(p => p.id === id) || null;
+        }
+
+        function editProduct(id) {
+            const p = getProductById(id);
             if (!p) return;
 
             document.getElementById('prod-id').value = p.id;
@@ -1196,33 +1142,13 @@
                     await _supabase.from('product_groups').insert(inserts);
                 }
 
-                await loadProducts(0, true);
+                // إعادة تحميل بـ cache bypass ليرى الأدمن التغيير فوراً
+                await loadCatalog(true);
                 closeModal('productModal');
             } catch (err) {
                 console.error('Ürün kaydedilemedi:', err);
                 alert('Hata oluştu: ' + err.message);
             }
-        }
-
-        async function getProductById(id) {
-            if (!_supabase) return null;
-            const { data: product, error } = await _supabase.from('products').select('*').eq('id', id).single();
-            if (error || !product) return null;
-
-            try {
-                const { data: pgData, error: pgError } = await _supabase
-                    .from('product_groups')
-                    .select('group_id, groups(id, name_ar, name_tr)')
-                    .eq('product_id', id);
-                if (!pgError && pgData) {
-                    product.groups = pgData.map(row => row.groups).filter(Boolean);
-                } else {
-                    product.groups = [];
-                }
-            } catch (e) {
-                product.groups = [];
-            }
-            return product;
         }
 
         function renderCart() {
@@ -1329,8 +1255,8 @@
             window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
         }
 
-        async function openProductDetail(id) {
-            const p = await getProductById(id);
+        function openProductDetail(id) {
+            const p = getProductById(id);
             if (!p) { alert('Ürün bulunamadı.'); return; }
             const name = settings.lang === 'ar' ? p.name_ar : p.name_tr;
             const desc = settings.lang === 'ar' ? p.desc_ar : p.desc_tr;
@@ -1411,30 +1337,37 @@
                 alert(settings.lang === 'ar' ? 'يرجى إدخال اسم المجموعة' : 'Lütfen grup adı girin!');
                 return;
             }
-            const newId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
-            const newGroup = { id: newId, name_ar: name_ar || name_tr, name_tr: name_tr || name_ar };
-            groups.push(newGroup);
-            try { await _supabase.from('groups').insert([newGroup]); } catch (err) { console.error("Grup eklenemedi:", err); }
-            renderGroupsList();
-            renderGroupCheckboxes([]);
-            renderCategories();
-            document.getElementById('new-group-ar').value = '';
-            document.getElementById('new-group-tr').value = '';
+            const newGroup = { name_ar: name_ar || name_tr, name_tr: name_tr || name_ar };
+            try {
+                const { data, error } = await _supabase.from('groups').insert([newGroup]).select();
+                if (error) throw error;
+                // إعادة تحميل البيانات بـ cache bypass
+                await loadCatalog(true);
+                renderGroupsList();
+                renderGroupCheckboxes([]);
+                document.getElementById('new-group-ar').value = '';
+                document.getElementById('new-group-tr').value = '';
+            } catch (err) {
+                console.error("Grup eklenemedi:", err);
+                alert('Hata: ' + err.message);
+            }
         }
 
         async function deleteGroup(id) {
             if (!_supabase) return;
             if (confirm(settings.lang === 'ar' ? 'هل أنت تأكد من حذف هذه المجموعة؟' : 'Bu grubu silmek istediğinize emin misiniz?')) {
-                groups = groups.filter(g => g.id !== id);
-                try { await _supabase.from('groups').delete().eq('id', id); } catch (err) { console.error("Grup silinemedi:", err); }
-                renderGroupsList();
-                renderGroupCheckboxes([]);
-                renderCategories();
-                if (selectedCategory !== 'ALL' && selectedCategory.id === id) {
-                    selectedCategory = 'ALL';
-                    renderCategories();
+                try {
+                    await _supabase.from('groups').delete().eq('id', id);
+                    if (selectedCategory !== 'ALL' && selectedCategory.id === id) {
+                        selectedCategory = 'ALL';
+                    }
+                    await loadCatalog(true);
+                    renderGroupsList();
+                    renderGroupCheckboxes([]);
+                } catch (err) {
+                    console.error("Grup silinemedi:", err);
+                    alert('Hata: ' + err.message);
                 }
-                loadProducts(0, true);
             }
         }
 
@@ -1486,7 +1419,7 @@
                 isAdmin = true;
                 closeModal('loginModal');
                 await updateAdminUI();
-                renderProducts(true);
+                renderFilteredProducts();
                 alert(settings.lang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Başarıyla giriş yapıldı!');
             }
         }
@@ -1497,7 +1430,7 @@
             isAdmin = false;
             await updateAdminUI();
             closeModal('settingsModal');
-            renderProducts(true);
+            renderFilteredProducts();
             alert(settings.lang === 'ar' ? 'تم تسجيل الخروج' : 'Oturum kapatıldı.');
         }
 
@@ -1526,6 +1459,8 @@
             settings.customAddText = document.getElementById('new-add-text').value.trim();
             settings.customCheckoutText = document.getElementById('new-checkout-text').value.trim();
             await updateAdminSettingsToSupabase();
+            // إعادة تحميل البيانات لتحديث cache Vercel
+            await loadCatalog(true);
             changeLanguage(settings.lang, false);
             alert(settings.lang === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Ayarlar başarıyla kaydedildi!');
         }
@@ -1646,7 +1581,7 @@
             document.getElementById('btn-update-account').innerText = t.updateAccountBtn;
 
             renderCategories();
-            renderProducts(true);
+            renderFilteredProducts();
             renderCart();
         }
 
@@ -1660,14 +1595,14 @@
                 document.getElementById('search-input').value = '';
                 searchQuery = '';
                 openModal('loginModal');
-                loadProducts(0, true);
+                applyLocalFilter();
                 return;
             }
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 searchQuery = val.trim().toLowerCase();
-                loadProducts(0, true);
-            }, 300);
+                applyLocalFilter();
+            }, 200);
         }
 
         function previewSelectedImage(input) {
@@ -1729,10 +1664,9 @@
                 try {
                     await _supabase.from('products').delete().eq('id', id);
                     cart = cart.filter(c => c.id !== id);
-                    await saveCart();
-                    currentProducts = currentProducts.filter(p => p.id !== id);
+                    saveCart();
+                    await loadCatalog(true);
                     renderCart();
-                    renderProducts(true);
                 } catch (err) {
                     console.error("Ürün silinemedi:", err);
                     alert('Ürün silinirken hata oluştu.');
@@ -1743,55 +1677,41 @@
         async function init() {
             showLoadingScreen();
             initSupabase();
+
             try {
                 if (_supabase) {
                     const { data: { session } } = await _supabase.auth.getSession();
                     isAdmin = !!session;
+
                     _supabase.auth.onAuthStateChange((event, session) => {
                         isAdmin = !!session;
                         updateAdminUI();
-                        renderProducts(true);
+                        renderFilteredProducts();
                     });
+                }
 
-                    const { data: sData } = await _supabase.from('settings').select('*').eq('id', 1).maybeSingle();
-                    if (sData) settings = { ...defaultSettings, ...sData };
+                await loadCatalog();
+                await updateAdminUI();
 
-                    const { data: gData } = await _supabase.from('groups').select('*');
-                    if (gData && gData.length > 0) groups = gData;
-
-                    await loadProducts(0, true);
-                } else {
-                    hideLoadingScreen();
-                    document.getElementById('productsGrid').innerHTML =
-                        `<p style="text-align:center;color:red;">⚠️ Supabase bağlantısı başarısız. Lütfen internet bağlantınızı kontrol edin veya sayfayı yenileyin.</p>`;
+                const urlParams = new URLSearchParams(window.location.search);
+                const productIdParam = urlParams.get('product');
+                if (productIdParam) {
+                    setTimeout(() => openProductDetail(Number(productIdParam)), 400);
                 }
             } catch (err) {
                 console.error('Başlatma Hatası:', err);
                 hideLoadingScreen();
                 document.getElementById('productsGrid').innerHTML =
-                    `<p style="text-align:center;color:red;">⚠️ Bir hata oluştu: ${err.message}</p>`;
+                    `<p style="grid-column:1/-1;text-align:center;color:red;">⚠️ Bir hata oluştu: ${err.message}</p>`;
             }
 
             changeLanguage(settings.lang, false);
-            await updateAdminUI();
-            renderCategories();
             renderCart();
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const productIdParam = urlParams.get('product');
-            if (productIdParam) {
-                setTimeout(() => openProductDetail(Number(productIdParam)), 400);
-            }
 
             const scrollBtn = document.getElementById('scrollTopBtn');
             window.addEventListener('scroll', function() {
                 if (window.scrollY > 300) scrollBtn.style.display = 'block';
                 else scrollBtn.style.display = 'none';
-
-                const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 400);
-                if (nearBottom && hasMoreProducts && !isLoadingProducts) {
-                    loadMoreProducts();
-                }
             });
             scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
         }
