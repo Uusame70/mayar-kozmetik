@@ -1,26 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
+  // Önbellek Başlığı: Cevabı 1 saat hafızada tutar, veritabanını yormaz
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
 
   try {
     const supabaseUrl = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
     const supabaseKey = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // İlişki hatasını önlemek için tabloları ayrı ayrı çekiyoruz
+    // Sadece gerekli sütunları çekiyoruz (Performans optimizasyonu)
     const [{ data: products, error: pErr }, { data: productGroups }, { data: groups }] = await Promise.all([
-      supabase.from('products').select('*'),
-      supabase.from('product_groups').select('*'),
-      supabase.from('groups').select('*')
+      supabase.from('products').select('id, name_ar, name_tr, desc_ar, desc_tr, price, img'),
+      supabase.from('product_groups').select('product_id, group_id'),
+      supabase.from('groups').select('id, name_ar, name_tr')
     ]);
 
     if (pErr) throw pErr;
 
-    // Kategori isimlerini ID'leri ile eşleştiriyoruz
     const groupMap = new Map((groups || []).map(g => [g.id, g.name_ar || g.name_tr]));
 
-    // Her ürünün dahil olduğu kategorileri topluyoruz
     const productCategoryMap = new Map();
     (productGroups || []).forEach(pg => {
       const catName = groupMap.get(pg.group_id);
