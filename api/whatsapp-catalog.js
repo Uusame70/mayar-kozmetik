@@ -10,26 +10,66 @@ export default async function handler(req, res) {
   const API_KEY = 'SENIN_2CHAT_API_KEYIN';
   const PHONE = '905074444502';
 
+  // Yardımcı: ürün alanlarını esnek çıkar
+  function pickName(p) {
+    return p.name_ar || p.name_tr || p.name || p.product_name || p.productName || p.title || '';
+  }
+  function pickDesc(p) {
+    return p.desc_ar || p.desc_tr || p.description || p.product_description || p.desc || p.caption || '';
+  }
+  function pickPrice(p) {
+    const raw = p.price ?? p.product_price ?? p.productPrice ?? p.amount ?? 0;
+    if (typeof raw === 'string') return parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
+    return parseFloat(raw) || 0;
+  }
+  function pickImg(p) {
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      const f = p.images[0];
+      return typeof f === 'string' ? f : (f.url || f.link || f.src || '');
+    }
+    if (p.img) return typeof p.img === 'string' ? p.img : (p.img.url || '');
+    if (p.image) return typeof p.image === 'string' ? p.image : (p.image.url || '');
+    if (p.image_url) return p.image_url;
+    if (p.imageUrl) return p.imageUrl;
+    return '';
+  }
+
   try {
-    const url = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
-    const response = await fetch(url, {
+    const apiUrl = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
+    const apiRes = await fetch(apiUrl, {
       headers: { 'X-User-API-Key': API_KEY }
     });
-    const data = await response.json();
 
-    // ═══════════════════════════════════════════════════════
-    //  DEBUG: Ham cevabı görmek için ?debug=1 ekle
-    //  Örnek: /api/whatsapp-catalog?debug=1
-    // ═══════════════════════════════════════════════════════
+    // 2Chat cevap kodu
+    const status = apiRes.status;
+    let data;
+    try {
+      data = await apiRes.json();
+    } catch (jsonErr) {
+      return res.status(500).json({
+        step: '2chat_json_parse',
+        status,
+        error: 'API cevabı JSON değil',
+        raw: await apiRes.text().catch(() => '')
+      });
+    }
+
+    // Debug modu
     if (req.query.debug === '1') {
-      return res.status(200).json(data);
+      return res.status(200).json({ step: 'debug', status, data });
     }
 
-    if (!data.success && !data.products) {
-      throw new Error(data.error?.message || 'Katalog çekilemedi');
+    // 2Chat hata döndürdüyse
+    if (status !== 200) {
+      return res.status(500).json({
+        step: '2chat_api',
+        status,
+        message: data?.error?.message || data?.message || 'Bilinmeyen 2Chat hatası',
+        raw: data
+      });
     }
 
-    // Farklı API sürümlerinde ürünler farklı alanlarda olabilir
+    // Ürünleri al (farklı sürümler için)
     const rawProducts =
       data.products ||
       data.data ||
@@ -38,60 +78,15 @@ export default async function handler(req, res) {
       [];
 
     const products = rawProducts.map((p, index) => {
-      // Olası alan isimlerini sırayla dene
-      const name =
-        p.name ||
-        p.product_name ||
-        p.productName ||
-        p.title ||
-        p.productTitle ||
-        '';
-
-      const description =
-        p.description ||
-        p.product_description ||
-        p.productDescription ||
-        p.desc ||
-        p.caption ||
-        p.productDescriptionText ||
-        '';
-
-      let price = 0;
-      const priceRaw =
-        p.price ||
-        p.product_price ||
-        p.productPrice ||
-        p.amount ||
-        p.price_value ||
-        p.priceValue ||
-        0;
-      if (typeof priceRaw === 'string') {
-        price = parseFloat(priceRaw.replace(/[^0-9.]/g, '')) || 0;
-      } else {
-        price = parseFloat(priceRaw) || 0;
-      }
-
-      // Görsel URL'sini farklı formatlardan çıkar
-      let img = '';
-      if (Array.isArray(p.images) && p.images.length > 0) {
-        const first = p.images[0];
-        img = typeof first === 'string' ? first : (first.url || first.link || first.src || '');
-      } else if (p.image) {
-        img = typeof p.image === 'string' ? p.image : (p.image.url || p.image.link || '');
-      } else if (p.image_url) {
-        img = p.image_url;
-      } else if (p.imageUrl) {
-        img = p.imageUrl;
-      } else if (p.photo) {
-        img = typeof p.photo === 'string' ? p.photo : (p.photo.url || '');
-      }
-
+      const name = pickName(p);
       return {
         id: p.retailer_id || p.retailerId || p.id || index + 1,
-        name,
-        price,
-        desc: description,
-        img,
+        name_ar: name,
+        name_tr: name,
+        price: pickPrice(p),
+        desc_ar: pickDesc(p),
+        desc_tr: pickDesc(p),
+        img: pickImg(p),
         groups: []
       };
     });
@@ -116,6 +111,10 @@ export default async function handler(req, res) {
       cachedAt: new Date().toISOString()
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      step: 'unhandled',
+      error: err.message,
+      stack: err.stack
+    });
   }
 }
