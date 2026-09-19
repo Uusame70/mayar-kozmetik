@@ -20,116 +20,95 @@ export default async function handler(req, res) {
   const headers = { 'X-User-API-Key': API_KEY };
 
   function pickName(p) {
-    return p.name_ar || p.name_tr || p.name || p.product_name || p.productName || p.title || '';
+    return p.name || p.name_ar || p.name_tr || '';
   }
   function pickDesc(p) {
-    return p.desc_ar || p.desc_tr || p.description || p.product_description || p.desc || p.caption || '';
+    return p.description || p.desc_ar || p.desc_tr || '';
   }
   function pickPrice(p) {
-    const raw = p.price ?? p.product_price ?? p.productPrice ?? p.amount ?? 0;
+    const raw = p.price ?? 0;
     if (typeof raw === 'string') return parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
     return parseFloat(raw) || 0;
   }
   function pickImg(p) {
     if (Array.isArray(p.images) && p.images.length > 0) {
       const f = p.images[0];
-      return typeof f === 'string' ? f : (f.url || f.link || f.src || '');
+      return typeof f === 'string' ? f : (f.url || '');
     }
-    if (p.img) return typeof p.img === 'string' ? p.img : (p.img.url || '');
-    if (p.image) return typeof p.image === 'string' ? p.image : (p.image.url || '');
     if (p.image_url) return p.image_url;
-    if (p.imageUrl) return p.imageUrl;
+    if (p.img) return p.img;
     return '';
   }
 
   try {
-    // ── 1. Ürünleri çek ──
-    const productsUrl = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
-    const productsRes = await fetch(productsUrl, { headers });
-    const productsData = await productsRes.json();
+    // ── 1. Koleksiyonları çek (içinde ürünler de var) ──
+    const colUrl = `https://api.p.2chat.io/open/whatsapp/catalog/collections?from_number=${PHONE}`;
+    const colRes = await fetch(colUrl, { headers });
+    const colData = await colRes.json();
 
     if (req.query.debug === '1') {
-      return res.status(200).json({ step: 'debug_products', data: productsData });
+      return res.status(200).json({ step: 'debug_collections', status: colRes.status, data: colData });
     }
 
-    if (productsRes.status !== 200) {
+    if (colRes.status !== 200) {
       return res.status(500).json({
-        step: '2chat_products',
-        status: productsRes.status,
-        message: productsData?.detail || 'Ürünler çekilemedi',
-        raw: productsData
+        step: '2chat_collections',
+        status: colRes.status,
+        message: colData?.detail || 'Koleksiyonlar çekilemedi',
+        raw: colData
       });
     }
 
-    const rawProducts = productsData.products || productsData.data || productsData.items || [];
+    const collections = colData.collections || [];
 
-    // ── 2. Koleksiyonları çek ──
-    let collections = [];
-    try {
-      const colUrl = `https://api.p.2chat.io/open/whatsapp/catalog/collection?from_number=${PHONE}`;
-      const colRes = await fetch(colUrl, { headers });
-      const colData = await colRes.json();
-
-      if (req.query.debug === '2') {
-        return res.status(200).json({ step: 'debug_collections', data: colData });
-      }
-
-      if (colRes.status === 200) {
-        collections = colData.collections || colData.data || colData.items || [];
-      }
-    } catch (e) {
-      console.warn('Koleksiyonlar çekilemedi:', e.message);
-    }
-
-    // ── 3. Her koleksiyonun ürünlerini çek ve eşleştir ──
-    // productId -> [collectionId, ...] haritası
-    const productCollectionMap = new Map();
+    // ── 2. Ürünleri koleksiyonlardan çıkar ve grupları eşleştir ──
+    const productMap = new Map(); // productId -> product objesi
+    const productGroupsMap = new Map(); // productId -> [collection, ...]
 
     for (const col of collections) {
-      const colId = col.id || col.collection_id;
-      if (!colId) continue;
+      const colInfo = {
+        id: col.id,
+        name_ar: col.name || '',
+        name_tr: col.name || ''
+      };
 
-      try {
-        // Koleksiyon ürünlerini getiren endpoint (2Chat dokümanına göre)
-        const colProductsUrl = `https://api.p.2chat.io/open/whatsapp/catalog/collection/${colId}/products?from_number=${PHONE}`;
-        const cpRes = await fetch(colProductsUrl, { headers });
-        const cpData = await cpRes.json();
+      const colProducts = col.products || [];
+      for (const cp of colProducts) {
+        const pid = String(cp.retailer_id || cp.id || '');
+        if (!pid) continue;
 
-        const colProducts = cpData.products || cpData.data || cpData.items || [];
-        for (const cp of colProducts) {
-          const pid = String(cp.retailer_id || cp.id || '');
-          if (!pid) continue;
-          if (!productCollectionMap.has(pid)) {
-            productCollectionMap.set(pid, []);
-          }
-          productCollectionMap.get(pid).push({
-            id: colId,
-            name_ar: col.name || col.collection_name || '',
-            name_tr: col.name || col.collection_name || ''
+        // Ürünü ilk kez görüyorsak kaydet
+        if (!productMap.has(pid)) {
+          productMap.set(pid, {
+            id: pid,
+            name_ar: pickName(cp),
+            name_tr: pickName(cp),
+            price: pickPrice(cp),
+            desc_ar: pickDesc(cp),
+            desc_tr: pickDesc(cp),
+            img: pickImg(cp),
+            groups: []
           });
         }
-      } catch (e) {
-        console.warn(`Koleksiyon ${colId} ürünleri çekilemedi:`, e.message);
+
+        // Ürünün grup listesine bu koleksiyonu ekle
+        if (!productGroupsMap.has(pid)) {
+          productGroupsMap.set(pid, []);
+        }
+        const groupsList = productGroupsMap.get(pid);
+        if (!groupsList.some(g => g.id === colInfo.id)) {
+          groupsList.push(colInfo);
+        }
       }
     }
 
-    // ── 4. Ürünleri oluştur ──
-    const products = rawProducts.map((p, index) => {
-      const name = pickName(p);
-      const pid = String(p.retailer_id || p.retailerId || p.id || index + 1);
-      return {
-        id: pid,
-        name_ar: name,
-        name_tr: name,
-        price: pickPrice(p),
-        desc_ar: pickDesc(p),
-        desc_tr: pickDesc(p),
-        img: pickImg(p),
-        groups: productCollectionMap.get(pid) || []
-      };
+    // ── 3. Ürünlere grupları bağla ──
+    const products = Array.from(productMap.values()).map(p => {
+      p.groups = productGroupsMap.get(p.id) || [];
+      return p;
     });
 
-    // ── 5. Benzersiz grupları çıkar ──
+    // ── 4. Benzersiz grupları çıkar ──
     const groupMap = new Map();
     products.forEach(p => {
       (p.groups || []).forEach(g => {
@@ -137,6 +116,29 @@ export default async function handler(req, res) {
       });
     });
     const groups = Array.from(groupMap.values());
+
+    // ── 5. Eğer hiç koleksiyon yoksa, düz ürün listesini de dene ──
+    let finalProducts = products;
+    if (products.length === 0) {
+      // Koleksiyonsuz durum — eski yöntemle ürünleri çek
+      const prodUrl = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
+      const prodRes = await fetch(prodUrl, { headers });
+      const prodData = await prodRes.json();
+      const rawProducts = prodData.products || prodData.data || prodData.items || [];
+      finalProducts = rawProducts.map((p, index) => {
+        const name = pickName(p);
+        return {
+          id: String(p.retailer_id || p.id || index + 1),
+          name_ar: name,
+          name_tr: name,
+          price: pickPrice(p),
+          desc_ar: pickDesc(p),
+          desc_tr: pickDesc(p),
+          img: pickImg(p),
+          groups: []
+        };
+      });
+    }
 
     const settings = {
       id: 1,
@@ -150,11 +152,11 @@ export default async function handler(req, res) {
     };
 
     res.status(200).json({
-      products,
+      products: finalProducts,
       groups,
       settings,
       source: 'whatsapp',
-      count: products.length,
+      count: finalProducts.length,
       collectionsCount: collections.length,
       cachedAt: new Date().toISOString()
     });
