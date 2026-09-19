@@ -18,8 +18,6 @@ export default async function handler(req, res) {
   const API_KEY = req.query.api_key || DEFAULT_API_KEY;
   const PHONE = req.query.phone || DEFAULT_PHONE;
 
-  const headers = { 'X-User-API-Key': API_KEY };
-
   function pickName(p) {
     return p.name || p.name_ar || p.name_tr || '';
   }
@@ -42,101 +40,48 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ── 1. Koleksiyonları çek ──
-    const colUrl = `https://api.p.2chat.io/open/whatsapp/catalog/collections?from_number=${PHONE}`;
-    const colRes = await fetch(colUrl, { headers });
-    const colData = await colRes.json();
+    const apiUrl = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
+    const apiRes = await fetch(apiUrl, {
+      headers: { 'X-User-API-Key': API_KEY }
+    });
+
+    const status = apiRes.status;
+    let data;
+    try {
+      data = await apiRes.json();
+    } catch (jsonErr) {
+      return res.status(500).json({ step: '2chat_json_parse', status, error: 'API cevabı JSON değil' });
+    }
 
     if (req.query.debug === '1') {
-      return res.status(200).json({ step: 'debug_collections', status: colRes.status, data: colData });
+      return res.status(200).json({ step: 'debug', status, data });
     }
 
-    if (colRes.status !== 200) {
+    if (status !== 200) {
       return res.status(500).json({
-        step: '2chat_collections',
-        status: colRes.status,
-        message: colData?.detail || 'Koleksiyonlar çekilemedi',
-        raw: colData
+        step: '2chat_api',
+        status,
+        message: data?.detail || data?.error?.message || data?.message || 'Bilinmeyen 2Chat hatası',
+        raw: data
       });
     }
 
-    const collections = colData.collections || [];
+    const rawProducts =
+      data.products || data.data || data.items || data.result?.products || [];
 
-    // ── 2. Ürünleri koleksiyonlardan çıkar ──
-    const productMap = new Map();
-    const productGroupsMap = new Map();
-
-    for (const col of collections) {
-      const colInfo = {
-        id: col.id,
-        name_ar: col.name || '',
-        name_tr: col.name || ''
+    const products = rawProducts.map((p, index) => {
+      const name = pickName(p);
+      return {
+        id: String(p.retailer_id || p.retailerId || p.id || index + 1),
+        name_ar: name,
+        name_tr: name,
+        price: pickPrice(p),
+        desc_ar: pickDesc(p),
+        desc_tr: pickDesc(p),
+        img: pickImg(p),
+        groups: []
       };
-
-      const colProducts = col.products || [];
-      for (const cp of colProducts) {
-        const pid = String(cp.retailer_id || cp.id || '');
-        if (!pid) continue;
-
-        if (!productMap.has(pid)) {
-          productMap.set(pid, {
-            id: pid,
-            name_ar: pickName(cp),
-            name_tr: pickName(cp),
-            price: pickPrice(cp),
-            desc_ar: pickDesc(cp),
-            desc_tr: pickDesc(cp),
-            img: pickImg(cp),
-            groups: []
-          });
-        }
-
-        if (!productGroupsMap.has(pid)) {
-          productGroupsMap.set(pid, []);
-        }
-        const groupsList = productGroupsMap.get(pid);
-        if (!groupsList.some(g => g.id === colInfo.id)) {
-          groupsList.push(colInfo);
-        }
-      }
-    }
-
-    // ── 3. Ürünlere grupları bağla ──
-    const products = Array.from(productMap.values()).map(p => {
-      p.groups = productGroupsMap.get(p.id) || [];
-      return p;
     });
-
-    // ── 4. Benzersiz grupları çıkar ──
-    const groupMap = new Map();
-    products.forEach(p => {
-      (p.groups || []).forEach(g => {
-        if (!groupMap.has(g.id)) groupMap.set(g.id, g);
-      });
-    });
-    const groups = Array.from(groupMap.values());
-
-    // ── 5. Hiç koleksiyon yoksa eski yönteme düş ──
-    let finalProducts = products;
-    if (products.length === 0) {
-      const prodUrl = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
-      const prodRes = await fetch(prodUrl, { headers });
-      const prodData = await prodRes.json();
-      const rawProducts = prodData.products || prodData.data || prodData.items || [];
-      finalProducts = rawProducts.map((p, index) => {
-        const name = pickName(p);
-        return {
-          id: String(p.retailer_id || p.id || index + 1),
-          name_ar: name,
-          name_tr: name,
-          price: pickPrice(p),
-          desc_ar: pickDesc(p),
-          desc_tr: pickDesc(p),
-          img: pickImg(p),
-          groups: []
-        };
-      });
-    }
 
     const settings = {
       id: 1,
@@ -150,12 +95,11 @@ export default async function handler(req, res) {
     };
 
     res.status(200).json({
-      products: finalProducts,
-      groups,
+      products,
+      groups: [],
       settings,
       source: 'whatsapp',
-      count: finalProducts.length,
-      collectionsCount: collections.length,
+      count: products.length,
       cachedAt: new Date().toISOString()
     });
   } catch (err) {
