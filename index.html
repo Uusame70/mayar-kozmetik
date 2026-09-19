@@ -7,51 +7,35 @@
     <title>mayar kozmetik</title>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent; }
         body { background-color: #f4f6f9; color: #333; padding-bottom: 90px; }
         #loadingScreen {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.95);
+            position: fixed; inset: 0; background: rgba(255,255,255,0.95);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 9999; font-size: 1.1rem; color: #2c3e50; font-weight: bold;
             transition: opacity 0.3s ease;
         }
-        .spinner {
-            border: 4px solid #f3f3f3; border-top: 4px solid #3498db;
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db;
             border-radius: 50%; width: 45px; height: 45px;
-            animation: spin 0.9s linear infinite; margin-bottom: 12px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        header {
-            background-color: #2c3e50; color: white;
-            padding: 12px 15px 8px 15px;
-            position: sticky; top: 0; z-index: 100;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-        }
-        .header-top {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-        }
+            animation: spin 0.9s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        header { background-color: #2c3e50; color: white;
+            padding: 12px 15px 8px; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+        .header-top { display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 10px; }
         header h1 { font-size: 1.1rem; font-weight: 600; }
         .header-btns { display: flex; gap: 8px; align-items: center; }
         .search-box { margin-bottom: 10px; }
-        .search-box input {
-            width: 100%; padding: 10px 14px;
+        .search-box input { width: 100%; padding: 10px 14px;
             border: 1px solid #1a252f; border-radius: 8px;
-            font-size: 0.9rem; outline: none; background-color: #ffffff;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
+            font-size: 0.9rem; outline: none; background-color: #fff; }
         .search-box input:focus { border-color: #3498db; }
-        button {
-            cursor: pointer; padding: 8px 12px; border: none; border-radius: 6px;
-            background-color: #3498db; color: white; font-weight: bold; font-size: 0.85rem;
-            transition: background 0.2s, transform 0.1s; touch-action: manipulation;
-        }
+        button { cursor: pointer; padding: 8px 12px; border: none;
+            border-radius: 6px; background-color: #3498db; color: white;
+            font-weight: bold; font-size: 0.85rem; touch-action: manipulation; }
         button:active { transform: scale(0.97); }
         button:hover { background-color: #2980b9; }
         button.btn-danger { background-color: #e74c3c; }
@@ -63,16 +47,14 @@
         button.btn-whatsapp { background-color: #25d366; }
         button.btn-whatsapp:hover { background-color: #1ebd59; }
         .container { max-width: 1200px; margin: 15px auto; padding: 0 12px; }
-        .admin-bar {
-            background-color: #e8f4f8; border: 1px solid #bce8f1;
+        .admin-bar { background-color: #e8f4f8; border: 1px solid #bce8f1;
             padding: 12px; border-radius: 8px; margin-bottom: 15px;
             display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; gap: 10px;
-        }
-        .products-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        @media (max-width: 900px) {
-            .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        }
+            flex-wrap: wrap; gap: 10px; }
+        .sync-info { font-size: 0.8rem; color: #555; }
+        .products-grid { display: grid;
+            grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        @media (max-width: 900px) { .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
         @media (max-width: 500px) {
             .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .product-card img { height: 130px !important; }
@@ -82,89 +64,56 @@
             .product-actions button { width: 100%; padding: 8px 5px; }
         }
         .product-actions button { font-size: 0.78rem; padding: 8px 6px; }
-        .product-card {
-            background: white; border-radius: 10px; overflow: hidden;
+        .product-card { background: white; border-radius: 10px; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            display: flex; flex-direction: column; position: relative;
-        }
-        .product-card img {
-            width: 100%; height: 200px; object-fit: contain;
-            background: #f1f4f8; cursor: pointer;
-        }
-        .product-info {
-            padding: 12px; flex-grow: 1;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .product-title {
-            font-size: 1rem; margin-bottom: 8px; color: #2c3e50;
-            font-weight: 600; cursor: pointer;
-        }
-        .product-price {
-            font-size: 1.1rem; font-weight: bold;
-            color: #27ae60; margin-bottom: 10px;
-        }
+            display: flex; flex-direction: column; position: relative; }
+        .product-card img { width: 100%; height: 200px; object-fit: contain;
+            background: #f1f4f8; cursor: pointer; }
+        .product-info { padding: 12px; flex-grow: 1;
+            display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-size: 1rem; margin-bottom: 8px;
+            color: #2c3e50; font-weight: 600; cursor: pointer; }
+        .product-price { font-size: 1.1rem; font-weight: bold;
+            color: #27ae60; margin-bottom: 10px; }
         .product-actions { display: flex; gap: 5px; flex-wrap: wrap; }
-        .cart-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
+        .cart-bar { position: fixed; bottom: 0; left: 0; right: 0;
             background: #2c3e50; color: white; padding: 12px 15px;
             display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 90;
-        }
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 90; }
         .cart-bar-info { font-size: 0.95rem; }
         .cart-bar-info strong { color: #2ecc71; font-size: 1.1rem; }
-        #scrollTopBtn {
-            position: fixed; bottom: 80px; right: 20px; display: none;
+        #scrollTopBtn { position: fixed; bottom: 80px; right: 20px; display: none;
             z-index: 99; background-color: #2c3e50; color: white;
             border: none; border-radius: 50%; width: 50px; height: 50px;
-            font-size: 26px; cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3); line-height: 1; padding: 0;
-        }
+            font-size: 26px; cursor: pointer; line-height: 1; padding: 0; }
         #scrollTopBtn:hover { background-color: #3498db; }
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); justify-content: center; align-items: center;
-            z-index: 1000; padding: 10px;
-        }
-        .modal-content {
-            background: white; padding: 20px; border-radius: 12px;
-            width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .modal-header-row {
-            display: flex; justify-content: space-between;
-            align-items: center; margin-bottom: 15px;
-        }
+        .modal { display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6); justify-content: center;
+            align-items: center; z-index: 1000; padding: 10px; }
+        .modal-content { background: white; padding: 20px;
+            border-radius: 12px; width: 100%; max-width: 480px;
+            max-height: 90vh; overflow-y: auto; }
+        .modal-header-row { display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 15px; }
         .modal-content h2 { font-size: 1.3rem; }
-        .modal-actions {
-            display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;
-        }
+        .modal-actions { display: flex; justify-content: flex-end;
+            gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         .form-group { margin-bottom: 12px; }
-        .form-group label {
-            display: block; margin-bottom: 4px;
-            font-weight: 600; font-size: 0.9rem; color: #2c3e50;
-        }
-        .form-group input {
-            width: 100%; padding: 10px;
-            border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
-        }
-        .cart-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 0; border-bottom: 1px solid #eee; gap: 10px;
-        }
+        .form-group label { display: block; margin-bottom: 4px;
+            font-weight: 600; font-size: 0.9rem; color: #2c3e50; }
+        .form-group input { width: 100%; padding: 10px;
+            border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .cart-item { display: flex; justify-content: space-between;
+            align-items: center; padding: 10px 0;
+            border-bottom: 1px solid #eee; gap: 10px; }
         .cart-item-details { flex-grow: 1; }
         .qty-btns { display: flex; gap: 6px; align-items: center; }
         .qty-btns button { padding: 4px 10px; font-size: 1rem; }
-        .btn-remove-item {
-            padding: 6px 10px; font-size: 0.85rem;
-            background-color: #ff7675; color: white;
-        }
-        .btn-remove-item:hover { background-color: #d63031; }
-        .info-box {
-            background: #e8f4f8; border: 1px solid #bce8f1;
-            padding: 10px; border-radius: 6px;
-            font-size: 0.85rem; color: #2c3e50;
-            margin-bottom: 12px; line-height: 1.5;
-        }
+        .btn-remove-item { padding: 6px 10px; font-size: 0.85rem;
+            background-color: #ff7675; color: white; }
+        .info-box { background: #e8f4f8; border: 1px solid #bce8f1;
+            padding: 10px; border-radius: 6px; font-size: 0.85rem;
+            color: #2c3e50; margin-bottom: 12px; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -188,9 +137,13 @@
 
     <div class="container">
         <div id="adminBar" class="admin-bar" style="display: none;">
-            <span>🔐 <strong>وضع المسؤول مفعل</strong></span>
-            <div style="display: flex; gap: 8px;">
-                <button onclick="openConfigModal()" class="btn-warning">⚙️ إعدادات الكتالوج</button>
+            <div>
+                <span>🔐 <strong>وضع المسؤول مفعل</strong></span>
+                <div class="sync-info" id="sync-info">—</div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button onclick="syncFromWhatsApp()" class="btn-success" id="btn-sync">🔄 Senkronize Et</button>
+                <button onclick="openConfigModal()" class="btn-warning">⚙️ إعدادات 2Chat</button>
                 <button onclick="handleSupabaseLogout()" class="btn-danger">🚪 Çıkış Yap</button>
             </div>
         </div>
@@ -237,7 +190,7 @@
         </div>
     </div>
 
-    <!-- Supabase Giriş -->
+    <!-- Giriş -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <h2 style="margin-bottom:15px;">🔐 Admin Girişi</h2>
@@ -258,12 +211,12 @@
         </div>
     </div>
 
-    <!-- Katalog Ayarları -->
+    <!-- 2Chat Ayarları -->
     <div id="configModal" class="modal">
         <div class="modal-content">
-            <h2 style="margin-bottom:15px;">⚙️ إعدادات الكتالوج</h2>
+            <h2 style="margin-bottom:15px;">⚙️ إعدادات 2Chat</h2>
             <div class="info-box">
-                Bu değerler Supabase'deki <strong>settings</strong> tablosuna kaydedilir ve <strong>tüm ziyaretçiler</strong> tarafından görülür.
+                Bu değerler <strong>senkronizasyon</strong> sırasında kullanılır. Supabase'deki <code>settings</code> tablosuna kaydedilir.
             </div>
             <div class="form-group">
                 <label>2Chat API Anahtarı</label>
@@ -286,11 +239,9 @@
 
         let _supabase = null;
         let isAdmin = false;
+        let sessionToken = null;
 
-        let catalogConfig = {
-            twochat_api_key: '',
-            twochat_phone: ''
-        };
+        let catalogConfig = { twochat_api_key: '', twochat_phone: '' };
 
         let cart = JSON.parse(localStorage.getItem('catalog_cart')) || [];
         let currentProducts = [];
@@ -303,26 +254,22 @@
                 if (typeof supabase !== 'undefined' && supabase.createClient) {
                     _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 }
-            } catch (e) {
-                console.error('Supabase init hatası:', e);
-            }
+            } catch (e) { console.error('Supabase init:', e); }
         }
 
         async function loadCatalogConfig() {
             if (!_supabase) return;
             try {
-                const { data, error } = await _supabase
+                const { data } = await _supabase
                     .from('settings')
                     .select('twochat_api_key, twochat_phone')
                     .eq('id', 1)
                     .maybeSingle();
-                if (!error && data) {
+                if (data) {
                     catalogConfig.twochat_api_key = data.twochat_api_key || '';
                     catalogConfig.twochat_phone = data.twochat_phone || '';
                 }
-            } catch (e) {
-                console.warn('Katalog config yüklenemedi:', e);
-            }
+            } catch (e) { console.warn('Config yüklenemedi:', e); }
         }
 
         async function saveCatalogConfig(apiKey, phone) {
@@ -334,37 +281,22 @@
             if (error) throw error;
         }
 
-        function getConfigQuery() {
-            const params = [];
-            if (catalogConfig.twochat_api_key) {
-                params.push('api_key=' + encodeURIComponent(catalogConfig.twochat_api_key));
-            }
-            if (catalogConfig.twochat_phone) {
-                params.push('phone=' + encodeURIComponent(catalogConfig.twochat_phone));
-            }
-            return params.length > 0 ? '&' + params.join('&') : '';
-        }
-
         function getConfigQueryForImages() {
-            return catalogConfig.twochat_api_key
-                ? '&api_key=' + encodeURIComponent(catalogConfig.twochat_api_key)
-                : '';
+            return ''; // Artık resimler doğrudan Supabase'den gelir, proxy gerekmez
         }
 
         function proxiedImage(originalUrl) {
             if (!originalUrl) return 'https://via.placeholder.com/300x200';
-            if (originalUrl.startsWith('/api/image-proxy')) return originalUrl;
+            // 2Chat S3 URL'leri için proxy kullan
             if (originalUrl.includes('2chat-user-data.s3') ||
                 originalUrl.includes('s3.amazonaws.com') ||
                 originalUrl.includes('2chat.io')) {
-                return '/api/image-proxy?url=' + encodeURIComponent(originalUrl) + getConfigQueryForImages();
+                return '/api/image-proxy?url=' + encodeURIComponent(originalUrl);
             }
             return originalUrl;
         }
 
-        function showLoadingScreen() {
-            document.getElementById('loadingScreen').style.display = 'flex';
-        }
+        function showLoadingScreen() { document.getElementById('loadingScreen').style.display = 'flex'; }
         function hideLoadingScreen() {
             const ls = document.getElementById('loadingScreen');
             ls.style.opacity = '0';
@@ -379,68 +311,109 @@
         }
 
         function getProductLink(id) {
-            const baseUrl = window.location.origin + window.location.pathname;
-            return `${baseUrl}?product=${encodeURIComponent(id)}`;
+            return window.location.origin + window.location.pathname + '?product=' + encodeURIComponent(id);
         }
 
         function escapeHtml(str) {
-            if (str === null || str === undefined) return '';
+            if (str == null) return '';
             return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
 
-        function copyTextToClipboard(text, successMsg) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => alert(successMsg)).catch(() => fallbackCopyText(text, successMsg));
-            } else {
-                fallbackCopyText(text, successMsg);
-            }
+        function copyTextToClipboard(text, msg) {
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(text).then(() => alert(msg)).catch(() => fbCopy(text, msg));
+            } else fbCopy(text, msg);
         }
-        function fallbackCopyText(text, successMsg) {
+        function fbCopy(text, msg) {
             const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand('copy'); alert(successMsg); } catch (e) {}
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); alert(msg); } catch (e) {}
             document.body.removeChild(ta);
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  KATALOG YÜKLE (Supabase'den — hızlı)
+        // ═══════════════════════════════════════════════════════
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
-                const bustParam = bust ? '&bust=1' : '';
-                const url = '/api/whatsapp-catalog?x=1' + getConfigQuery() + bustParam;
+                const url = '/api/products' + (bust ? '?bust=1' : '');
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('API hatası: ' + res.status);
                 const data = await res.json();
 
                 currentProducts = data.products || [];
+
+                // Sync bilgisini göster
+                if (data.lastSync) {
+                    const d = new Date(data.lastSync.synced_at);
+                    document.getElementById('sync-info').innerText =
+                        `Son senkron: ${d.toLocaleString('tr-TR')} (${data.lastSync.total_count} ürün)`;
+                }
+
                 applyLocalFilter();
             } catch (err) {
-                console.error('Katalog yüklenemedi:', err);
+                console.error('Katalog hatası:', err);
                 document.getElementById('productsGrid').innerHTML =
                     `<p style="grid-column:1/-1;text-align:center;color:red;padding:20px 0;">⚠️ تعذر تحميل البيانات: ${err.message}</p>`;
+            } finally { hideLoadingScreen(); }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  SENKRONİZASYON
+        // ═══════════════════════════════════════════════════════
+        async function syncFromWhatsApp() {
+            if (!isAdmin || !sessionToken) {
+                alert('Yetkisiz.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-sync');
+            const oldText = btn.innerText;
+            btn.innerText = '⏳ Senkronize ediliyor...';
+            btn.disabled = true;
+
+            try {
+                const params = [];
+                if (catalogConfig.twochat_api_key) params.push('api_key=' + encodeURIComponent(catalogConfig.twochat_api_key));
+                if (catalogConfig.twochat_phone) params.push('phone=' + encodeURIComponent(catalogConfig.twochat_phone));
+                const qs = params.length > 0 ? '?' + params.join('&') : '';
+
+                const res = await fetch('/api/sync-whatsapp' + qs, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Sync hatası');
+
+                alert(`✅ ${data.count} ürün senkronize edildi!`);
+                await loadCatalog(true);
+            } catch (err) {
+                alert('❌ Senkronizasyon hatası: ' + err.message);
             } finally {
-                hideLoadingScreen();
+                btn.innerText = oldText;
+                btn.disabled = false;
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  FİLTRE & RENDER
+        // ═══════════════════════════════════════════════════════
         function applyLocalFilter() {
             let list = currentProducts.slice();
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 list = list.filter(p => {
-                    const nameAr = (p.name_ar || '').toLowerCase();
-                    const nameTr = (p.name_tr || '').toLowerCase();
-                    const descAr = (p.desc_ar || '').toLowerCase();
-                    const descTr = (p.desc_tr || '').toLowerCase();
-                    return nameAr.includes(q) || nameTr.includes(q) || descAr.includes(q) || descTr.includes(q);
+                    const n = ((p.name_ar || '') + (p.name_tr || '') + (p.desc_ar || '') + (p.desc_tr || '')).toLowerCase();
+                    return n.includes(q);
                 });
             }
             filteredProducts = list;
@@ -454,9 +427,9 @@
                 grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:20px 0;">لم يتم العثور على منتجات.</p>`;
                 return;
             }
-            const fragment = document.createDocumentFragment();
-            filteredProducts.forEach(p => fragment.appendChild(createProductCardElement(p)));
-            grid.appendChild(fragment);
+            const frag = document.createDocumentFragment();
+            filteredProducts.forEach(p => frag.appendChild(createProductCardElement(p)));
+            grid.appendChild(frag);
         }
 
         function createProductCardElement(p) {
@@ -466,7 +439,7 @@
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
-                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy">
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200'">
                 <div class="product-info">
                     <div>
                         <div class="product-title" onclick="openProductDetail('${idStr}')">${escapeHtml(name)}</div>
@@ -474,8 +447,8 @@
                     </div>
                     <div class="product-actions">
                         <button onclick="addToCart('${idStr}')" class="btn-success" style="flex-grow:1;">إضافة للسلة</button>
-                        <button onclick="shareProduct('${idStr}')" class="btn-whatsapp" title="مشاركة">💬</button>
-                        <button onclick="copyProductLink('${idStr}')" class="btn-warning" title="نسخ الرابط">🔗</button>
+                        <button onclick="shareProduct('${idStr}')" class="btn-whatsapp">💬</button>
+                        <button onclick="copyProductLink('${idStr}')" class="btn-warning">🔗</button>
                     </div>
                 </div>
             `;
@@ -485,7 +458,7 @@
         function renderCart() {
             const cartList = document.getElementById('cartList');
             cartList.innerHTML = '';
-            let totalQty = 0, totalPrice = 0;
+            let tQty = 0, tPrice = 0;
             if (cart.length === 0) {
                 cartList.innerHTML = `<p style="text-align:center; color:#888; padding:20px 0;">السلة فارغة</p>`;
             } else {
@@ -494,12 +467,11 @@
                     if (prod) {
                         const name = prod.name_ar || prod.name_tr || 'منتج';
                         const itemTotal = prod.price * c.qty;
-                        totalQty += c.qty;
-                        totalPrice += itemTotal;
+                        tQty += c.qty; tPrice += itemTotal;
                         const idStr = String(prod.id);
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'cart-item';
-                        itemDiv.innerHTML = `
+                        const d = document.createElement('div');
+                        d.className = 'cart-item';
+                        d.innerHTML = `
                             <div class="cart-item-details">
                                 <strong>${escapeHtml(name)}</strong><br>
                                 <small>${prod.price} TL x ${c.qty} = ${itemTotal} TL</small>
@@ -511,12 +483,12 @@
                             </div>
                             <button onclick="removeFromCart('${idStr}')" class="btn-remove-item">🗑️</button>
                         `;
-                        cartList.appendChild(itemDiv);
+                        cartList.appendChild(d);
                     }
                 });
             }
-            document.getElementById('cart-count').innerText = totalQty;
-            document.getElementById('cart-total-price').innerText = totalPrice;
+            document.getElementById('cart-count').innerText = tQty;
+            document.getElementById('cart-total-price').innerText = tPrice;
         }
 
         function addToCart(id) {
@@ -524,60 +496,42 @@
             const item = cart.find(c => String(c.id) === id);
             if (item) item.qty++;
             else cart.push({ id, qty: 1 });
-            saveCart();
-            renderCart();
+            saveCart(); renderCart();
         }
         function updateQty(id, delta) {
             id = String(id);
             const item = cart.find(c => String(c.id) === id);
-            if (item) {
-                item.qty += delta;
-                if (item.qty <= 0) cart = cart.filter(c => String(c.id) !== id);
-            }
-            saveCart();
-            renderCart();
+            if (item) { item.qty += delta; if (item.qty <= 0) cart = cart.filter(c => String(c.id) !== id); }
+            saveCart(); renderCart();
         }
         function removeFromCart(id) {
             id = String(id);
             cart = cart.filter(c => String(c.id) !== id);
-            saveCart();
-            renderCart();
+            saveCart(); renderCart();
         }
         function clearCart() {
             if (cart.length === 0) return;
-            if (confirm('هل أنت متأكد من تفريغ السلة بالكامل؟')) {
-                cart = [];
-                saveCart();
-                renderCart();
-            }
+            if (confirm('هل أنت متأكد من تفريغ السلة؟')) { cart = []; saveCart(); renderCart(); }
         }
-        async function saveCart() {
-            localStorage.setItem('catalog_cart', JSON.stringify(cart));
-        }
+        function saveCart() { localStorage.setItem('catalog_cart', JSON.stringify(cart)); }
 
         function completeOrder() {
-            if (cart.length === 0) {
-                alert('السلة فارغة!');
-                return;
-            }
-            let messageLines = [];
-            let totalQty = 0, grandTotal = 0;
+            if (cart.length === 0) { alert('السلة فارغة!'); return; }
+            let lines = [], tQty = 0, tTotal = 0;
             const orderPhone = catalogConfig.twochat_phone || '905388444275';
-            messageLines.push('طلب جديد');
+            lines.push('طلب جديد');
             cart.forEach(c => {
                 const prod = currentProducts.find(p => String(p.id) === String(c.id));
                 if (prod) {
                     const name = prod.name_ar || prod.name_tr || `#${c.id}`;
                     const itemTotal = prod.price * c.qty;
-                    totalQty += c.qty;
-                    grandTotal += itemTotal;
-                    messageLines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
+                    tQty += c.qty; tTotal += itemTotal;
+                    lines.push(`( ${name} ) ( ${prod.price} TL ) ( ${c.qty} عدد ) ( ${itemTotal} TL )`);
                 }
             });
-            messageLines.push(`( إجمالي المنتجات: ${totalQty} ) ( المبلغ الإجمالي: ${grandTotal} TL )`);
-            const encodedMessage = encodeURIComponent(messageLines.join('\n'));
-            const cleanPhone = formatPhoneForWa(orderPhone);
-            window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, '_blank');
+            lines.push(`( إجمالي المنتجات: ${tQty} ) ( المبلغ الإجمالي: ${tTotal} TL )`);
+            const msg = encodeURIComponent(lines.join('\n'));
+            window.open(`https://wa.me/${formatPhoneForWa(orderPhone)}?text=${msg}`, '_blank');
         }
 
         function openProductDetail(id) {
@@ -590,12 +544,9 @@
             document.getElementById('detail-title').innerText = name;
             document.getElementById('detail-desc').innerText = desc || 'لا يوجد وصف';
             document.getElementById('detail-price').innerText = `${p.price} TL`;
-            document.getElementById('detail-add-btn').onclick = function() {
-                addToCart(p.id);
-                closeModal('productDetailModal');
-            };
-            document.getElementById('detail-share-btn').onclick = function() { shareProduct(p.id); };
-            document.getElementById('detail-copy-link-btn').onclick = function() { copyProductLink(p.id); };
+            document.getElementById('detail-add-btn').onclick = () => { addToCart(p.id); closeModal('productDetailModal'); };
+            document.getElementById('detail-share-btn').onclick = () => shareProduct(p.id);
+            document.getElementById('detail-copy-link-btn').onclick = () => copyProductLink(p.id);
             openModal('productDetailModal');
         }
 
@@ -604,28 +555,23 @@
             const p = currentProducts.find(x => String(x.id) === id);
             if (!p) return;
             const name = p.name_ar || p.name_tr || 'منتج';
-            const productUrl = getProductLink(id);
-            const message = `${name}\n💰 ${p.price} TL\n🔗 ${productUrl}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            const msg = `${name}\n💰 ${p.price} TL\n🔗 ${getProductLink(id)}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function copyProductLink(id) {
             id = String(id);
             const p = currentProducts.find(x => String(x.id) === id);
             if (!p) return;
-            copyTextToClipboard(getProductLink(id), 'تم نسخ الرابط بنجاح!');
+            copyTextToClipboard(getProductLink(id), 'تم نسخ الرابط!');
         }
 
         function handleSearch(val) {
             if (val.trim() === 'mayar.') {
                 document.getElementById('search-input').value = '';
-                searchQuery = '';
-                applyLocalFilter();
+                searchQuery = ''; applyLocalFilter();
                 openModal('loginModal');
-                setTimeout(() => {
-                    const inp = document.getElementById('login-email');
-                    if (inp) inp.focus();
-                }, 100);
+                setTimeout(() => document.getElementById('login-email')?.focus(), 100);
                 return;
             }
             clearTimeout(searchTimeout);
@@ -635,38 +581,38 @@
             }, 200);
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  AUTH
+        // ═══════════════════════════════════════════════════════
         async function handleSupabaseLogin() {
             if (!_supabase) { alert('Supabase yüklenemedi'); return; }
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             if (!email || !password) { alert('E-posta ve şifre gerekli'); return; }
 
-            const { error } = await _supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                alert('Giriş Hatası: ' + error.message);
-            } else {
-                isAdmin = true;
-                closeModal('loginModal');
-                document.getElementById('login-email').value = '';
-                document.getElementById('login-password').value = '';
-                updateAdminUI();
-                await loadCatalogConfig();
-                await loadCatalog(true);
-                alert('✅ Giriş başarılı!');
-            }
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) { alert('Giriş Hatası: ' + error.message); return; }
+
+            isAdmin = true;
+            sessionToken = data.session?.access_token || null;
+            closeModal('loginModal');
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            updateAdminUI();
+            await loadCatalogConfig();
+            alert('✅ Giriş başarılı! Katalogu senkronize etmek için "Senkronize Et" butonuna bas.');
         }
 
         async function handleSupabaseLogout() {
             if (!_supabase) return;
             await _supabase.auth.signOut();
-            isAdmin = false;
+            isAdmin = false; sessionToken = null;
             updateAdminUI();
             alert('Çıkış yapıldı.');
         }
 
         function updateAdminUI() {
-            const adminBar = document.getElementById('adminBar');
-            adminBar.style.display = isAdmin ? 'flex' : 'none';
+            document.getElementById('adminBar').style.display = isAdmin ? 'flex' : 'none';
         }
 
         function openConfigModal() {
@@ -680,19 +626,14 @@
             if (!isAdmin) { alert('Yetkisiz.'); return; }
             const apiKey = document.getElementById('cfg-api-key').value.trim();
             const phone = document.getElementById('cfg-phone').value.trim();
-
-            if (!apiKey || !phone) {
-                alert('API anahtarı ve telefon gerekli.');
-                return;
-            }
+            if (!apiKey || !phone) { alert('API anahtarı ve telefon gerekli.'); return; }
 
             try {
                 await saveCatalogConfig(apiKey, phone);
                 catalogConfig.twochat_api_key = apiKey;
                 catalogConfig.twochat_phone = phone;
-                alert('✅ Kaydedildi! Katalog yenileniyor...');
+                alert('✅ Kaydedildi! Şimdi "Senkronize Et" butonuna basabilirsin.');
                 closeModal('configModal');
-                await loadCatalog(true);
             } catch (err) {
                 alert('❌ Kaydetme hatası: ' + err.message);
             }
@@ -709,33 +650,29 @@
                 if (_supabase) {
                     const { data: { session } } = await _supabase.auth.getSession();
                     isAdmin = !!session;
+                    sessionToken = session?.access_token || null;
 
                     _supabase.auth.onAuthStateChange((event, session) => {
                         isAdmin = !!session;
+                        sessionToken = session?.access_token || null;
                         updateAdminUI();
                     });
                 }
 
                 await loadCatalogConfig();
                 await loadCatalog();
-            } catch (err) {
-                console.error('Başlatma hatası:', err);
-                hideLoadingScreen();
-            }
+            } catch (err) { console.error('Init:', err); hideLoadingScreen(); }
 
             updateAdminUI();
             renderCart();
 
             const urlParams = new URLSearchParams(window.location.search);
-            const productIdParam = urlParams.get('product');
-            if (productIdParam) {
-                setTimeout(() => openProductDetail(String(productIdParam)), 500);
-            }
+            const pid = urlParams.get('product');
+            if (pid) setTimeout(() => openProductDetail(String(pid)), 500);
 
             const scrollBtn = document.getElementById('scrollTopBtn');
-            window.addEventListener('scroll', function() {
-                if (window.scrollY > 300) scrollBtn.style.display = 'block';
-                else scrollBtn.style.display = 'none';
+            window.addEventListener('scroll', () => {
+                scrollBtn.style.display = window.scrollY > 300 ? 'block' : 'none';
             });
             scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
         }
