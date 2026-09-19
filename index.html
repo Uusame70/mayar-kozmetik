@@ -287,7 +287,6 @@
         let _supabase = null;
         let isAdmin = false;
 
-        // Supabase'den çekilen katalog ayarları
         let catalogConfig = {
             twochat_api_key: '',
             twochat_phone: ''
@@ -309,7 +308,6 @@
             }
         }
 
-        // Supabase settings tablosundan katalog ayarlarını çek
         async function loadCatalogConfig() {
             if (!_supabase) return;
             try {
@@ -327,7 +325,6 @@
             }
         }
 
-        // Katalog ayarlarını Supabase'e kaydet (sadece admin)
         async function saveCatalogConfig(apiKey, phone) {
             if (!_supabase) throw new Error('Supabase yok');
             const { error } = await _supabase
@@ -337,7 +334,6 @@
             if (error) throw error;
         }
 
-        // API çağrılarına eklenecek query param'ları üret
         function getConfigQuery() {
             const params = [];
             if (catalogConfig.twochat_api_key) {
@@ -639,9 +635,6 @@
             }, 200);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  SUPABASE AUTH
-        // ═══════════════════════════════════════════════════════
         async function handleSupabaseLogin() {
             if (!_supabase) { alert('Supabase yüklenemedi'); return; }
             const email = document.getElementById('login-email').value.trim();
@@ -657,8 +650,8 @@
                 document.getElementById('login-email').value = '';
                 document.getElementById('login-password').value = '';
                 updateAdminUI();
-                await loadCatalogConfig();  // Admin girişinde taze config çek
-                await loadCatalog(true);    // Katalogu yenile
+                await loadCatalogConfig();
+                await loadCatalog(true);
                 alert('✅ Giriş başarılı!');
             }
         }
@@ -676,9 +669,6 @@
             adminBar.style.display = isAdmin ? 'flex' : 'none';
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  KATALOG AYARLARI (ADMIN)
-        // ═══════════════════════════════════════════════════════
         function openConfigModal() {
             if (!isAdmin) { alert('Önce giriş yapın.'); return; }
             document.getElementById('cfg-api-key').value = catalogConfig.twochat_api_key || '';
@@ -717,7 +707,6 @@
 
             try {
                 if (_supabase) {
-                    // Oturum kontrolü
                     const { data: { session } } = await _supabase.auth.getSession();
                     isAdmin = !!session;
 
@@ -727,10 +716,7 @@
                     });
                 }
 
-                // Supabase settings'ten katalog ayarlarını çek
                 await loadCatalogConfig();
-
-                // Katalogu yükle
                 await loadCatalog();
             } catch (err) {
                 console.error('Başlatma hatası:', err);
