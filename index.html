@@ -131,6 +131,15 @@
         .modal-actions {
             display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;
         }
+        .form-group { margin-bottom: 12px; }
+        .form-group label {
+            display: block; margin-bottom: 4px;
+            font-weight: 600; font-size: 0.9rem; color: #2c3e50;
+        }
+        .form-group input {
+            width: 100%; padding: 10px;
+            border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
+        }
         .cart-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 10px 0; border-bottom: 1px solid #eee; gap: 10px;
@@ -143,6 +152,17 @@
             background-color: #ff7675; color: white;
         }
         .btn-remove-item:hover { background-color: #d63031; }
+        .info-box {
+            background: #e8f4f8; border: 1px solid #bce8f1;
+            padding: 10px; border-radius: 6px;
+            font-size: 0.85rem; color: #2c3e50;
+            margin-bottom: 12px; line-height: 1.5;
+        }
+        .info-box code {
+            background: #fff; padding: 2px 6px;
+            border-radius: 4px; font-size: 0.8rem;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +198,7 @@
 
     <button id="scrollTopBtn" title="Yukarı Çık">▲</button>
 
+    <!-- Ürün Detay -->
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align:center;">
             <img id="detail-img" src="" style="width:100%; max-height:420px; height:auto; object-fit:contain; background:#f1f4f8; border-radius:8px; margin-bottom:12px;" loading="lazy">
@@ -193,6 +214,7 @@
         </div>
     </div>
 
+    <!-- Sepet -->
     <div id="cartModal" class="modal">
         <div class="modal-content">
             <div class="modal-header-row">
@@ -206,7 +228,104 @@
         </div>
     </div>
 
+    <!-- Giriş Modali -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom:15px;">🔐 Yönetici Girişi</h2>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="admin-password-input" placeholder="Şifrenizi girin" onkeydown="if(event.key==='Enter'){event.preventDefault();handleAdminLogin();}">
+            </div>
+            <div class="modal-actions">
+                <button onclick="handleAdminLogin()" class="btn-success">Giriş Yap</button>
+                <button onclick="closeModal('loginModal')" class="btn-danger">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config Modali -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom:15px;">⚙️ Katalog Ayarları</h2>
+            <div class="info-box">
+                Buradaki değerler <strong>sadece bu tarayıcıda</strong> saklanır. Boş bırakırsan Vercel'deki varsayılan env var kullanılır.
+                <br><br>
+                Varsayılan ayarlar için: <code>Vercel → Project → Settings → Environment Variables</code>
+                <br>
+                <code>TWOCHAT_API_KEY</code> ve <code>TWOCHAT_PHONE</code> ekle.
+            </div>
+            <div class="form-group">
+                <label>2Chat API Anahtarı</label>
+                <input type="text" id="cfg-api-key" placeholder="UAKxxxxx-xxxx-xxxx">
+            </div>
+            <div class="form-group">
+                <label>WhatsApp Telefon Numarası (90 ile başlayarak)</label>
+                <input type="tel" id="cfg-phone" placeholder="905388444275">
+            </div>
+            <div class="form-group">
+                <label>Yönetici Şifresi</label>
+                <input type="text" id="cfg-admin-pass" placeholder="mayar2024">
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveConfig()" class="btn-success">💾 Kaydet</button>
+                <button onclick="resetConfig()" class="btn-warning">🔄 Sıfırla</button>
+                <button onclick="closeModal('configModal')" class="btn-danger">Kapat</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // ═══════════════════════════════════════════════════════
+        //  VARSAYILAN AYARLAR (LocalStorage'da override edilebilir)
+        // ═══════════════════════════════════════════════════════
+        const DEFAULT_ADMIN_PASSWORD = 'mayar2024';
+        const LS_KEYS = {
+            apiKey: 'cfg_twochat_api_key',
+            phone: 'cfg_twochat_phone',
+            adminPass: 'cfg_admin_password'
+        };
+
+        function getConfig() {
+            return {
+                apiKey: localStorage.getItem(LS_KEYS.apiKey) || '',
+                phone: localStorage.getItem(LS_KEYS.phone) || '',
+                adminPass: localStorage.getItem(LS_KEYS.adminPass) || DEFAULT_ADMIN_PASSWORD
+            };
+        }
+
+        function setConfig(cfg) {
+            if (cfg.apiKey) localStorage.setItem(LS_KEYS.apiKey, cfg.apiKey);
+            else localStorage.removeItem(LS_KEYS.apiKey);
+            if (cfg.phone) localStorage.setItem(LS_KEYS.phone, cfg.phone);
+            else localStorage.removeItem(LS_KEYS.phone);
+            if (cfg.adminPass) localStorage.setItem(LS_KEYS.adminPass, cfg.adminPass);
+        }
+
+        function resetConfig() {
+            if (confirm('Tüm katalog ayarları sıfırlanacak. Vercel varsayılanına dönülecek. Emin misin?')) {
+                localStorage.removeItem(LS_KEYS.apiKey);
+                localStorage.removeItem(LS_KEYS.phone);
+                alert('Ayarlar sıfırlandı! Sayfa yenileniyor...');
+                location.reload();
+            }
+        }
+
+        // API çağrılarına eklenecek query param'ları üret
+        function getConfigQuery() {
+            const cfg = getConfig();
+            const params = [];
+            if (cfg.apiKey) params.push('api_key=' + encodeURIComponent(cfg.apiKey));
+            if (cfg.phone) params.push('phone=' + encodeURIComponent(cfg.phone));
+            return params.length > 0 ? '&' + params.join('&') : '';
+        }
+
+        function getConfigQueryForImages() {
+            const cfg = getConfig();
+            return cfg.apiKey ? '&api_key=' + encodeURIComponent(cfg.apiKey) : '';
+        }
+
+        // ═══════════════════════════════════════════════════════
+
         let settings = {
             phone: '0507 444 45 02',
             wa_header: 'طلب جديد'
@@ -217,19 +336,13 @@
         let searchQuery = '';
         let searchTimeout = null;
 
-        // ═══════════════════════════════════════════════════════
-        //  Resim URL'sini proxy üzerinden geçir
-        //  (2Chat S3 URL'leri API key gerektirdiği için)
-        // ═══════════════════════════════════════════════════════
         function proxiedImage(originalUrl) {
             if (!originalUrl) return 'https://via.placeholder.com/300x200';
-            // Zaten bizim proxy'den geçmişse tekrar geçirme
             if (originalUrl.startsWith('/api/image-proxy')) return originalUrl;
-            // 2Chat S3 veya benzeri özel URL ise proxy kullan
             if (originalUrl.includes('2chat-user-data.s3') ||
                 originalUrl.includes('s3.amazonaws.com') ||
                 originalUrl.includes('2chat.io')) {
-                return '/api/image-proxy?url=' + encodeURIComponent(originalUrl);
+                return '/api/image-proxy?url=' + encodeURIComponent(originalUrl) + getConfigQueryForImages();
             }
             return originalUrl;
         }
@@ -286,7 +399,8 @@
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
-                const url = bust ? '/api/whatsapp-catalog?bust=1' : '/api/whatsapp-catalog';
+                const bustParam = bust ? '&bust=1' : '';
+                const url = '/api/whatsapp-catalog?x=1' + getConfigQuery() + bustParam;
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('API hatası: ' + res.status);
                 const data = await res.json();
@@ -489,11 +603,62 @@
         }
 
         function handleSearch(val) {
+            // ═══════════════════════════════════════════════════════
+            //  KOMUT: "mayar." yazılınca yönetici girişi açılır
+            // ═══════════════════════════════════════════════════════
+            if (val.trim() === 'mayar.') {
+                document.getElementById('search-input').value = '';
+                searchQuery = '';
+                applyLocalFilter();
+                openModal('loginModal');
+                setTimeout(() => {
+                    const inp = document.getElementById('admin-password-input');
+                    if (inp) { inp.value = ''; inp.focus(); }
+                }, 100);
+                return;
+            }
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 searchQuery = val.trim().toLowerCase();
                 applyLocalFilter();
             }, 200);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  YÖNETİCİ GİRİŞ / CONFIG
+        // ═══════════════════════════════════════════════════════
+        function handleAdminLogin() {
+            const inp = document.getElementById('admin-password-input');
+            const entered = (inp.value || '').trim();
+            const cfg = getConfig();
+            if (entered === cfg.adminPass) {
+                closeModal('loginModal');
+                inp.value = '';
+                openConfigModal();
+            } else {
+                alert('❌ Şifre yanlış!');
+                inp.value = '';
+                inp.focus();
+            }
+        }
+
+        function openConfigModal() {
+            const cfg = getConfig();
+            document.getElementById('cfg-api-key').value = cfg.apiKey;
+            document.getElementById('cfg-phone').value = cfg.phone;
+            document.getElementById('cfg-admin-pass').value = cfg.adminPass;
+            openModal('configModal');
+        }
+
+        function saveConfig() {
+            const apiKey = document.getElementById('cfg-api-key').value.trim();
+            const phone = document.getElementById('cfg-phone').value.trim();
+            const adminPass = document.getElementById('cfg-admin-pass').value.trim() || DEFAULT_ADMIN_PASSWORD;
+
+            setConfig({ apiKey, phone, adminPass });
+            alert('✅ Ayarlar kaydedildi! Katalog yeniden yükleniyor...');
+            closeModal('configModal');
+            loadCatalog(true);
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
