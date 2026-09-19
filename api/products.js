@@ -6,10 +6,18 @@ const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
 
 export default async function handler(req, res) {
   const bust = req.query.bust === '1';
+
   if (bust) {
-    res.setHeader('Cache-Control', 'no-store, must-revalidate');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   } else {
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+    // Vercel edge cache (s-maxage) + browser cache (max-age) + stale-while-revalidate
+    res.setHeader(
+      'Cache-Control',
+      'public, max-age=0, s-maxage=600, stale-while-revalidate=3600'
+    );
+    // Vercel'in kesin cache'lemesi için bu ek header'lar çok önemli:
+    res.setHeader('CDN-Cache-Control', 'public, s-maxage=600');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=600');
   }
 
   try {
@@ -17,12 +25,11 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from('whatsapp_products')
-      .select('*')
+      .select('id, name, price, description, img, synced_at')
       .order('id', { ascending: false });
 
     if (error) throw error;
 
-    // Frontend formatına dönüştür
     const products = (data || []).map(p => ({
       id: p.id,
       name_ar: p.name || '',
@@ -34,7 +41,6 @@ export default async function handler(req, res) {
       groups: []
     }));
 
-    // Son sync zamanı
     const { data: logData } = await supabase
       .from('whatsapp_sync_log')
       .select('synced_at, total_count, success')
@@ -47,7 +53,8 @@ export default async function handler(req, res) {
       groups: [],
       count: products.length,
       lastSync: logData || null,
-      source: 'supabase'
+      source: 'supabase',
+      cachedAt: new Date().toISOString()
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
