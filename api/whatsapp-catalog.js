@@ -3,8 +3,8 @@ export default async function handler(req, res) {
   // Cache: 1 saat boyunca Vercel'de tut
   res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
 
-  const API_KEY = 'SENIN_2CHAT_API_KEYIN';
-  const PHONE = '905074444502'; // Başına 90 ekleyerek yaz
+  const API_KEY = 'UAK6f703c42-c939-4575-89cc-35922b2faca9';
+  const PHONE = '905388444275'; // Başına 90 ekleyerek yaz
 
   try {
     const url = `https://api.p.2chat.io/open/whatsapp/catalog/products?from_number=${PHONE}`;
