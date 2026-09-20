@@ -25,23 +25,32 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    const products = (data || []).map(p => ({
-      id: p.id,
-      name_ar: p.name || '',
-      name_tr: p.name || '',
-      price: parseFloat(p.price) || 0,
-      original_price: parseFloat(p.original_price) || 0,
-      desc_ar: p.description || '',
-      desc_tr: p.description || '',
-      category: p.category || '',
-      img: p.img || '',
-      groups: []
-    }));
+    const products = (data || []).map(p => {
+      // "عطور,عروض,جديد" → ["عطور", "عروض", "جديد"]
+      const cats = (p.category || '')
+        .split(',')
+        .map(c => c.trim())
+        .filter(Boolean);
+
+      return {
+        id: p.id,
+        name_ar: p.name || '',
+        name_tr: p.name || '',
+        price: parseFloat(p.price) || 0,
+        original_price: parseFloat(p.original_price) || 0,
+        desc_ar: p.description || '',
+        desc_tr: p.description || '',
+        category: p.category || '',    // Ham string (admin formu için)
+        categories: cats,              // Array (frontend için)
+        img: p.img || '',
+        groups: []
+      };
+    });
 
     // Benzersiz kategorileri çıkar
     const categorySet = new Set();
     products.forEach(p => {
-      if (p.category && p.category.trim()) categorySet.add(p.category.trim());
+      p.categories.forEach(c => categorySet.add(c));
     });
     const categories = Array.from(categorySet).sort();
 
