@@ -8,11 +8,13 @@ export default async function handler(req, res) {
   const bust = req.query.bust === '1';
 
   if (bust) {
+    // Admin cache bypass: taze veri
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   } else {
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=600, stale-while-revalidate=3600');
-    res.setHeader('CDN-Cache-Control', 'public, s-maxage=600');
-    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=600');
+    // Müşteri: 5 dakika Vercel edge cache
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600');
+    res.setHeader('CDN-Cache-Control', 'public, s-maxage=300');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=300');
   }
 
   try {
@@ -26,7 +28,6 @@ export default async function handler(req, res) {
     if (error) throw error;
 
     const products = (data || []).map(p => {
-      // "عطور,عروض,جديد" → ["عطور", "عروض", "جديد"]
       const cats = (p.category || '')
         .split(',')
         .map(c => c.trim())
@@ -40,14 +41,13 @@ export default async function handler(req, res) {
         original_price: parseFloat(p.original_price) || 0,
         desc_ar: p.description || '',
         desc_tr: p.description || '',
-        category: p.category || '',    // Ham string (admin formu için)
-        categories: cats,              // Array (frontend için)
+        category: p.category || '',
+        categories: cats,
         img: p.img || '',
         groups: []
       };
     });
 
-    // Benzersiz kategorileri çıkar
     const categorySet = new Set();
     products.forEach(p => {
       p.categories.forEach(c => categorySet.add(c));
