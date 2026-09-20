@@ -3,8 +3,8 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
 
 // ═══════════════ B2 AYARLARI ═══════════════
-const B2_KEY_ID = 'BURAYA_KEY_ID_YAPISTIR';
-const B2_APP_KEY = 'BURAYA_APPLICATION_KEY_YAPISTIR';
+const B2_KEY_ID = '0052a17b1b477e60000000001';
+const B2_APP_KEY = 'K005vrGhMV5pNF+uMYOFyfELDSOmURE';
 const B2_BUCKET = 'mayar-images';
 const B2_ENDPOINT = 'https://s3.us-east-005.backblazeb2.com';
 const B2_REGION = 'us-east-005';
