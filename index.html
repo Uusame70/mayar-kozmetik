@@ -128,7 +128,7 @@
         #scrollTopBtn { position: fixed; bottom: 80px; right: 20px; display: none;
             z-index: 99; background-color: #2c3e50; color: white;
             border: none; border-radius: 50%; width: 50px; height: 50px;
-            font-size: 26px; cursor: pointer; line-height: 1; padding: 0; }
+            font-size: 24px; cursor: pointer; line-height: 1; padding: 0; }
         #scrollTopBtn:hover { background-color: #3498db; }
         .modal { display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.6); justify-content: center;
@@ -255,6 +255,7 @@
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button onclick="openProductForm()" class="btn-success">➕ إضافة منتج</button>
+                <button onclick="openCatManager()" class="btn-warning" style="background-color:#8e44ad;">🏷️ إدارة الفئات</button>
                 <button onclick="openConfigModal()" class="btn-warning">⚙️ إعدادات 2Chat</button>
                 <button onclick="handleSupabaseLogout()" class="btn-danger">🚪 تسجيل الخروج</button>
             </div>
@@ -270,7 +271,7 @@
         <button onclick="completeOrder()" class="btn-success">📱 إرسال الطلب عبر WhatsApp</button>
     </div>
 
-    <button id="scrollTopBtn" title="الأعلى">▲</button>
+    <button id="scrollTopBtn" title="الأعلى">⬆️</button>
 
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align:center;">
@@ -367,6 +368,29 @@
         </div>
     </div>
 
+    <div id="catManagerModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom:15px;">🏷️ إدارة الفئات</h2>
+
+            <div class="form-group">
+                <label>إضافة فئة جديدة</label>
+                <div class="cat-add-row">
+                    <input type="text" id="cat-manager-new-input" placeholder="اسم الفئة الجديدة..." onkeydown="if(event.key==='Enter'){event.preventDefault();addCatFromManager();}">
+                    <button type="button" onclick="addCatFromManager()" class="btn-success">➕ إضافة</button>
+                </div>
+            </div>
+
+            <hr style="margin:15px 0;">
+
+            <h3 style="font-size:1rem; margin-bottom:10px; color:#2c3e50;">الفئات الحالية</h3>
+            <div id="cat-manager-list" style="max-height:50vh; overflow-y:auto;"></div>
+
+            <div class="modal-actions">
+                <button onclick="closeModal('catManagerModal')" class="btn-danger">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
     <div id="configModal" class="modal">
         <div class="modal-content">
             <h2 style="margin-bottom:15px;">⚙️ إعدادات 2Chat</h2>
@@ -456,6 +480,16 @@
                 .update({ twochat_api_key: apiKey, twochat_phone: phone })
                 .eq('id', 1);
             if (error) throw error;
+        }
+
+        async function saveCategoriesToSettings() {
+            if (!_supabase) return;
+            try {
+                await _supabase
+                    .from('settings')
+                    .update({ all_categories: allCategories.join(',') })
+                    .eq('id', 1);
+            } catch (e) { console.error('Kategori kaydedilemedi:', e); }
         }
 
         function imageUrl(url) {
@@ -565,12 +599,11 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  ÜRÜN YÜKLEME — ADMIN İÇİN HER ZAMAN TAZE
+        //  ÜRÜN YÜKLEME
         // ═══════════════════════════════════════════════════════
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
-                // Admin girişliyse cache'i otomatik atla
                 const forceBust = bust || isAdmin;
                 const url = '/api/products' + (forceBust ? '?bust=1&t=' + Date.now() : '');
                 const res = await fetch(url);
@@ -850,7 +883,7 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  ÇOKLU KATEGORİ SEÇİCİ
+        //  ÜRÜN FORMUNDAKİ KATEGORİ SEÇİCİ
         // ═══════════════════════════════════════════════════════
         function renderCategorySelector(selected = []) {
             selectedCategoriesInForm = selected.slice();
@@ -894,7 +927,7 @@
             preview.innerHTML = '✅ ' + selectedCategoriesInForm.map(c => `<span>${escapeHtml(c)}</span>`).join(' ');
         }
 
-        function addNewCategory() {
+        async function addNewCategory() {
             const inp = document.getElementById('new-cat-input');
             const newCat = (inp.value || '').trim();
             if (!newCat) return;
@@ -910,6 +943,150 @@
 
             inp.value = '';
             renderCategorySelector(selectedCategoriesInForm);
+
+            // Supabase'e kaydet
+            await saveCategoriesToSettings();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  KATEGORİ YÖNETİM PANELİ (Admin Dashboard)
+        // ═══════════════════════════════════════════════════════
+        function openCatManager() {
+            if (!isAdmin) { alert('يجب تسجيل الدخول أولاً'); return; }
+            document.getElementById('cat-manager-new-input').value = '';
+            renderCatManagerList();
+            openModal('catManagerModal');
+        }
+
+        function renderCatManagerList() {
+            const list = document.getElementById('cat-manager-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (allCategories.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#888; padding:15px 0;">لا توجد فئات بعد</p>';
+                return;
+            }
+
+            allCategories.forEach(cat => {
+                const productCount = currentProducts.filter(p => {
+                    const cats = getProductCategories(p);
+                    return cats.includes(cat);
+                }).length;
+
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid #eee; border-radius:6px; margin-bottom:6px; background:#f9fafb;';
+                row.innerHTML = `
+                    <div>
+                        <div style="font-weight:600; color:#2c3e50;">${escapeHtml(cat)}</div>
+                        <div style="font-size:0.75rem; color:#888; margin-top:2px;">${productCount} منتج</div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="renameCategoryFromManager('${escapeHtml(cat).replace(/'/g, "\\'")}')" 
+                            class="btn-warning" style="padding:6px 10px; font-size:0.8rem;" title="إعادة تسمية">✏️</button>
+                        <button onclick="deleteCategoryFromManager('${escapeHtml(cat).replace(/'/g, "\\'")}')" 
+                            class="btn-danger" style="padding:6px 10px; font-size:0.8rem;" title="حذف">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function addCatFromManager() {
+            const inp = document.getElementById('cat-manager-new-input');
+            const newCat = (inp.value || '').trim();
+            if (!newCat) { alert('يجب إدخال اسم الفئة'); return; }
+
+            if (allCategories.includes(newCat)) {
+                alert('⚠️ هذه الفئة موجودة بالفعل');
+                return;
+            }
+
+            allCategories.push(newCat);
+            allCategories.sort();
+
+            await saveCategoriesToSettings();
+
+            inp.value = '';
+            renderCatManagerList();
+            renderCategories();
+            await loadCatalog(true);
+        }
+
+        async function deleteCategoryFromManager(cat) {
+            const productCount = currentProducts.filter(p => {
+                const cats = getProductCategories(p);
+                return cats.includes(cat);
+            }).length;
+
+            let confirmMsg = `حذف الفئة "${cat}"؟`;
+            if (productCount > 0) {
+                confirmMsg += `\n\n⚠️ ${productCount} منتج مرتبط بهذه الفئة. سيتم إزالتها من هذه المنتجات أيضاً.`;
+            }
+
+            if (!confirm(confirmMsg)) return;
+
+            allCategories = allCategories.filter(c => c !== cat);
+
+            if (_supabase && productCount > 0) {
+                for (const p of currentProducts) {
+                    const cats = getProductCategories(p);
+                    if (cats.includes(cat)) {
+                        const newCats = cats.filter(c => c !== cat);
+                        const newCatStr = newCats.join(',');
+                        try {
+                            await _supabase
+                                .from('whatsapp_products')
+                                .update({ category: newCatStr })
+                                .eq('id', p.id);
+                        } catch (e) { console.error(e); }
+                    }
+                }
+            }
+
+            await saveCategoriesToSettings();
+
+            renderCatManagerList();
+            renderCategories();
+            await loadCatalog(true);
+            alert('✅ تم حذف الفئة');
+        }
+
+        async function renameCategoryFromManager(oldCat) {
+            const newCat = prompt(`إعادة تسمية "${oldCat}" إلى:`, oldCat);
+            if (!newCat || newCat.trim() === '' || newCat === oldCat) return;
+            const trimmed = newCat.trim();
+
+            if (allCategories.includes(trimmed)) {
+                alert('⚠️ هذه الفئة موجودة بالفعل');
+                return;
+            }
+
+            allCategories = allCategories.map(c => c === oldCat ? trimmed : c);
+            allCategories.sort();
+
+            if (_supabase) {
+                for (const p of currentProducts) {
+                    const cats = getProductCategories(p);
+                    if (cats.includes(oldCat)) {
+                        const newCats = cats.map(c => c === oldCat ? trimmed : c);
+                        const newCatStr = newCats.join(',');
+                        try {
+                            await _supabase
+                                .from('whatsapp_products')
+                                .update({ category: newCatStr })
+                                .eq('id', p.id);
+                        } catch (e) { console.error(e); }
+                    }
+                }
+            }
+
+            await saveCategoriesToSettings();
+
+            renderCatManagerList();
+            renderCategories();
+            await loadCatalog(true);
+            alert('✅ تم إعادة التسمية');
         }
 
         // ═══════════════════════════════════════════════════════
@@ -1081,8 +1258,10 @@
                     alert('✅ تمت إضافة المنتج بنجاح');
                 }
 
+                // Yeni kategoriler eklendiyse settings'e kaydet
+                await saveCategoriesToSettings();
+
                 closeModal('productFormModal');
-                // Admin olduğu için forceBust otomatik tetiklenecek
                 await loadCatalog(true);
             } catch (err) {
                 alert('❌ خطأ: ' + err.message);
@@ -1152,7 +1331,7 @@
             document.getElementById('btn-toggle-pass').innerText = '👁️';
             updateAdminUI();
             await loadCatalogConfig();
-            renderFilteredProducts();
+            await loadCatalog(true);
             alert('✅ تم تسجيل الدخول بنجاح');
         }
 
@@ -1216,7 +1395,6 @@
                         isAdmin = !!session;
                         sessionToken = session?.access_token || null;
                         updateAdminUI();
-                        // Giriş yapıldığında taze veri çek
                         if (isAdmin) {
                             loadCatalog(true);
                         } else {
