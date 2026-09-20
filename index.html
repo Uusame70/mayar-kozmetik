@@ -86,13 +86,17 @@
         .product-card { background: white; border-radius: 10px; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex; flex-direction: column; position: relative; }
-        .product-badge-cat {
+        .product-badges-container {
             position: absolute; top: 8px; right: 8px;
+            display: flex; flex-direction: column; gap: 4px;
+            align-items: flex-end; z-index: 2; max-width: 70%;
+        }
+        .product-badge-cat {
             background-color: rgba(44,62,80,0.85); color: white;
             padding: 3px 8px; border-radius: 12px;
-            font-size: 0.7rem; font-weight: bold; z-index: 2;
-            max-width: 70%; overflow: hidden; text-overflow: ellipsis;
-            white-space: nowrap;
+            font-size: 0.7rem; font-weight: bold;
+            overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; max-width: 100%;
         }
         .product-badge-discount {
             position: absolute; top: 8px; left: 8px;
@@ -147,6 +151,40 @@
             background: #fff; }
         .form-group textarea { resize: vertical; min-height: 70px; }
         .price-hint { font-size: 0.75rem; color: #888; margin-top: 4px; }
+
+        /* Kategori seçim kutusu */
+        .cat-selector {
+            border: 1px solid #ccc; border-radius: 6px;
+            padding: 8px; background: #f9fafb; max-height: 200px;
+            overflow-y: auto;
+        }
+        .cat-selector-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 8px; cursor: pointer;
+            border-radius: 4px; font-size: 0.9rem;
+            user-select: none;
+        }
+        .cat-selector-item:hover { background: #e8f4f8; }
+        .cat-selector-item input[type="checkbox"] {
+            width: 18px; height: 18px; cursor: pointer; margin: 0;
+        }
+        .cat-selector-item.checked {
+            background: #d4f5e3; font-weight: 600;
+        }
+        .cat-add-row {
+            display: flex; gap: 6px; margin-top: 8px;
+        }
+        .cat-add-row input { flex-grow: 1; padding: 8px 10px; font-size: 14px; }
+        .cat-add-row button { padding: 8px 14px; font-size: 0.85rem; }
+        .selected-cats-preview {
+            margin-top: 8px; font-size: 0.8rem; color: #27ae60;
+            display: flex; flex-wrap: wrap; gap: 4px;
+        }
+        .selected-cats-preview span {
+            background: #e8f8f0; border: 1px solid #b8e6c9;
+            padding: 2px 8px; border-radius: 10px;
+        }
+
         .password-row { display: flex; gap: 6px; }
         .password-row input { flex-grow: 1; }
         .toggle-pass-btn {
@@ -178,6 +216,15 @@
             display: inline-block; background: #e74c3c; color: white;
             padding: 4px 10px; border-radius: 12px;
             font-size: 0.85rem; font-weight: bold; margin-bottom: 8px;
+        }
+        .detail-cats {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            justify-content: center; margin-bottom: 10px;
+        }
+        .detail-cat-badge {
+            background: #2c3e50; color: #fff;
+            padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: bold;
         }
     </style>
 </head>
@@ -230,6 +277,7 @@
         <div class="modal-content" style="text-align:center;">
             <img id="detail-img" src="" style="width:100%; max-height:420px; height:auto; object-fit:contain; background:#f1f4f8; border-radius:8px; margin-bottom:12px;" loading="lazy">
             <div id="detail-discount" class="detail-discount" style="display:none;"></div>
+            <div id="detail-cats" class="detail-cats"></div>
             <h2 id="detail-title" style="margin-bottom:10px; color:#2c3e50;"></h2>
             <p id="detail-desc" style="color:#555; font-size:0.95rem; line-height:1.5; margin-bottom:15px; text-align:start; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;"></p>
             <div id="detail-price-row" style="margin-bottom:15px;"></div>
@@ -301,10 +349,13 @@
                 <div class="price-hint">إذا أدخلت هذا الحقل وكان أكبر من السعر الحالي، سيظهر شعار الخصم تلقائياً</div>
             </div>
             <div class="form-group">
-                <label>🏷️ الفئة / القسم</label>
-                <input type="text" id="pf-category" list="category-list" placeholder="مثال: عطور، عناية بالبشرة...">
-                <datalist id="category-list"></datalist>
-                <div class="price-hint">اكتب فئة جديدة أو اختر من الفئات الموجودة</div>
+                <label>🏷️ الفئات / الأقسام (يمكن اختيار أكثر من واحدة)</label>
+                <div id="cat-selector" class="cat-selector"></div>
+                <div class="cat-add-row">
+                    <input type="text" id="new-cat-input" placeholder="أضف فئة جديدة..." onkeydown="if(event.key==='Enter'){event.preventDefault();addNewCategory();}">
+                    <button type="button" onclick="addNewCategory()" class="btn-success">➕</button>
+                </div>
+                <div id="selected-cats-preview" class="selected-cats-preview"></div>
             </div>
             <div class="form-group">
                 <label>📄 الوصف</label>
@@ -359,6 +410,7 @@
         let currentImageFile = null;
         let currentImageUrl = '';
         let currentImagePreview = '';
+        let selectedCategoriesInForm = []; // Form'daki seçili kategoriler
 
         function initSupabase() {
             try {
@@ -407,25 +459,19 @@
             if (error) throw error;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  RESİM URL DÖNÜŞTÜRÜCÜ (B2 + Supabase + 2Chat)
-        // ═══════════════════════════════════════════════════════
         function imageUrl(url) {
             if (!url) return 'https://via.placeholder.com/300x200?text=No+Image';
 
-            // B2 key formatı: "b2:whatsapp/wa_xxx.jpg"
             if (url.startsWith('b2:')) {
                 const key = url.substring(3);
                 return '/api/b2-image?key=' + encodeURIComponent(key);
             }
 
-            // Eski Supabase URL'leri
             const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
             if (url.startsWith(supabaseBase)) {
                 return url.replace(supabaseBase, '/storage-img');
             }
 
-            // 2Chat URL'leri
             if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
                 return '/api/image-proxy?url=' + encodeURIComponent(url);
             }
@@ -478,8 +524,20 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  KATEGORİLER
+        //  ÜRÜN KATEGORİLERİ
         // ═══════════════════════════════════════════════════════
+        function getProductCategories(p) {
+            // Önce API'den gelen `categories` array'ini kullan
+            if (Array.isArray(p.categories) && p.categories.length > 0) {
+                return p.categories;
+            }
+            // Yoksa `category` string'ini split et
+            if (typeof p.category === 'string') {
+                return p.category.split(',').map(c => c.trim()).filter(Boolean);
+            }
+            return [];
+        }
+
         function renderCategories() {
             const bar = document.getElementById('categoriesBar');
             bar.innerHTML = '';
@@ -507,21 +565,8 @@
                 };
                 bar.appendChild(btn);
             });
-
-            const datalist = document.getElementById('category-list');
-            if (datalist) {
-                datalist.innerHTML = '';
-                allCategories.forEach(cat => {
-                    const opt = document.createElement('option');
-                    opt.value = cat;
-                    datalist.appendChild(opt);
-                });
-            }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  ÜRÜN YÜKLEME
-        // ═══════════════════════════════════════════════════════
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
@@ -586,7 +631,10 @@
             let list = currentProducts.slice();
 
             if (selectedCategory !== 'ALL') {
-                list = list.filter(p => (p.category || '').trim() === selectedCategory);
+                list = list.filter(p => {
+                    const cats = getProductCategories(p);
+                    return cats.includes(selectedCategory);
+                });
             }
 
             if (searchQuery) {
@@ -619,12 +667,16 @@
             const idStr = String(p.id);
             const discount = calcDiscount(p);
             const hasDiscount = discount > 0;
-            const category = (p.category || '').trim();
+            const cats = getProductCategories(p);
+
+            const badgesHtml = cats.length > 0
+                ? `<div class="product-badges-container">${cats.slice(0, 3).map(c => `<span class="product-badge-cat">${escapeHtml(c)}</span>`).join('')}</div>`
+                : '';
 
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
-                ${category ? `<span class="product-badge-cat">${escapeHtml(category)}</span>` : ''}
+                ${badgesHtml}
                 ${hasDiscount ? `<span class="product-badge-discount">-${discount}%</span>` : ''}
                 <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
                 <div class="product-info">
@@ -739,6 +791,7 @@
             const name = p.name_ar || p.name_tr || 'منتج';
             const desc = p.desc_ar || p.desc_tr || '';
             const discount = calcDiscount(p);
+            const cats = getProductCategories(p);
 
             document.getElementById('detail-img').src = imageUrl(p.img);
             document.getElementById('detail-title').innerText = name;
@@ -751,6 +804,9 @@
             } else {
                 discountEl.style.display = 'none';
             }
+
+            const catsEl = document.getElementById('detail-cats');
+            catsEl.innerHTML = cats.map(c => `<span class="detail-cat-badge">${escapeHtml(c)}</span>`).join('');
 
             const priceRow = document.getElementById('detail-price-row');
             if (discount > 0) {
@@ -792,6 +848,73 @@
         }
 
         // ═══════════════════════════════════════════════════════
+        //  ÇOKLU KATEGORİ SEÇİCİ
+        // ═══════════════════════════════════════════════════════
+        function renderCategorySelector(selected = []) {
+            selectedCategoriesInForm = selected.slice();
+            const container = document.getElementById('cat-selector');
+            container.innerHTML = '';
+
+            if (allCategories.length === 0) {
+                container.innerHTML = '<div style="color:#999; font-size:0.85rem; padding:8px;">لا توجد فئات بعد — أضف فئة جديدة من الأسفل</div>';
+            } else {
+                allCategories.forEach(cat => {
+                    const isChecked = selectedCategoriesInForm.includes(cat);
+                    const label = document.createElement('label');
+                    label.className = 'cat-selector-item' + (isChecked ? ' checked' : '');
+                    label.innerHTML = `
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCategory('${escapeHtml(cat).replace(/'/g, "\\'")}')">
+                        <span>${escapeHtml(cat)}</span>
+                    `;
+                    container.appendChild(label);
+                });
+            }
+
+            renderSelectedCatsPreview();
+        }
+
+        function toggleCategory(cat) {
+            const idx = selectedCategoriesInForm.indexOf(cat);
+            if (idx >= 0) {
+                selectedCategoriesInForm.splice(idx, 1);
+            } else {
+                selectedCategoriesInForm.push(cat);
+            }
+            renderCategorySelector(selectedCategoriesInForm);
+        }
+
+        function renderSelectedCatsPreview() {
+            const preview = document.getElementById('selected-cats-preview');
+            if (selectedCategoriesInForm.length === 0) {
+                preview.innerHTML = '';
+                return;
+            }
+            preview.innerHTML = '✅ ' + selectedCategoriesInForm.map(c => `<span>${escapeHtml(c)}</span>`).join(' ');
+        }
+
+        function addNewCategory() {
+            const inp = document.getElementById('new-cat-input');
+            const newCat = (inp.value || '').trim();
+            if (!newCat) return;
+
+            // Zaten var mı?
+            if (allCategories.includes(newCat)) {
+                alert('⚠️ هذه الفئة موجودة بالفعل');
+                return;
+            }
+
+            // allCategories'e ekle (henüz kaydedilmedi, ürün kaydedilince DB'ye gidecek)
+            allCategories.push(newCat);
+            allCategories.sort();
+
+            // Otomatik seçili yap
+            selectedCategoriesInForm.push(newCat);
+
+            inp.value = '';
+            renderCategorySelector(selectedCategoriesInForm);
+        }
+
+        // ═══════════════════════════════════════════════════════
         //  ÜRÜN FORMU
         // ═══════════════════════════════════════════════════════
         function openProductForm(id = null) {
@@ -805,6 +928,7 @@
             preview.style.display = 'none';
             preview.src = '';
             document.getElementById('pf-image-file').value = '';
+            document.getElementById('new-cat-input').value = '';
 
             if (id) {
                 const p = currentProducts.find(x => String(x.id) === String(id));
@@ -814,7 +938,6 @@
                 document.getElementById('pf-name').value = p.name_ar || p.name_tr || '';
                 document.getElementById('pf-price').value = p.price || '';
                 document.getElementById('pf-original-price').value = p.original_price || '';
-                document.getElementById('pf-category').value = p.category || '';
                 document.getElementById('pf-desc').value = p.desc_ar || p.desc_tr || '';
 
                 if (p.img) {
@@ -823,14 +946,18 @@
                     preview.src = imageUrl(p.img);
                     preview.style.display = 'block';
                 }
+
+                // Mevcut kategorileri seçili getir
+                const existingCats = getProductCategories(p);
+                renderCategorySelector(existingCats);
             } else {
                 document.getElementById('product-form-title').innerText = '➕ إضافة منتج جديد';
                 document.getElementById('pf-id').value = '';
                 document.getElementById('pf-name').value = '';
                 document.getElementById('pf-price').value = '';
                 document.getElementById('pf-original-price').value = '';
-                document.getElementById('pf-category').value = '';
                 document.getElementById('pf-desc').value = '';
+                renderCategorySelector([]);
             }
 
             openModal('productFormModal');
@@ -851,9 +978,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  RESİM YÜKLEME (B2'ye)
-        // ═══════════════════════════════════════════════════════
         async function uploadImage(file) {
             const compressed = await compressImage(file);
             const reader = new FileReader();
@@ -912,7 +1036,6 @@
             const name = document.getElementById('pf-name').value.trim();
             const price = parseFloat(document.getElementById('pf-price').value) || 0;
             const originalPrice = parseFloat(document.getElementById('pf-original-price').value) || 0;
-            const category = document.getElementById('pf-category').value.trim();
             const desc = document.getElementById('pf-desc').value.trim();
 
             if (!name) { alert('يجب إدخال اسم المنتج'); return; }
@@ -921,6 +1044,9 @@
                 alert('⚠️ السعر الأصلي يجب أن يكون أكبر من السعر الحالي (أو اتركه فارغاً)');
                 return;
             }
+
+            // Seçili kategorileri virgülle birleştir
+            const categoryString = selectedCategoriesInForm.join(',');
 
             const btn = document.getElementById('pf-save-btn');
             const oldText = btn.innerText;
@@ -937,7 +1063,7 @@
                     name,
                     price,
                     original_price: originalPrice,
-                    category,
+                    category: categoryString,
                     description: desc,
                     img: imgUrl,
                     synced_at: new Date().toISOString()
@@ -1011,9 +1137,6 @@
             }, 200);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  AUTH
-        // ═══════════════════════════════════════════════════════
         async function handleSupabaseLogin() {
             if (!_supabase) { alert('Supabase غير محمل'); return; }
             const email = document.getElementById('login-email').value.trim();
@@ -1076,7 +1199,7 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         document.getElementById('productFormModal')?.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.id !== 'new-cat-input') {
                 e.preventDefault();
                 saveProduct();
             }
