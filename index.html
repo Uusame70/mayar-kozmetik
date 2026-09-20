@@ -152,7 +152,6 @@
         .form-group textarea { resize: vertical; min-height: 70px; }
         .price-hint { font-size: 0.75rem; color: #888; margin-top: 4px; }
 
-        /* Kategori seçim kutusu */
         .cat-selector {
             border: 1px solid #ccc; border-radius: 6px;
             padding: 8px; background: #f9fafb; max-height: 200px;
@@ -410,7 +409,7 @@
         let currentImageFile = null;
         let currentImageUrl = '';
         let currentImagePreview = '';
-        let selectedCategoriesInForm = []; // Form'daki seçili kategoriler
+        let selectedCategoriesInForm = [];
 
         function initSupabase() {
             try {
@@ -524,14 +523,12 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        //  ÜRÜN KATEGORİLERİ
+        //  KATEGORİLER
         // ═══════════════════════════════════════════════════════
         function getProductCategories(p) {
-            // Önce API'den gelen `categories` array'ini kullan
             if (Array.isArray(p.categories) && p.categories.length > 0) {
                 return p.categories;
             }
-            // Yoksa `category` string'ini split et
             if (typeof p.category === 'string') {
                 return p.category.split(',').map(c => c.trim()).filter(Boolean);
             }
@@ -567,10 +564,15 @@
             });
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  ÜRÜN YÜKLEME — ADMIN İÇİN HER ZAMAN TAZE
+        // ═══════════════════════════════════════════════════════
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
-                const url = '/api/products' + (bust ? '?bust=1&t=' + Date.now() : '');
+                // Admin girişliyse cache'i otomatik atla
+                const forceBust = bust || isAdmin;
+                const url = '/api/products' + (forceBust ? '?bust=1&t=' + Date.now() : '');
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('API error: ' + res.status);
                 const data = await res.json();
@@ -897,17 +899,13 @@
             const newCat = (inp.value || '').trim();
             if (!newCat) return;
 
-            // Zaten var mı?
             if (allCategories.includes(newCat)) {
                 alert('⚠️ هذه الفئة موجودة بالفعل');
                 return;
             }
 
-            // allCategories'e ekle (henüz kaydedilmedi, ürün kaydedilince DB'ye gidecek)
             allCategories.push(newCat);
             allCategories.sort();
-
-            // Otomatik seçili yap
             selectedCategoriesInForm.push(newCat);
 
             inp.value = '';
@@ -947,7 +945,6 @@
                     preview.style.display = 'block';
                 }
 
-                // Mevcut kategorileri seçili getir
                 const existingCats = getProductCategories(p);
                 renderCategorySelector(existingCats);
             } else {
@@ -1045,7 +1042,6 @@
                 return;
             }
 
-            // Seçili kategorileri virgülle birleştir
             const categoryString = selectedCategoriesInForm.join(',');
 
             const btn = document.getElementById('pf-save-btn');
@@ -1086,6 +1082,7 @@
                 }
 
                 closeModal('productFormModal');
+                // Admin olduğu için forceBust otomatik tetiklenecek
                 await loadCatalog(true);
             } catch (err) {
                 alert('❌ خطأ: ' + err.message);
@@ -1219,7 +1216,12 @@
                         isAdmin = !!session;
                         sessionToken = session?.access_token || null;
                         updateAdminUI();
-                        renderFilteredProducts();
+                        // Giriş yapıldığında taze veri çek
+                        if (isAdmin) {
+                            loadCatalog(true);
+                        } else {
+                            renderFilteredProducts();
+                        }
                     });
                 }
 
