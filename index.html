@@ -48,6 +48,7 @@
             white-space: nowrap; font-size: 0.85rem;
             font-weight: 600; cursor: pointer;
             transition: background 0.2s;
+            font-family: inherit;
         }
         .cat-btn.active { background-color: #3498db; border-color: #3498db; }
         button { cursor: pointer; padding: 8px 12px; border: none;
@@ -341,7 +342,6 @@
     <script>
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
-        const STORAGE_BUCKET = 'product-images';
 
         let _supabase = null;
         let isAdmin = false;
@@ -407,15 +407,29 @@
             if (error) throw error;
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  RESİM URL DÖNÜŞTÜRÜCÜ (B2 + Supabase + 2Chat)
+        // ═══════════════════════════════════════════════════════
         function imageUrl(url) {
             if (!url) return 'https://via.placeholder.com/300x200?text=No+Image';
+
+            // B2 key formatı: "b2:whatsapp/wa_xxx.jpg"
+            if (url.startsWith('b2:')) {
+                const key = url.substring(3);
+                return '/api/b2-image?key=' + encodeURIComponent(key);
+            }
+
+            // Eski Supabase URL'leri
             const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
             if (url.startsWith(supabaseBase)) {
                 return url.replace(supabaseBase, '/storage-img');
             }
+
+            // 2Chat URL'leri
             if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
                 return '/api/image-proxy?url=' + encodeURIComponent(url);
             }
+
             return url;
         }
 
@@ -494,7 +508,6 @@
                 bar.appendChild(btn);
             });
 
-            // Admin için kategori datalist'i güncelle
             const datalist = document.getElementById('category-list');
             if (datalist) {
                 datalist.innerHTML = '';
@@ -572,12 +585,10 @@
         function applyLocalFilter() {
             let list = currentProducts.slice();
 
-            // Kategori filtresi
             if (selectedCategory !== 'ALL') {
                 list = list.filter(p => (p.category || '').trim() === selectedCategory);
             }
 
-            // Arama filtresi
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 list = list.filter(p => {
@@ -809,7 +820,7 @@
                 if (p.img) {
                     currentImageUrl = p.img;
                     currentImagePreview = p.img;
-                    preview.src = p.img;
+                    preview.src = imageUrl(p.img);
                     preview.style.display = 'block';
                 }
             } else {
@@ -840,23 +851,30 @@
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        //  RESİM YÜKLEME (B2'ye)
+        // ═══════════════════════════════════════════════════════
         async function uploadImage(file) {
-            if (!_supabase) throw new Error('Supabase yok');
             const compressed = await compressImage(file);
-            const fileName = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.webp`;
-            const path = `admin/${fileName}`;
+            const reader = new FileReader();
+            const base64 = await new Promise(resolve => {
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsDataURL(compressed);
+            });
 
-            const { error: uploadErr } = await _supabase.storage
-                .from(STORAGE_BUCKET)
-                .upload(path, compressed, { contentType: 'image/webp', upsert: false });
+            const res = await fetch('/api/b2-upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + sessionToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ base64, contentType: 'image/webp' })
+            });
 
-            if (uploadErr) throw uploadErr;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-            const { data: urlData } = _supabase.storage
-                .from(STORAGE_BUCKET)
-                .getPublicUrl(path);
-
-            return urlData.publicUrl;
+            return 'b2:' + data.key;
         }
 
         function compressImage(file, maxWidth = 1000, quality = 0.8) {
