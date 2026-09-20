@@ -2,11 +2,13 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
 
-const B2_KEY_ID = process.env.B2_KEY_ID;
-const B2_APP_KEY = process.env.B2_APP_KEY;
-const B2_BUCKET = process.env.B2_BUCKET;
-const B2_ENDPOINT = process.env.B2_ENDPOINT;
-const B2_REGION = process.env.B2_REGION;
+// ═══════════════ B2 AYARLARI ═══════════════
+const B2_KEY_ID = 'BURAYA_KEY_ID_YAPISTIR';
+const B2_APP_KEY = 'BURAYA_APPLICATION_KEY_YAPISTIR';
+const B2_BUCKET = 'mayar-images';
+const B2_ENDPOINT = 'https://s3.us-east-005.backblazeb2.com';
+const B2_REGION = 'us-east-005';
+// ═══════════════════════════════════════════
 
 const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
