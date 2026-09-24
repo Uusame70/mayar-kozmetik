@@ -17,13 +17,22 @@ const s3 = new S3Client({
 });
 
 export default async function handler(req, res) {
-  const key = req.query.key;
+  let key = req.query.key;
 
   if (!key) return res.status(400).send('Missing key');
 
+  // URL-encoded gelirse decode et
+  if (key.includes('%')) {
+    try { key = decodeURIComponent(key); } catch (e) { /* ignore */ }
+  }
+
+  // Başındaki olası slash'ları temizle
+  key = key.replace(/^\/+/, '');
+
   // Sadece whatsapp/ ve admin/ klasörlerine izin ver
   if (!key.startsWith('whatsapp/') && !key.startsWith('admin/')) {
-    return res.status(403).send('Forbidden');
+    console.error('B2 forbidden key:', key);
+    return res.status(403).send('Forbidden: ' + key);
   }
 
   try {
@@ -38,8 +47,10 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).send(buffer);
   } catch (err) {
-    console.error('B2 proxy error:', err);
-    if (err.name === 'NoSuchKey') return res.status(404).send('Image not found');
+    console.error('B2 proxy error:', err, 'key=', key);
+    if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) {
+      return res.status(404).send('Image not found: ' + key);
+    }
     res.status(500).send('Proxy error: ' + err.message);
   }
 }
