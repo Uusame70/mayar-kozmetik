@@ -4,9 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
 
-// 2Chat varsayılanları — environment variables'dan okunur
-const DEFAULT_API_KEY = process.env.TWOCHAT_API_KEY;
-const DEFAULT_PHONE = process.env.TWOCHAT_PHONE || '905388444275';
+// 2Chat varsayılanları (admin override edebilir)
+const DEFAULT_API_KEY = 'UAK6f703c42-c939-4575-89cc-35922b2faca9';
+const DEFAULT_PHONE = '905388444275';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') {
@@ -32,10 +32,6 @@ export default async function handler(req, res) {
 
   const API_KEY = req.query.api_key || DEFAULT_API_KEY;
   const PHONE = req.query.phone || DEFAULT_PHONE;
-
-  if (!API_KEY) {
-    return res.status(500).json({ error: 'TWOCHAT_API_KEY tanımlı değil' });
-  }
 
   try {
     // ── 1. 2Chat'ten ürünleri çek ──

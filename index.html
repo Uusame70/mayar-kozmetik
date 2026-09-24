@@ -407,28 +407,15 @@
             if (error) throw error;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  RESİM URL ÇÖZÜMLEYİCİ (GÜNCELLENDİ)
-        // ═══════════════════════════════════════════════════════
         function imageUrl(url) {
             if (!url) return 'https://via.placeholder.com/300x200?text=No+Image';
-
-            // 1. Supabase Storage URL → /storage-img proxy (Vercel rewrite)
             const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
             if (url.startsWith(supabaseBase)) {
                 return url.replace(supabaseBase, '/storage-img');
             }
-
-            // 2. B2 bucket key (whatsapp/... veya admin/...) → /api/b2-image?key=
-            if (url.startsWith('whatsapp/') || url.startsWith('admin/')) {
-                return '/api/b2-image?key=' + encodeURIComponent(url);
+            if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
+                return '/api/image-proxy?url=' + encodeURIComponent(url);
             }
-
-            // 3. Dış URL (2Chat S3, http/https) → /api/b2-image?url=
-            if (url.startsWith('http://') || url.startsWith('https://')) {
-                return '/api/b2-image?url=' + encodeURIComponent(url);
-            }
-
             return url;
         }
 
@@ -507,6 +494,7 @@
                 bar.appendChild(btn);
             });
 
+            // Admin için kategori datalist'i güncelle
             const datalist = document.getElementById('category-list');
             if (datalist) {
                 datalist.innerHTML = '';
@@ -584,10 +572,12 @@
         function applyLocalFilter() {
             let list = currentProducts.slice();
 
+            // Kategori filtresi
             if (selectedCategory !== 'ALL') {
                 list = list.filter(p => (p.category || '').trim() === selectedCategory);
             }
 
+            // Arama filtresi
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 list = list.filter(p => {
@@ -819,7 +809,7 @@
                 if (p.img) {
                     currentImageUrl = p.img;
                     currentImagePreview = p.img;
-                    preview.src = imageUrl(p.img);
+                    preview.src = p.img;
                     preview.style.display = 'block';
                 }
             } else {
@@ -850,36 +840,23 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  RESİM YÜKLEME → B2 (Supabase Storage yerine)
-        // ═══════════════════════════════════════════════════════
         async function uploadImage(file) {
-            if (!sessionToken) throw new Error('Oturum yok');
+            if (!_supabase) throw new Error('Supabase yok');
             const compressed = await compressImage(file);
+            const fileName = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.webp`;
+            const path = `admin/${fileName}`;
 
-            // Base64'e çevir
-            const base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(compressed);
-            });
+            const { error: uploadErr } = await _supabase.storage
+                .from(STORAGE_BUCKET)
+                .upload(path, compressed, { contentType: 'image/webp', upsert: false });
 
-            const res = await fetch('/api/b2-upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + sessionToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    base64: base64,
-                    contentType: 'image/webp'
-                })
-            });
+            if (uploadErr) throw uploadErr;
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Upload error');
-            return data.key;  // örn: "admin/admin_123.webp"
+            const { data: urlData } = _supabase.storage
+                .from(STORAGE_BUCKET)
+                .getPublicUrl(path);
+
+            return urlData.publicUrl;
         }
 
         function compressImage(file, maxWidth = 1000, quality = 0.8) {
