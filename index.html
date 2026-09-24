@@ -85,6 +85,14 @@
         .product-card { background: white; border-radius: 10px; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex; flex-direction: column; position: relative; }
+        .product-badge-cat {
+            position: absolute; top: 8px; right: 8px;
+            background-color: rgba(44,62,80,0.85); color: white;
+            padding: 3px 8px; border-radius: 12px;
+            font-size: 0.7rem; font-weight: bold; z-index: 2;
+            max-width: 70%; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .product-badge-discount {
             position: absolute; top: 8px; left: 8px;
             background-color: #e74c3c; color: white;
@@ -252,12 +260,12 @@
             <form onsubmit="event.preventDefault(); handleSupabaseLogin();">
                 <div class="form-group">
                     <label>البريد الإلكتروني</label>
-                    <input type="email" id="login-email" placeholder="email@domain.com" dir="ltr" autocomplete="username">
+                    <input type="email" id="login-email" placeholder="email@domain.com" dir="ltr">
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور</label>
                     <div class="password-row">
-                        <input type="password" id="login-password" placeholder="كلمة المرور" dir="ltr" autocomplete="current-password">
+                        <input type="password" id="login-password" placeholder="كلمة المرور" dir="ltr">
                         <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()" id="btn-toggle-pass" title="عرض كلمة المرور">👁️</button>
                     </div>
                 </div>
@@ -352,8 +360,6 @@
         let currentImageUrl = '';
         let currentImagePreview = '';
 
-        var PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23f1f4f8%22/></svg>';
-
         function initSupabase() {
             try {
                 if (typeof supabase !== 'undefined' && supabase.createClient) {
@@ -401,26 +407,16 @@
             if (error) throw error;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  GÖRSEL URL DÖNÜŞTÜRÜCÜ (DÜZELTİLDİ)
-        // ═══════════════════════════════════════════════════════
         function imageUrl(url) {
-            if (!url) return PLACEHOLDER;
-
-            // Zaten tam URL (http/https) ise
-            if (url.startsWith('http://') || url.startsWith('https://')) {
-                const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
-                if (url.startsWith(supabaseBase)) {
-                    return url.replace(supabaseBase, '/storage-img');
-                }
-                if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
-                    return '/api/image-proxy?url=' + encodeURIComponent(url);
-                }
-                return url;
+            if (!url) return 'https://via.placeholder.com/300x200?text=No+Image';
+            const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
+            if (url.startsWith(supabaseBase)) {
+                return url.replace(supabaseBase, '/storage-img');
             }
-
-            // Tam URL değil, sadece B2 key'i (örn: "admin/admin_xxx.webp" veya "whatsapp/...")
-            return '/api/b2-image?key=' + encodeURIComponent(url);
+            if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
+                return '/api/image-proxy?url=' + encodeURIComponent(url);
+            }
+            return url;
         }
 
         function showLoadingScreen() { document.getElementById('loadingScreen').style.display = 'flex'; }
@@ -498,6 +494,7 @@
                 bar.appendChild(btn);
             });
 
+            // Admin için kategori datalist'i güncelle
             const datalist = document.getElementById('category-list');
             if (datalist) {
                 datalist.innerHTML = '';
@@ -575,10 +572,12 @@
         function applyLocalFilter() {
             let list = currentProducts.slice();
 
+            // Kategori filtresi
             if (selectedCategory !== 'ALL') {
                 list = list.filter(p => (p.category || '').trim() === selectedCategory);
             }
 
+            // Arama filtresi
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 list = list.filter(p => {
@@ -609,12 +608,14 @@
             const idStr = String(p.id);
             const discount = calcDiscount(p);
             const hasDiscount = discount > 0;
+            const category = (p.category || '').trim();
 
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
+                ${category ? `<span class="product-badge-cat">${escapeHtml(category)}</span>` : ''}
                 ${hasDiscount ? `<span class="product-badge-discount">-${discount}%</span>` : ''}
-                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy">
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
                 <div class="product-info">
                     <div>
                         <div class="product-title" onclick="openProductDetail('${idStr}')">${escapeHtml(name)}</div>
@@ -634,16 +635,6 @@
                     </div>
                 </div>
             `;
-
-            // onerror'ı JS ile bağla (HTML attribute içinde string sorunu olmasın)
-            const imgEl = card.querySelector('img');
-            if (imgEl) {
-                imgEl.onerror = function () {
-                    this.onerror = null;
-                    this.src = PLACEHOLDER;
-                };
-            }
-
             return card;
         }
 
@@ -738,12 +729,7 @@
             const desc = p.desc_ar || p.desc_tr || '';
             const discount = calcDiscount(p);
 
-            const detailImg = document.getElementById('detail-img');
-            detailImg.onerror = function () {
-                this.onerror = null;
-                this.src = PLACEHOLDER;
-            };
-            detailImg.src = imageUrl(p.img);
+            document.getElementById('detail-img').src = imageUrl(p.img);
             document.getElementById('detail-title').innerText = name;
             document.getElementById('detail-desc').innerText = desc || 'لا يوجد وصف';
 
@@ -823,7 +809,7 @@
                 if (p.img) {
                     currentImageUrl = p.img;
                     currentImagePreview = p.img;
-                    preview.src = imageUrl(p.img);
+                    preview.src = p.img;
                     preview.style.display = 'block';
                 }
             } else {
