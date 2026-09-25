@@ -21,7 +21,6 @@ export default async function handler(req, res) {
 
   if (!key) return res.status(400).send('Missing key');
 
-  // Sadece whatsapp/ ve admin/ klasörlerine izin ver
   if (!key.startsWith('whatsapp/') && !key.startsWith('admin/')) {
     return res.status(403).send('Forbidden');
   }
@@ -41,6 +40,7 @@ export default async function handler(req, res) {
     console.error('B2 proxy error:', err);
     if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) {
       return res.status(404).send('Image not found');
-}
+    }
+    res.status(500).send('Proxy error: ' + err.message);
   }
 }
