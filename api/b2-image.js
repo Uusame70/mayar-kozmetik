@@ -5,7 +5,7 @@ const B2_KEY_ID = process.env.B2_KEY_ID;
 const B2_APP_KEY = process.env.B2_APP_KEY;
 const B2_BUCKET = process.env.B2_BUCKET;
 const B2_ENDPOINT = process.env.B2_ENDPOINT;
-const B2_REGION = process.env.B2_REGION;
+const B2_REGION = process.env.B2_REGION || 'us-west-004';
 
 const s3 = new S3Client({
   endpoint: B2_ENDPOINT,
@@ -39,7 +39,8 @@ export default async function handler(req, res) {
     res.status(200).send(buffer);
   } catch (err) {
     console.error('B2 proxy error:', err);
-    if (err.name === 'NoSuchKey') return res.status(404).send('Image not found');
-    res.status(500).send('Proxy error: ' + err.message);
+    if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) {
+      return res.status(404).send('Image not found');
+}
   }
 }

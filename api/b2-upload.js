@@ -6,7 +6,7 @@ const B2_KEY_ID = process.env.B2_KEY_ID;
 const B2_APP_KEY = process.env.B2_APP_KEY;
 const B2_BUCKET = process.env.B2_BUCKET;
 const B2_ENDPOINT = process.env.B2_ENDPOINT;
-const B2_REGION = process.env.B2_REGION;
+const B2_REGION = process.env.B2_REGION || 'us-west-004';
 
 const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
