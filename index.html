@@ -85,14 +85,6 @@
         .product-card { background: white; border-radius: 10px; overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex; flex-direction: column; position: relative; }
-        .product-badge-cat {
-            position: absolute; top: 8px; right: 8px;
-            background-color: rgba(44,62,80,0.85); color: white;
-            padding: 3px 8px; border-radius: 12px;
-            font-size: 0.7rem; font-weight: bold; z-index: 2;
-            max-width: 70%; overflow: hidden; text-overflow: ellipsis;
-            white-space: nowrap;
-        }
         .product-badge-discount {
             position: absolute; top: 8px; left: 8px;
             background-color: #e74c3c; color: white;
@@ -208,7 +200,6 @@
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button onclick="openProductForm()" class="btn-success">➕ إضافة منتج</button>
-                <button onclick="openConfigModal()" class="btn-warning">⚙️ إعدادات 2Chat</button>
                 <button onclick="handleSupabaseLogout()" class="btn-danger">🚪 تسجيل الخروج</button>
             </div>
         </div>
@@ -223,7 +214,7 @@
         <button onclick="completeOrder()" class="btn-success">📱 إرسال الطلب عبر WhatsApp</button>
     </div>
 
-    <button id="scrollTopBtn" title="الأعلى">▲</button>
+    <button id="scrollTopBtn" title="الأعلى">⬆</button>
 
     <div id="productDetailModal" class="modal">
         <div class="modal-content" style="text-align:center;">
@@ -260,12 +251,12 @@
             <form onsubmit="event.preventDefault(); handleSupabaseLogin();">
                 <div class="form-group">
                     <label>البريد الإلكتروني</label>
-                    <input type="email" id="login-email" placeholder="email@domain.com" dir="ltr">
+                    <input type="email" id="login-email" placeholder="email@domain.com" dir="ltr" autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور</label>
                     <div class="password-row">
-                        <input type="password" id="login-password" placeholder="كلمة المرور" dir="ltr">
+                        <input type="password" id="login-password" placeholder="كلمة المرور" dir="ltr" autocomplete="current-password">
                         <button type="button" class="toggle-pass-btn" onclick="togglePasswordVisibility()" id="btn-toggle-pass" title="عرض كلمة المرور">👁️</button>
                     </div>
                 </div>
@@ -301,9 +292,9 @@
             </div>
             <div class="form-group">
                 <label>🏷️ الفئة / القسم</label>
-                <input type="text" id="pf-category" list="category-list" placeholder="مثال: عطور، عناية بالبشرة...">
+                <input type="text" id="pf-category" list="category-list" placeholder="مثال: عطور, عناية بالبشرة...">
                 <datalist id="category-list"></datalist>
-                <div class="price-hint">اكتب فئة جديدة أو اختر من الفئات الموجودة</div>
+                <div class="price-hint">اكتب فئة جديدة أو اختر من الفئات الموجودة. للفئات المتعددة افصل بينها بفاصلة ,</div>
             </div>
             <div class="form-group">
                 <label>📄 الوصف</label>
@@ -316,32 +307,9 @@
         </div>
     </div>
 
-    <div id="configModal" class="modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom:15px;">⚙️ إعدادات 2Chat</h2>
-            <div class="info-box">
-                تُستخدم هذه الإعدادات لمزامنة المنتجات من WhatsApp. تُحفظ في Supabase.
-            </div>
-            <div class="form-group">
-                <label>مفتاح 2Chat API</label>
-                <input type="text" id="cfg-api-key" placeholder="UAKxxxxx-xxxx-xxxx" dir="ltr">
-            </div>
-            <div class="form-group">
-                <label>رقم WhatsApp (يبدأ بـ 90)</label>
-                <input type="tel" id="cfg-phone" placeholder="905388444275" dir="ltr">
-            </div>
-            <div class="modal-actions">
-                <button onclick="saveConfig()" class="btn-success">💾 حفظ الإعدادات</button>
-                <button onclick="syncFromWhatsApp()" class="btn-warning">🔄 مزامنة من WhatsApp</button>
-                <button onclick="closeModal('configModal')" class="btn-danger">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = 'https://xmrdqepjtfycvtgcbkyy.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_MgJhvhCdIg9oC40t--FZxQ_04A8dWkU';
-        const STORAGE_BUCKET = 'product-images';
 
         let _supabase = null;
         let isAdmin = false;
@@ -408,20 +376,26 @@
         }
 
         function imageUrl(url) {
-            if (!url) return 'https://via.placeholder.com/300x200?text=No+Image';
+            if (!url) return 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect width=%22300%22 height=%22200%22 fill=%22%23f1f4f8%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2216%22 text-anchor=%22middle%22 dy=%22.3em%22>No Image</text></svg>';
 
-          if (url.startsWith('/api/b2-image')) return url;
+            if (url.startsWith('/api/b2-image')) return url;
 
-           const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
-           if (url.startsWith(supabaseBase)) {
-               return url.replace(supabaseBase, '/storage-img');
-           }
+            const supabaseBase = 'https://xmrdqepjtfycvtgcbkyy.supabase.co/storage/v1/object/public/product-images';
+            if (url.startsWith(supabaseBase)) {
+                return url.replace(supabaseBase, '/storage-img');
+            }
 
-          if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
-              return '/api/image-proxy?url=' + encodeURIComponent(url);
-           }
+            if (url.includes('2chat-user-data.s3') || url.includes('2chat.io')) {
+                return '/api/image-proxy?url=' + encodeURIComponent(url);
+            }
 
-         return url;
+            return url;
+        }
+
+        // ═══ Kategori Ayırıcı (esnek: virgül, noktalı virgül, slash, pipe) ═══
+        function parseCategories(str) {
+            if (!str) return [];
+            return str.split(/[,;\/|]+/).map(s => s.trim()).filter(s => s.length > 0);
         }
 
         function showLoadingScreen() { document.getElementById('loadingScreen').style.display = 'flex'; }
@@ -468,9 +442,6 @@
             return Math.round(((p.original_price - p.price) / p.original_price) * 100);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  KATEGORİLER
-        // ═══════════════════════════════════════════════════════
         function renderCategories() {
             const bar = document.getElementById('categoriesBar');
             bar.innerHTML = '';
@@ -499,7 +470,6 @@
                 bar.appendChild(btn);
             });
 
-            // Admin için kategori datalist'i güncelle
             const datalist = document.getElementById('category-list');
             if (datalist) {
                 datalist.innerHTML = '';
@@ -511,9 +481,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  ÜRÜN YÜKLEME
-        // ═══════════════════════════════════════════════════════
         async function loadCatalog(bust = false) {
             showLoadingScreen();
             try {
@@ -523,7 +490,13 @@
                 const data = await res.json();
 
                 currentProducts = data.products || [];
-                allCategories = data.categories || [];
+
+                // Kategorileri ürünlerden frontend'de çıkar (esnek ayırıcı ile)
+                const catSet = new Set();
+                currentProducts.forEach(p => {
+                    parseCategories(p.category || '').forEach(c => catSet.add(c));
+                });
+                allCategories = Array.from(catSet).sort();
 
                 if (data.lastSync) {
                     const d = new Date(data.lastSync.synced_at);
@@ -540,49 +513,16 @@
             } finally { hideLoadingScreen(); }
         }
 
-        async function syncFromWhatsApp() {
-            if (!isAdmin || !sessionToken) { alert('غير مصرح'); return; }
-            const btn = event.target;
-            const oldText = btn.innerText;
-            btn.innerText = '⏳ جاري المزامنة...';
-            btn.disabled = true;
-
-            try {
-                const params = [];
-                if (catalogConfig.twochat_api_key) params.push('api_key=' + encodeURIComponent(catalogConfig.twochat_api_key));
-                if (catalogConfig.twochat_phone) params.push('phone=' + encodeURIComponent(catalogConfig.twochat_phone));
-                const qs = params.length > 0 ? '?' + params.join('&') : '';
-
-                const res = await fetch('/api/sync-whatsapp' + qs, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + sessionToken,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Sync error');
-
-                alert(`✅ تمت مزامنة ${data.count} منتج`);
-                await loadCatalog(true);
-            } catch (err) {
-                alert('❌ خطأ في المزامنة: ' + err.message);
-            } finally {
-                btn.innerText = oldText;
-                btn.disabled = false;
-            }
-        }
-
         function applyLocalFilter() {
             let list = currentProducts.slice();
 
-            // Kategori filtresi
             if (selectedCategory !== 'ALL') {
-                list = list.filter(p => (p.category || '').trim() === selectedCategory);
+                list = list.filter(p => {
+                    const cats = parseCategories(p.category || '');
+                    return cats.includes(selectedCategory);
+                });
             }
 
-            // Arama filtresi
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 list = list.filter(p => {
@@ -613,14 +553,12 @@
             const idStr = String(p.id);
             const discount = calcDiscount(p);
             const hasDiscount = discount > 0;
-            const category = (p.category || '').trim();
 
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
-                ${category ? `<span class="product-badge-cat">${escapeHtml(category)}</span>` : ''}
                 ${hasDiscount ? `<span class="product-badge-discount">-${discount}%</span>` : ''}
-                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                <img src="${escapeHtml(img)}" alt="${escapeHtml(name)}" onclick="openProductDetail('${idStr}')" loading="lazy">
                 <div class="product-info">
                     <div>
                         <div class="product-title" onclick="openProductDetail('${idStr}')">${escapeHtml(name)}</div>
@@ -785,9 +723,6 @@
             copyTextToClipboard(getProductLink(id), '✅ تم نسخ الرابط');
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  ÜRÜN FORMU
-        // ═══════════════════════════════════════════════════════
         function openProductForm(id = null) {
             if (!isAdmin) { alert('يجب تسجيل الدخول أولاً'); return; }
 
@@ -845,34 +780,6 @@
             }
         }
 
-        async function uploadImage(file) {
-            if (!isAdmin || !sessionToken) throw new Error('غير مصرح');
-
-            const compressed = await compressImage(file);
-            const base64 = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.readAsDataURL(compressed);
-            });
-
-            const res = await fetch('/api/b2-upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + sessionToken,
-                    'Content-Type': 'application/json'
-             },
-             body: JSON.stringify({
-                 base64: base64,
-                 contentType: compressed.type || 'image/webp'
-             })
-         });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Upload failed');
-
-    return '/api/b2-image?key=' + encodeURIComponent(data.key);
-}
-
         function compressImage(file, maxWidth = 1000, quality = 0.8) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -899,6 +806,34 @@
                 };
                 reader.onerror = reject;
             });
+        }
+
+        async function uploadImage(file) {
+            if (!isAdmin || !sessionToken) throw new Error('غير مصرح');
+
+            const compressed = await compressImage(file);
+            const base64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsDataURL(compressed);
+            });
+
+            const res = await fetch('/api/b2-upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + sessionToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    base64: base64,
+                    contentType: compressed.type || 'image/webp'
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+            return '/api/b2-image?key=' + encodeURIComponent(data.key);
         }
 
         async function saveProduct() {
@@ -1007,9 +942,6 @@
             }, 200);
         }
 
-        // ═══════════════════════════════════════════════════════
-        //  AUTH
-        // ═══════════════════════════════════════════════════════
         async function handleSupabaseLogin() {
             if (!_supabase) { alert('Supabase غير محمل'); return; }
             const email = document.getElementById('login-email').value.trim();
@@ -1043,29 +975,6 @@
 
         function updateAdminUI() {
             document.getElementById('adminBar').style.display = isAdmin ? 'flex' : 'none';
-        }
-
-        function openConfigModal() {
-            if (!isAdmin) { alert('يجب تسجيل الدخول أولاً'); return; }
-            document.getElementById('cfg-api-key').value = catalogConfig.twochat_api_key || '';
-            document.getElementById('cfg-phone').value = catalogConfig.twochat_phone || '';
-            openModal('configModal');
-        }
-
-        async function saveConfig() {
-            if (!isAdmin) { alert('غير مصرح'); return; }
-            const apiKey = document.getElementById('cfg-api-key').value.trim();
-            const phone = document.getElementById('cfg-phone').value.trim();
-            if (!apiKey || !phone) { alert('مفتاح API والهاتف مطلوبان'); return; }
-
-            try {
-                await saveCatalogConfig(apiKey, phone);
-                catalogConfig.twochat_api_key = apiKey;
-                catalogConfig.twochat_phone = phone;
-                alert('✅ تم الحفظ');
-            } catch (err) {
-                alert('❌ خطأ: ' + err.message);
-            }
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
