@@ -216,7 +216,7 @@
 
     <button id="scrollTopBtn" title="الأعلى">⬆</button>
 
-    <div id="productDetailModal" class="modal">
+    <div id="productDetailModal" class="modal" onclick="closeModalOnBackdrop(event, 'productDetailModal')">
         <div class="modal-content" style="text-align:center;">
             <img id="detail-img" src="" style="width:100%; max-height:420px; height:auto; object-fit:contain; background:#f1f4f8; border-radius:8px; margin-bottom:12px;" loading="lazy">
             <div id="detail-discount" class="detail-discount" style="display:none;"></div>
@@ -227,12 +227,12 @@
                 <button id="detail-add-btn" class="btn-success" style="flex-grow:1; padding:10px;">🛒 إضافة للسلة</button>
                 <button id="detail-share-btn" class="btn-whatsapp" style="padding:10px 15px;">💬 مشاركة</button>
                 <button id="detail-copy-link-btn" class="btn-warning" style="padding:10px 15px;">🔗 نسخ الرابط</button>
-                <button onclick="closeModal('productDetailModal')" class="btn-danger" style="padding:10px 15px;">إغلاق</button>
+                <button onclick="closeModalAndPopHistory('productDetailModal')" class="btn-danger" style="padding:10px 15px;">إغلاق</button>
             </div>
         </div>
     </div>
 
-    <div id="cartModal" class="modal">
+    <div id="cartModal" class="modal" onclick="closeModalOnBackdrop(event, 'cartModal')">
         <div class="modal-content">
             <div class="modal-header-row">
                 <h2>🛒 سلة التسوق</h2>
@@ -240,12 +240,12 @@
             </div>
             <div id="cartList"></div>
             <div class="modal-actions">
-                <button onclick="closeModal('cartModal')" class="btn-danger">إغلاق</button>
+                <button onclick="closeModalAndPopHistory('cartModal')" class="btn-danger">إغلاق</button>
             </div>
         </div>
     </div>
 
-    <div id="loginModal" class="modal">
+    <div id="loginModal" class="modal" onclick="closeModalOnBackdrop(event, 'loginModal')">
         <div class="modal-content">
             <h2 style="margin-bottom:15px;">🔐 دخول المسؤول</h2>
             <form onsubmit="event.preventDefault(); handleSupabaseLogin();">
@@ -263,12 +263,12 @@
                 <button type="submit" class="btn-success" style="width:100%; margin-top:8px;">🔓 تسجيل الدخول</button>
             </form>
             <div class="modal-actions">
-                <button onclick="closeModal('loginModal')" class="btn-danger">إغلاق</button>
+                <button onclick="closeModalAndPopHistory('loginModal')" class="btn-danger">إغلاق</button>
             </div>
         </div>
     </div>
 
-    <div id="productFormModal" class="modal">
+    <div id="productFormModal" class="modal" onclick="closeModalOnBackdrop(event, 'productFormModal')">
         <div class="modal-content">
             <h2 id="product-form-title" style="margin-bottom:15px;">➕ إضافة منتج جديد</h2>
             <input type="hidden" id="pf-id">
@@ -302,7 +302,7 @@
             </div>
             <div class="modal-actions">
                 <button onclick="saveProduct()" class="btn-success" id="pf-save-btn">💾 حفظ</button>
-                <button onclick="closeModal('productFormModal')" class="btn-danger">إلغاء</button>
+                <button onclick="closeModalAndPopHistory('productFormModal')" class="btn-danger">إلغاء</button>
             </div>
         </div>
     </div>
@@ -327,6 +327,9 @@
         let currentImageFile = null;
         let currentImageUrl = '';
         let currentImagePreview = '';
+
+        // ═══ Modal history stack (telefon geri tuşu için) ═══
+        let modalHistoryStack = [];
 
         function initSupabase() {
             try {
@@ -366,15 +369,6 @@
             } catch (e) { console.warn('Config:', e); }
         }
 
-        async function saveCatalogConfig(apiKey, phone) {
-            if (!_supabase) throw new Error('Supabase yok');
-            const { error } = await _supabase
-                .from('settings')
-                .update({ twochat_api_key: apiKey, twochat_phone: phone })
-                .eq('id', 1);
-            if (error) throw error;
-        }
-
         function imageUrl(url) {
             if (!url) return 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect width=%22300%22 height=%22200%22 fill=%22%23f1f4f8%22/><text x=%2250%25%22 y=%2250%25%22 fill=%22%23999%22 font-family=%22sans-serif%22 font-size=%2216%22 text-anchor=%22middle%22 dy=%22.3em%22>No Image</text></svg>';
 
@@ -392,7 +386,6 @@
             return url;
         }
 
-        // ═══ Kategori Ayırıcı (esnek: virgül, noktalı virgül, slash, pipe) ═══
         function parseCategories(str) {
             if (!str) return [];
             return str.split(/[,;\/|]+/).map(s => s.trim()).filter(s => s.length > 0);
@@ -491,7 +484,6 @@
 
                 currentProducts = data.products || [];
 
-                // Kategorileri ürünlerden frontend'de çıkar (esnek ayırıcı ile)
                 const catSet = new Set();
                 currentProducts.forEach(p => {
                     parseCategories(p.category || '').forEach(c => catSet.add(c));
@@ -694,7 +686,7 @@
                 priceRow.innerHTML = `<span style="font-size:1.3rem; font-weight:bold; color:#27ae60;">${p.price} ₺</span>`;
             }
 
-            document.getElementById('detail-add-btn').onclick = () => { addToCart(p.id); closeModal('productDetailModal'); };
+            document.getElementById('detail-add-btn').onclick = () => { addToCart(p.id); closeModalAndPopHistory('productDetailModal'); };
             document.getElementById('detail-share-btn').onclick = () => shareProduct(p.id);
             document.getElementById('detail-copy-link-btn').onclick = () => copyProductLink(p.id);
             openModal('productDetailModal');
@@ -890,7 +882,7 @@
                     alert('✅ تمت إضافة المنتج بنجاح');
                 }
 
-                closeModal('productFormModal');
+                closeModalAndPopHistory('productFormModal');
                 await loadCatalog(true);
             } catch (err) {
                 alert('❌ خطأ: ' + err.message);
@@ -953,7 +945,7 @@
 
             isAdmin = true;
             sessionToken = data.session?.access_token || null;
-            closeModal('loginModal');
+            closeModalAndPopHistory('loginModal');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
             document.getElementById('login-password').type = 'password';
@@ -977,8 +969,47 @@
             document.getElementById('adminBar').style.display = isAdmin ? 'flex' : 'none';
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        // ═══ Modal Yönetimi (geri tuşu + dış tıklama) ═══
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            if (id !== 'loadingScreen') {
+                modalHistoryStack.push(id);
+                history.pushState({ modal: id }, '');
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function closeModalAndPopHistory(id) {
+            closeModal(id);
+            const idx = modalHistoryStack.lastIndexOf(id);
+            if (idx !== -1) modalHistoryStack.splice(idx, 1);
+            if (history.state && history.state.modal === id) {
+                history.back();
+            }
+        }
+
+        function closeModalOnBackdrop(event, modalId) {
+            if (event.target.id === modalId) {
+                closeModalAndPopHistory(modalId);
+            }
+        }
+
+        // Tarayıcı geri tuşu → açık modal varsa kapat, yoksa siteden çıkma
+        window.addEventListener('popstate', function(event) {
+            if (modalHistoryStack.length > 0) {
+                const modalId = modalHistoryStack.pop();
+                closeModal(modalId);
+            } else {
+                // Modal yokken geri tuşu → siteden çıkma, yeniden state ekle
+                history.pushState({ root: true }, '');
+            }
+        });
+
+        // Sayfa yüklendiğinde bir state ekle (geri tuşu yakalansın)
+        history.replaceState({ root: true }, '');
 
         document.getElementById('productFormModal')?.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
