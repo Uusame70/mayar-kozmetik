@@ -245,7 +245,6 @@
             .modal { align-items: center; }
             .modal-content { margin: 0 auto; border-radius: var(--radius-lg); max-height: 85vh; }
             .toast { bottom: 100px; }
-            /* YENİ: BİLGİSAYARDA ADMIN SEKMELERİNİ DÜZELTME */
             .admin-tab-bar { flex-wrap: wrap; overflow-x: visible; justify-content: center; }
             .admin-tab { flex-shrink: 1; padding: 10px 20px; font-size: 0.95rem; }
             .admin-item { padding: 15px 20px; }
@@ -1321,7 +1320,12 @@
             await _supabase.auth.signOut(); isAdmin = false; sessionToken = null; document.getElementById('adminBar').style.display = 'none'; location.reload();
         }
 
-        function openAdmin() { document.getElementById('adminBar').style.display = 'flex'; openModal('adminModal'); switchAdminTab('products'); }
+        function openAdmin() { 
+            alert("0101022");
+            document.getElementById('adminBar').style.display = 'flex'; 
+            openModal('adminModal'); 
+            switchAdminTab('products'); 
+        }
 
         async function resetAnalytics() {
             if (!confirm('هل أنت متأكد من تصفير جميع الإحصائيات؟ لا يمكن التراجع عن هذا الإجراء.')) return;
