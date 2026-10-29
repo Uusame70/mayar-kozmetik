@@ -366,6 +366,10 @@
             <img id="detail-img" src="" style="width:100%; max-height:350px; object-fit:contain; margin-bottom:14px;">
             <h2 id="detail-title" style="margin-bottom:12px; justify-content: center;"></h2>
             <div id="detail-price-row" style="margin-bottom:16px; font-size:1.4rem; font-weight:900; color:var(--gold-dark);"></div>
+            
+            <!-- ÜRÜN AÇIKLAMASI BURADA -->
+            <div id="detail-desc" style="margin-bottom:20px; font-size:1rem; color:#555; line-height:1.6; padding:0 10px; display:none;"></div>
+            
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
                 <button id="detail-add-btn" class="btn-success" style="flex-grow:1; padding:12px;">إضافة للسلة</button>
                 <button onclick="closeModalAndPopHistory('productDetailModal')" class="btn-danger" style="padding:12px;">إغلاق</button>
@@ -484,6 +488,13 @@
                 <label>الفئة / القسم</label>
                 <input type="text" id="pf-category" placeholder="مثال: صابون, عناية">
             </div>
+            
+            <!-- ADMIN PANELİNDE AÇIKLAMA EKLEME KUTUSU -->
+            <div class="form-group">
+                <label>وصف المنتج (Açıklama)</label>
+                <textarea id="pf-description" placeholder="اكتب وصف المنتج هنا..." rows="3"></textarea>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="btn-success" style="flex:1; padding:12px;" onclick="saveProduct()" id="pf-save-btn">حفظ المنتج</button>
                 <button class="btn-danger" style="flex:1; padding:12px;" onclick="closeModalAndPopHistory('productFormModal')">إلغاء</button>
@@ -1238,6 +1249,16 @@
             const priceRow = document.getElementById('detail-price-row');
             if (hasDiscount) priceRow.innerHTML = `<span style="color:var(--danger); font-size:1.4rem;">${p.price} ₺</span> <span style="font-size:1rem; color:#888; text-decoration:line-through; margin-inline-start:10px;">${p.original_price} ₺</span>`;
             else priceRow.innerHTML = `${p.price} ₺`;
+            
+            // AÇIKLAMAYI MODALDA GÖSTER
+            const descEl = document.getElementById('detail-desc');
+            if (p.description && p.description.trim() !== '') {
+                descEl.innerText = p.description;
+                descEl.style.display = 'block';
+            } else {
+                descEl.style.display = 'none';
+            }
+
             document.getElementById('detail-add-btn').onclick = () => { addToCart(p.id); closeModalAndPopHistory('productDetailModal'); };
             openModal('productDetailModal');
         }
@@ -1321,7 +1342,6 @@
         }
 
         function openAdmin() { 
-            alert("0101022");
             document.getElementById('adminBar').style.display = 'flex'; 
             openModal('adminModal'); 
             switchAdminTab('products'); 
@@ -1575,12 +1595,10 @@
             } else if (tab === 'perfumes') {
                 const sortedPerfumes = [...currentPerfumes].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
                 c.innerHTML = `
-                    <!-- BURADA: MAVİ İNDİRME BUTONU -->
                     <button class="btn-info" style="margin-bottom:15px; width:100%; padding:12px; background: #2980b9;" onclick="downloadPerfumesAsWord()">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         تحميل قائمة العطور (Excel / Word)
                     </button>
-
                     <button class="btn-gold" style="margin-bottom:15px; width:100%; padding:12px;" onclick="openPerfumeForm()">+ إضافة عطر جديد</button>
                     <p style="color:#888; text-align:center; margin-bottom:15px;">قائمة العطور الحالية (مرتبة أبجدياً)</p>
                     ${sortedPerfumes.map(p => `
@@ -2042,12 +2060,17 @@
                 if (p) {
                     document.getElementById('pf-name').value = p.name_ar; document.getElementById('pf-price').value = p.price;
                     document.getElementById('pf-old-price').value = p.original_price || ''; document.getElementById('pf-category').value = p.category;
+                    
+                    // AÇIKLAMAYI FORMA DOLDUR
+                    document.getElementById('pf-description').value = p.description || '';
+                    
                     currentProductImageUrl = p.img;
                     if (p.img) { preview.src = imageUrl(p.img); preview.style.display = 'block'; }
                 }
             } else {
                 document.getElementById('pf-name').value = ''; document.getElementById('pf-price').value = '';
                 document.getElementById('pf-old-price').value = ''; document.getElementById('pf-category').value = '';
+                document.getElementById('pf-description').value = ''; // Yeni ürünse boş bırak
             }
             openModal('productFormModal');
         }
@@ -2063,13 +2086,24 @@
             const price = parseFloat(document.getElementById('pf-price').value) || 0;
             const oldPrice = parseFloat(document.getElementById('pf-old-price').value) || 0;
             const category = document.getElementById('pf-category').value.trim();
+            const description = document.getElementById('pf-description').value.trim(); // Açıklamayı al
             const fileInput = document.getElementById('pf-image-file');
             if (!name) return alert('اسم المنتج مطلوب');
             const btn = document.getElementById('pf-save-btn'); const oldText = btn.innerText; btn.innerText = '... جاري الحفظ'; btn.disabled = true;
             try {
                 let imgUrl = currentProductImageUrl;
                 if (fileInput.files[0]) imgUrl = await uploadToB2(fileInput.files[0]);
-                const payload = { id: id || 'admin_' + Date.now(), name: name, price: price, original_price: oldPrice, category: category, img: imgUrl, active: true, synced_at: new Date().toISOString() };
+                const payload = { 
+                    id: id || 'admin_' + Date.now(), 
+                    name: name, 
+                    price: price, 
+                    original_price: oldPrice, 
+                    category: category, 
+                    description: description, // Açıklamayı kaydet
+                    img: imgUrl, 
+                    active: true, 
+                    synced_at: new Date().toISOString() 
+                };
                 if (id) { const { error } = await _supabase.from('whatsapp_products').update(payload).eq('id', id); if (error) throw error; }
                 else { const { error } = await _supabase.from('whatsapp_products').insert([payload]); if (error) throw error; }
                 closeModalAndPopHistory('productFormModal'); await loadAllData(); renderCategories(); applyLocalFilter(); showToast('تم حفظ المنتج'); switchAdminTab('products');
