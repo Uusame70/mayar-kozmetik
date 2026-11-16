@@ -815,7 +815,6 @@
             });
         });
 
-        // Diğer gruplar (eğer yukarıdakiler dışında varsa)
         const otherPerfumes = currentPerfumes.filter(p => {
             const group = perfumeGroups.find(g => g.id === p.gender_id);
             return !group || !targetGroups.includes(group.label);
@@ -890,11 +889,12 @@
         }
 
         pricesContainer.innerHTML = '';
-        const currentPrices = id ? prices.filter(pr => String(pr.perfume_id) === String(id)) : [];
+        // Sadece standart şişe (size_id = 2) fiyatlarını çek
+        const currentPrices = id ? prices.filter(pr => String(pr.perfume_id) === String(id) && pr.size_id == 2) : [];
         
         if (currentPrices.length > 0) {
             currentPrices.forEach(pr => {
-                window.addPriceRow(pr.intensity_id, pr.size_id, pr.price);
+                window.addPriceRow(pr.intensity_id, pr.price);
             });
         } else {
             window.addPriceRow();
@@ -903,22 +903,19 @@
         window.openModal('perfumeFormModal');
     };
 
-    window.addPriceRow = function(intensityId = '', sizeId = '', price = '') {
+    window.addPriceRow = function(intensityId = '', price = '') {
         const container = document.getElementById('perfume-prices-container');
         const row = document.createElement('div');
         row.style.display = 'flex';
-        row.style.gap = '5px';
+        row.style.gap = '10px';
         row.style.marginBottom = '10px';
         row.className = 'price-row';
 
         const intensityOpts = intensities.map(i => `<option value="${i.id}" ${String(i.id) === String(intensityId) ? 'selected' : ''}>${i.name}</option>`).join('');
-        const activeBottles = bottles.filter(b => b.active !== false);
-        const bottleOpts = activeBottles.map(b => `<option value="${b.id}" ${String(b.id) === String(sizeId) ? 'selected' : ''}>${b.name}</option>`).join('');
 
         row.innerHTML = `
-            <select class="price-intensity" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">${intensityOpts}</select>
-            <select class="price-size" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">${bottleOpts}</select>
-            <input type="number" class="price-value" value="${price}" placeholder="السعر" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; width:80px; font-family:inherit;">
+            <select class="price-intensity" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">${intensityOpts}</select>
+            <input type="number" class="price-value" value="${price}" placeholder="السعر (₺)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">
             <button type="button" class="btn-danger" onclick="this.parentElement.remove()" style="padding:8px 12px; min-height: unset;">✕</button>
         `;
         container.appendChild(row);
@@ -960,7 +957,8 @@
                 perfumeId = data[0].id;
             }
 
-            const { error: delError } = await _supabase.from('perfume_prices').delete().eq('perfume_id', perfumeId);
+            // Sadece baz fiyatları (size_id = 2) sil
+            const { error: delError } = await _supabase.from('perfume_prices').delete().eq('perfume_id', perfumeId).eq('size_id', 2);
             if (delError) throw delError;
 
             const priceRows = document.querySelectorAll('.price-row');
@@ -968,14 +966,13 @@
             
             priceRows.forEach(row => {
                 const intId = row.querySelector('.price-intensity').value;
-                const sizeId = row.querySelector('.price-size').value;
                 const priceVal = parseFloat(row.querySelector('.price-value').value);
 
-                if (intId && sizeId && !isNaN(priceVal)) {
+                if (intId && !isNaN(priceVal)) {
                     newPrices.push({
                         perfume_id: perfumeId,
                         intensity_id: intId,
-                        size_id: sizeId,
+                        size_id: 2, // Şişe farkı her zaman 2 numaralı baz boyuta eklenir
                         price: priceVal
                     });
                 }
