@@ -567,6 +567,7 @@
         } catch (err) { alert('Hata: ' + err.message); }
     };
 
+    // --- FİYAT LİSTELERİ (TOPU FİYAT) ---
     window.renderPriceTagsTab = function() {
         const c = document.getElementById('adminContent'); const lists = siteSettings.pricing_lists || [];
         c.innerHTML = `
@@ -810,353 +811,424 @@
                         <td>${counter++}</td>
                         <td>${groupName}</td>
                         <td>${p.name}</td>
-                    </tr>
-                `;
+                    </tr>`;
             });
+        });
+
+        // Diğer gruplar (eğer yukarıdakiler dışında varsa)
+        const otherPerfumes = currentPerfumes.filter(p => {
+            const group = perfumeGroups.find(g => g.id === p.gender_id);
+            return !group || !targetGroups.includes(group.label);
+        }).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
+
+        otherPerfumes.forEach(p => {
+            const group = perfumeGroups.find(g => g.id === p.gender_id);
+            html += `
+                <tr>
+                    <td>${counter++}</td>
+                    <td>${group ? group.label : 'غير محدد'}</td>
+                    <td>${p.name}</td>
+                </tr>`;
         });
 
         html += `</tbody></table></body></html>`;
 
-        const blob = new Blob(["\uFEFF" + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Parfum_Listesi_${new Date().toISOString().slice(0,10)}.xls`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-        window.showToast('Excel dosyası başarıyla indirildi!');
+        a.download = 'Parfum_Listesi.xls';
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
-    window.openBottleForm = function(id = null) {
-        let b = { name: '', price_diff: 0, size_id: 2, image_url: '' };
-        if (id) b = bottles.find(x => String(x.id) === String(id)) || b;
-        const html = `
-            <div class="modal open" id="bottleFormModal" onclick="window.closeModalOnBackdrop(event, 'bottleFormModal')" style="display:flex; z-index:1001;">
-                <div class="modal-content" onclick="event.stopPropagation()">
-                    <h2 style="margin-bottom: 20px;">${id ? 'تعديل زجاجة' : 'إضافة زجاجة جديدة'}</h2>
-                    <input type="hidden" id="bottle-form-id" value="${id || ''}"><input type="hidden" id="bottle-form-existing-image" value="${b.image_url || ''}">
-                    <div class="form-group">
-                        <label>صورة الزجاجة</label>
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <button type="button" class="btn-gold" onclick="document.getElementById('bottle-form-image').click()" style="flex:1;"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> اختيار صورة</button>
-                            <button type="button" class="btn-success" onclick="window.pasteImage('bottle-form-image', 'previewBottleImage')" style="flex:1;"><svg class="icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> لصق صورة</button>
-                        </div>
-                        <input type="file" id="bottle-form-image" accept="image/*" onchange="window.previewBottleImage(this)" style="display:none;">
-                        <img id="bottle-form-preview" class="img-preview" src="${b.image_url ? window.imageUrl(b.image_url) : ''}" style="display:${b.image_url ? 'block' : 'none'};" onerror="this.style.display='none'">
-                    </div>
-                    <div class="form-group"><label>اسم الزجاجة (مثال: زجاجة 50 مل) *</label><input type="text" id="bottle-form-name" value="${b.name}"></div>
-                    <div class="form-group"><label>فرق السعر (₺)</label><input type="number" id="bottle-form-price" value="${b.price_diff}" step="1"></div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn-success" id="bottle-save-btn" style="flex:1; padding:12px;" onclick="window.saveBottle()">حفظ</button>
-                        <button class="btn-danger" style="flex:1; padding:12px;" onclick="document.getElementById('bottleFormModal').remove()">إلغاء</button>
-                    </div>
-                </div>
-            </div>
+    // --- PARFÜM EKLEME / DÜZENLEME VE FİYAT FONKSİYONLARI ---
+    window.previewPerfumeImage = function(input) {
+        const preview = document.getElementById('perfume-form-image-preview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    window.openPerfumeForm = function(id = null) {
+        const modal = document.getElementById('perfumeFormModal');
+        const title = document.getElementById('perfume-form-title');
+        const idInput = document.getElementById('perfume-form-id');
+        const nameInput = document.getElementById('perfume-form-name');
+        const genderSelect = document.getElementById('perfume-form-gender');
+        const pricesContainer = document.getElementById('perfume-prices-container');
+        const imageInput = document.getElementById('perfume-form-image');
+        const imagePreview = document.getElementById('perfume-form-image-preview');
+
+        imageInput.value = '';
+        imagePreview.src = '';
+        imagePreview.style.display = 'none';
+
+        genderSelect.innerHTML = perfumeGroups.map(g => `<option value="${g.id}">${g.label}</option>`).join('');
+
+        if (id) {
+            title.innerText = "تعديل العطر";
+            const p = currentPerfumes.find(x => String(x.id) === String(id));
+            if (p) {
+                idInput.value = p.id;
+                nameInput.value = p.name || '';
+                if (p.gender_id) genderSelect.value = p.gender_id;
+                if (p.image_url) {
+                    imagePreview.src = window.imageUrl(p.image_url);
+                    imagePreview.style.display = 'block';
+                }
+            }
+        } else {
+            title.innerText = "إضافة عطر جديد";
+            idInput.value = '';
+            nameInput.value = '';
+        }
+
+        pricesContainer.innerHTML = '';
+        const currentPrices = id ? prices.filter(pr => String(pr.perfume_id) === String(id)) : [];
+        
+        if (currentPrices.length > 0) {
+            currentPrices.forEach(pr => {
+                window.addPriceRow(pr.intensity_id, pr.size_id, pr.price);
+            });
+        } else {
+            window.addPriceRow();
+        }
+
+        window.openModal('perfumeFormModal');
+    };
+
+    window.addPriceRow = function(intensityId = '', sizeId = '', price = '') {
+        const container = document.getElementById('perfume-prices-container');
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '5px';
+        row.style.marginBottom = '10px';
+        row.className = 'price-row';
+
+        const intensityOpts = intensities.map(i => `<option value="${i.id}" ${String(i.id) === String(intensityId) ? 'selected' : ''}>${i.name}</option>`).join('');
+        const activeBottles = bottles.filter(b => b.active !== false);
+        const bottleOpts = activeBottles.map(b => `<option value="${b.id}" ${String(b.id) === String(sizeId) ? 'selected' : ''}>${b.name}</option>`).join('');
+
+        row.innerHTML = `
+            <select class="price-intensity" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">${intensityOpts}</select>
+            <select class="price-size" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-family:inherit;">${bottleOpts}</select>
+            <input type="number" class="price-value" value="${price}" placeholder="السعر" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; width:80px; font-family:inherit;">
+            <button type="button" class="btn-danger" onclick="this.parentElement.remove()" style="padding:8px 12px; min-height: unset;">✕</button>
         `;
-        document.body.insertAdjacentHTML('beforeend', html);
+        container.appendChild(row);
+    };
+
+    window.savePerfume = async function() {
+        const id = document.getElementById('perfume-form-id').value;
+        const name = document.getElementById('perfume-form-name').value.trim();
+        const genderId = document.getElementById('perfume-form-gender').value;
+        const imageFile = document.getElementById('perfume-form-image').files[0];
+        
+        if (!name || !genderId) {
+            window.showToast('يرجى ملء اسم العطر والمجموعة');
+            return;
+        }
+
+        const btn = document.querySelector('#perfumeFormModal .btn-success');
+        const oldText = btn.innerText;
+        btn.innerText = 'جاري الحفظ...';
+        btn.disabled = true;
+
+        try {
+            let perfumeId = id;
+            let imageUrl = null;
+
+            if (imageFile) {
+                imageUrl = await window.uploadToB2(imageFile);
+            }
+
+            const perfumeData = { name: name, gender_id: genderId };
+            if (imageUrl) perfumeData.image_url = imageUrl;
+
+            if (id) {
+                const { error } = await _supabase.from('perfumes').update(perfumeData).eq('id', id);
+                if (error) throw error;
+            } else {
+                const { data, error } = await _supabase.from('perfumes').insert([perfumeData]).select();
+                if (error) throw error;
+                perfumeId = data[0].id;
+            }
+
+            const { error: delError } = await _supabase.from('perfume_prices').delete().eq('perfume_id', perfumeId);
+            if (delError) throw delError;
+
+            const priceRows = document.querySelectorAll('.price-row');
+            const newPrices = [];
+            
+            priceRows.forEach(row => {
+                const intId = row.querySelector('.price-intensity').value;
+                const sizeId = row.querySelector('.price-size').value;
+                const priceVal = parseFloat(row.querySelector('.price-value').value);
+
+                if (intId && sizeId && !isNaN(priceVal)) {
+                    newPrices.push({
+                        perfume_id: perfumeId,
+                        intensity_id: intId,
+                        size_id: sizeId,
+                        price: priceVal
+                    });
+                }
+            });
+
+            if (newPrices.length > 0) {
+                const { error: insError } = await _supabase.from('perfume_prices').insert(newPrices);
+                if (insError) throw insError;
+            }
+
+            await window.loadAllData(); 
+            window.closeModalAndPopHistory('perfumeFormModal');
+            window.switchAdminTab('perfumes');
+            window.showToast('تم حفظ العطر بنجاح');
+            
+        } catch (err) {
+            alert('Hata: ' + err.message);
+        } finally {
+            btn.innerText = oldText;
+            btn.disabled = false;
+        }
+    };
+
+    window.deletePerfume = async function(id) {
+        if (!confirm('هل أنت متأكد من حذف هذا العطر نهائياً؟')) return;
+        try {
+            await _supabase.from('perfume_prices').delete().eq('perfume_id', id);
+            const { error } = await _supabase.from('perfumes').delete().eq('id', id);
+            if (error) throw error;
+            window.showToast('تم حذف العطر');
+            await window.loadAllData();
+            window.applyLocalFilter();
+            window.switchAdminTab('perfumes');
+        } catch (err) {
+            alert('Hata: ' + err.message);
+        }
+    };
+
+    // --- DİĞER EKSİK FONKSİYONLAR (ÜRÜN, ŞİŞE, AYARLAR) ---
+    window.previewProductImage = function(input) {
+        const preview = document.getElementById('pf-image-preview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    window.openProductForm = function(id = null) {
+        const modal = document.getElementById('productFormModal');
+        const title = document.getElementById('pf-title');
+        const idInput = document.getElementById('pf-id');
+        const nameInput = document.getElementById('pf-name');
+        const priceInput = document.getElementById('pf-price');
+        const oldPriceInput = document.getElementById('pf-old-price');
+        const catInput = document.getElementById('pf-category');
+        const descInput = document.getElementById('pf-description');
+        const imgInput = document.getElementById('pf-image-file');
+        const imgPreview = document.getElementById('pf-image-preview');
+        
+        imgInput.value = ''; imgPreview.style.display = 'none'; imgPreview.src = '';
+
+        if (id) {
+            title.innerText = "تعديل المنتج";
+            const p = currentProducts.find(x => String(x.id) === String(id));
+            if (p) {
+                idInput.value = p.id;
+                nameInput.value = p.name_ar || p.name || '';
+                priceInput.value = p.price;
+                oldPriceInput.value = p.original_price || '';
+                catInput.value = p.category || '';
+                descInput.value = p.description || '';
+                if (p.img) { imgPreview.src = window.imageUrl(p.img); imgPreview.style.display = 'block'; }
+            }
+        } else {
+            title.innerText = "إضافة منتج جديد";
+            idInput.value = ''; nameInput.value = ''; priceInput.value = ''; oldPriceInput.value = ''; catInput.value = ''; descInput.value = '';
+        }
+        window.openModal('productFormModal');
+    };
+
+    window.saveProduct = async function() {
+        const id = document.getElementById('pf-id').value;
+        const name = document.getElementById('pf-name').value.trim();
+        const price = parseFloat(document.getElementById('pf-price').value);
+        const oldPrice = parseFloat(document.getElementById('pf-old-price').value) || null;
+        const category = document.getElementById('pf-category').value.trim();
+        const description = document.getElementById('pf-description').value.trim();
+        const imageFile = document.getElementById('pf-image-file').files[0];
+
+        if (!name || isNaN(price)) return alert('الاسم والسعر مطلوبان');
+
+        const btn = document.getElementById('pf-save-btn'); const oldText = btn.innerText; btn.innerText = '...'; btn.disabled = true;
+
+        try {
+            let imgUrl = null;
+            if (imageFile) imgUrl = await window.uploadToB2(imageFile);
+
+            const dataToSave = { name: name, name_ar: name, price: price, original_price: oldPrice, category: category, description: description };
+            if (imgUrl) dataToSave.img = imgUrl;
+
+            if (id) await _supabase.from('whatsapp_products').update(dataToSave).eq('id', id);
+            else await _supabase.from('whatsapp_products').insert([dataToSave]);
+
+            await window.loadAllData(); window.applyLocalFilter(); window.closeModalAndPopHistory('productFormModal'); window.showToast('تم الحفظ بنجاح');
+            if (document.getElementById('adminModal').classList.contains('open')) window.switchAdminTab('products');
+        } catch (err) { alert('Hata: ' + err.message); } finally { btn.innerText = oldText; btn.disabled = false; }
+    };
+
+    window.deleteProduct = async function(id) {
+        if (!confirm('تأكيد الحذف؟')) return;
+        try { await _supabase.from('whatsapp_products').delete().eq('id', id); await window.loadAllData(); window.applyLocalFilter(); window.switchAdminTab('products'); window.showToast('تم الحذف'); } catch (err) { alert('Hata: ' + err.message); }
+    };
+
+    window.toggleProductActive = async function(id, event) {
+        if(event) event.stopPropagation();
+        const p = currentProducts.find(x => String(x.id) === String(id)); if (!p) return;
+        const newState = p.active !== false ? false : true;
+        try { await _supabase.from('whatsapp_products').update({ active: newState }).eq('id', id); p.active = newState; window.applyLocalFilter(); window.switchAdminTab(newState ? 'products' : 'hidden_products'); } catch (err) { alert('Hata: ' + err.message); }
     };
 
     window.previewBottleImage = function(input) {
-        const file = input.files[0]; const preview = document.getElementById('bottle-form-preview');
-        if (file) { const reader = new FileReader(); reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; }; reader.readAsDataURL(file); }
+        const preview = document.getElementById('bottle-form-image-preview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { preview.src = e.target.result; preview.style.display = 'block'; };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    window.openBottleForm = function(id = null) {
+        const modal = document.getElementById('bottleFormModal');
+        const title = document.getElementById('bottle-form-title');
+        const idInput = document.getElementById('bottle-form-id');
+        const nameInput = document.getElementById('bottle-form-name');
+        const priceInput = document.getElementById('bottle-form-price');
+        const imgInput = document.getElementById('bottle-form-image');
+        const imgPreview = document.getElementById('bottle-form-image-preview');
+        
+        imgInput.value = ''; imgPreview.style.display = 'none'; imgPreview.src = '';
+
+        if (id) {
+            title.innerText = "تعديل الزجاجة";
+            const b = bottles.find(x => String(x.id) === String(id));
+            if (b) {
+                idInput.value = b.id; nameInput.value = b.name; priceInput.value = b.price_diff;
+                if (b.image_url) { imgPreview.src = window.imageUrl(b.image_url); imgPreview.style.display = 'block'; }
+            }
+        } else {
+            title.innerText = "إضافة زجاجة جديدة";
+            idInput.value = ''; nameInput.value = ''; priceInput.value = '';
+        }
+        window.openModal('bottleFormModal');
     };
 
     window.saveBottle = async function() {
         const id = document.getElementById('bottle-form-id').value;
-        const existingImage = document.getElementById('bottle-form-existing-image').value;
         const name = document.getElementById('bottle-form-name').value.trim();
-        const price_diff = parseFloat(document.getElementById('bottle-form-price').value) || 0;
-        const fileInput = document.getElementById('bottle-form-image');
-        if (!name) return alert('اسم الزجاجة مطلوب!');
-        const btn = document.getElementById('bottle-save-btn'); const oldText = btn.innerText; btn.innerText = 'Kaydediliyor...'; btn.disabled = true;
+        const priceDiff = parseFloat(document.getElementById('bottle-form-price').value) || 0;
+        const imageFile = document.getElementById('bottle-form-image').files[0];
+        if (!name) return alert('اسم الزجاجة مطلوب');
+
+        const btn = document.querySelector('#bottleFormModal .btn-success'); const oldText = btn.innerText; btn.innerText = '...'; btn.disabled = true;
         try {
-            let imgUrl = existingImage;
-            if (fileInput.files[0]) imgUrl = await window.uploadToB2(fileInput.files[0]);
-            const payload = { name, price_diff, size_id: 2, active: true, image_url: imgUrl };
-            if (id) await _supabase.from('perfume_bottles').update(payload).eq('id', id);
-            else await _supabase.from('perfume_bottles').insert([payload]);
-            document.getElementById('bottleFormModal').remove(); await window.loadAllData(); window.switchAdminTab('bottles'); window.showToast('تم حفظ الزجاجة');
-        } catch (err) { alert('Hata: ' + err.message); btn.innerText = oldText; btn.disabled = false; }
+            let imgUrl = null; if (imageFile) imgUrl = await window.uploadToB2(imageFile);
+            const dataToSave = { name: name, price_diff: priceDiff, size_id: 2 };
+            if (imgUrl) dataToSave.image_url = imgUrl;
+
+            if (id) await _supabase.from('perfume_bottles').update(dataToSave).eq('id', id);
+            else await _supabase.from('perfume_bottles').insert([dataToSave]);
+
+            await window.loadAllData(); window.closeModalAndPopHistory('bottleFormModal'); window.switchAdminTab('bottles'); window.showToast('تم الحفظ');
+        } catch (err) { alert('Hata: ' + err.message); } finally { btn.innerText = oldText; btn.disabled = false; }
     };
 
     window.deleteBottle = async function(id) {
-        if (!confirm('تأكيد حذف الزجاجة؟')) return;
-        try { await _supabase.from('perfume_bottles').delete().eq('id', id); await window.loadAllData(); window.switchAdminTab('bottles'); } catch (err) { alert('Hata: ' + err.message); }
+        if (!confirm('تأكيد الحذف؟')) return;
+        try { await _supabase.from('perfume_bottles').delete().eq('id', id); await window.loadAllData(); window.switchAdminTab('bottles'); window.showToast('تم الحذف'); } catch (err) { alert('Hata: ' + err.message); }
+    };
+
+    window.previewSettingLogo = function(input) {
+        if (input.files && input.files[0]) settingLogoFile = input.files[0];
+        const preview = document.getElementById('setting-logo-preview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { preview.src = e.target.result; preview.style.display = 'block'; };
+            reader.readAsDataURL(input.files[0]);
+        }
     };
 
     window.renderSettingsTab = function() {
         return `
             <div class="form-group">
-                <label>شعار الموقع (Logo)</label>
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <button type="button" class="btn-gold" onclick="document.getElementById('setting-logo-file').click()" style="flex:1;"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> اختيار صورة</button>
-                    <button type="button" class="btn-success" onclick="window.pasteImage('setting-logo-file', 'previewSettingLogo')" style="flex:1;"><svg class="icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> لصق صورة</button>
-                </div>
+                <label>شعار المتجر (Logo)</label>
                 <input type="file" id="setting-logo-file" accept="image/*" onchange="window.previewSettingLogo(this)" style="display:none;">
-                <img id="setting-logo-preview" class="img-preview" src="${siteSettings.logo_url ? window.imageUrl(siteSettings.logo_url) : ''}" style="display:${siteSettings.logo_url ? 'block' : 'none'};" onerror="this.style.display='none'">
+                <button type="button" class="btn-gold" onclick="document.getElementById('setting-logo-file').click()" style="width:100%;">اختيار شعار</button>
+                <img id="setting-logo-preview" src="${siteSettings.logo_url ? window.imageUrl(siteSettings.logo_url) : ''}" style="display:${siteSettings.logo_url ? 'block' : 'none'}; max-height:100px; margin:10px auto; object-fit:contain;">
             </div>
-            <div class="form-group"><label>عنوان الموقع الرئيسي (Hero Title)</label><input type="text" id="setting-hero-title" value="${siteSettings.hero_title}"></div>
-            <div class="form-group"><label>العنوان الفرعي (Hero Subtitle)</label><input type="text" id="setting-hero-subtitle" value="${siteSettings.hero_subtitle}"></div>
-            <div class="form-group"><label>نص الشحن المجاني (Shipping Text)</label><input type="text" id="setting-shipping-text" value="${siteSettings.free_shipping_text}"></div>
-            <div class="form-group"><label>الحد الأدنى للشحن المجاني (Shipping Min Price)</label><input type="number" id="setting-shipping-min" value="${siteSettings.free_shipping_min}"></div>
-            <div class="form-group"><label>رقم الواتساب (WhatsApp Number)</label><input type="text" id="setting-whatsapp" value="${siteSettings.whatsapp_number}" dir="ltr"></div>
             <div class="form-group">
-                <label>صور البانر (Slider Images)</label>
-                <input type="file" id="setting-slider-files" multiple accept="image/*" onchange="window.previewSettingSlider(this)">
-                <div id="setting-slider-preview" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-                    ${siteSettings.slider_images.map(img => `
-                        <div style="position:relative;">
-                            <img src="${window.imageUrl(img)}" style="width:80px; height:50px; object-fit:cover; border-radius:6px; border:1px solid #ccc;" onerror="this.style.display='none'">
-                            <button onclick="window.removeBannerImage('${img}')" style="position:absolute; top:-5px; right:-5px; background:var(--danger); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; justify-content:center; min-height: unset; padding:0;"><svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                        </div>
-                    `).join('')}
-                </div>
+                <label>العنوان الرئيسي</label>
+                <input type="text" id="setting-hero-title" value="${siteSettings.hero_title}">
             </div>
-            <button class="btn-success" style="width:100%; padding:15px; font-size:1.1rem; margin-top:20px;" onclick="window.saveSettings()" id="setting-save-btn">حفظ الإعدادات</button>
+            <div class="form-group">
+                <label>العنوان الفرعي</label>
+                <input type="text" id="setting-hero-subtitle" value="${siteSettings.hero_subtitle}">
+            </div>
+            <div class="form-group">
+                <label>نص الشحن المجاني</label>
+                <input type="text" id="setting-shipping-text" value="${siteSettings.free_shipping_text}">
+            </div>
+            <div class="form-group">
+                <label>رقم الواتساب (بدون +)</label>
+                <input type="text" id="setting-whatsapp" value="${siteSettings.whatsapp_number}">
+            </div>
+            <button class="btn-success" style="width:100%; padding:12px;" onclick="window.saveSettings()">حفظ الإعدادات</button>
         `;
     };
 
-    window.previewSettingLogo = function(input) {
-        if (input.files && input.files[0]) {
-            settingLogoFile = input.files[0];
-            const reader = new FileReader();
-            reader.onload = e => { const preview = document.getElementById('setting-logo-preview'); preview.src = e.target.result; preview.style.display = 'block'; };
-            reader.readAsDataURL(settingLogoFile);
-        }
-    };
-
-    window.previewSettingSlider = function(input) {
-        if (input.files && input.files.length > 0) {
-            settingSliderFiles = Array.from(input.files);
-            const preview = document.getElementById('setting-slider-preview');
-            preview.innerHTML = settingSliderFiles.map(file => `<span style="font-size:0.8rem; background:#f0f0f0; padding:4px 8px; border-radius:4px;">${file.name}</span>`).join('');
-        }
-    };
-
-    window.removeBannerImage = async function(imgUrl) {
-        if (!confirm('هل أنت متأكد من حذف هذه الصورة من البانر؟')) return;
-        const newSliderImages = siteSettings.slider_images.filter(img => img !== imgUrl);
-        try {
-            const { error } = await _supabase.from('site_settings').update({ slider_images: newSliderImages }).eq('id', 1);
-            if (error) throw error;
-            siteSettings.slider_images = newSliderImages; window.renderSlider(); window.switchAdminTab('settings'); window.showToast('تم حذف الصورة');
-        } catch (err) { alert('Hata: ' + err.message); }
-    };
-
     window.saveSettings = async function() {
-        if (!_supabase) return alert('Supabase bağlantısı yok');
-        const btn = document.getElementById('setting-save-btn'); const oldText = btn.innerText; btn.innerText = 'Kaydediliyor...'; btn.disabled = true;
+        const title = document.getElementById('setting-hero-title').value;
+        const subtitle = document.getElementById('setting-hero-subtitle').value;
+        const shipping = document.getElementById('setting-shipping-text').value;
+        const whatsapp = document.getElementById('setting-whatsapp').value;
+
+        const btn = document.querySelector('#adminContent .btn-success'); const oldText = btn.innerText; btn.innerText = '...'; btn.disabled = true;
+
         try {
-            let finalLogoUrl = siteSettings.logo_url;
-            let finalSliderImages = [...siteSettings.slider_images];
-            if (settingLogoFile) finalLogoUrl = await window.uploadToB2(settingLogoFile);
-            if (settingSliderFiles.length > 0) {
-                for (const file of settingSliderFiles) { const finalUrl = await window.uploadToB2(file); finalSliderImages.push(finalUrl); }
-            }
-            const payload = {
-                logo_url: finalLogoUrl,
-                hero_title: document.getElementById('setting-hero-title').value.trim(),
-                hero_subtitle: document.getElementById('setting-hero-subtitle').value.trim(),
-                free_shipping_text: document.getElementById('setting-shipping-text').value.trim(),
-                free_shipping_min: parseFloat(document.getElementById('setting-shipping-min').value) || 800,
-                whatsapp_number: document.getElementById('setting-whatsapp').value.trim(),
-                slider_images: finalSliderImages, updated_at: new Date().toISOString()
-            };
-            const { error } = await _supabase.from('site_settings').update(payload).eq('id', 1);
+            let logoUrl = siteSettings.logo_url;
+            if (settingLogoFile) logoUrl = await window.uploadToB2(settingLogoFile);
+
+            const { error } = await _supabase.from('site_settings').update({
+                hero_title: title, hero_subtitle: subtitle, free_shipping_text: shipping, whatsapp_number: whatsapp, logo_url: logoUrl
+            }).eq('id', 1);
             if (error) throw error;
-            siteSettings.logo_url = payload.logo_url; siteSettings.hero_title = payload.hero_title; siteSettings.hero_subtitle = payload.hero_subtitle;
-            siteSettings.free_shipping_text = payload.free_shipping_text; siteSettings.free_shipping_min = payload.free_shipping_min;
-            siteSettings.whatsapp_number = payload.whatsapp_number; siteSettings.slider_images = payload.slider_images;
-            window.applySiteSettingsToUI(); settingLogoFile = null; settingSliderFiles = []; window.showToast('تم حفظ الإعدادات'); window.switchAdminTab('settings');
+
+            await window.loadSiteSettings(); window.switchAdminTab('settings'); window.showToast('تم الحفظ بنجاح'); settingLogoFile = null;
         } catch (err) { alert('Hata: ' + err.message); } finally { btn.innerText = oldText; btn.disabled = false; }
     };
 
-    window.toggleProductActive = async function(id, event) { if (event) event.stopPropagation(); if (!confirm('تغيير حالة ظهور المنتج؟')) return; const product = currentProducts.find(p => String(p.id) === String(id)); if (!product) return; const newState = product.active !== false ? false : true; try { const { error } = await _supabase.from('whatsapp_products').update({ active: newState }).eq('id', id); if (error) throw error; product.active = newState; window.applyLocalFilter(); if (document.getElementById('adminModal').classList.contains('open')) window.switchAdminTab(newState ? 'products' : 'hidden_products'); window.showToast('تم تحديث حالة المنتج'); } catch (err) { alert('Hata: ' + err.message); } };
-
-    window.openGroupForm = async function(groupId = null) {
-        document.getElementById('groupFormTitle').innerText = groupId ? 'تعديل المجموعة' : 'إضافة مجموعة';
-        document.getElementById('gf-id').value = groupId || '';
-        let group = { label: '' };
-        if (groupId) group = perfumeGroups.find(g => String(g.id) === String(groupId));
-        document.getElementById('gf-name').value = group.label;
-        document.getElementById('gf-perfumes').innerHTML = '<p style="color:#888; font-size:0.9rem;">يتم ربط العطور بهذه المجموعة تلقائياً بناءً على الجنس المحدد في بطاقة العطر.</p>';
-        window.openModal('groupFormModal');
-    };
-
-    window.saveGroup = async function() {
-        const id = document.getElementById('gf-id').value;
-        const name = document.getElementById('gf-name').value.trim();
-        if (!name) return alert('اسم المجموعة مطلوب');
-        try {
-            if (id) await _supabase.from('categories').update({ label: name }).eq('id', id);
-            else await _supabase.from('categories').insert([{ type: 'gender', value: 'grup_' + Date.now(), label: name, active: true, sort_order: 99 }]);
-            window.closeModalAndPopHistory('groupFormModal'); await window.loadAllData(); window.renderCategories(); window.switchAdminTab('groups');
-        } catch (err) { alert('Hata: ' + err.message); }
-    };
-
-    window.deleteGroup = async function(id) {
-        if (!confirm('تأكيد حذف المجموعة؟')) return;
-        const perfumesInGroup = currentPerfumes.filter(p => String(p.gender_id) === String(id));
-        if (perfumesInGroup.length > 0) { alert(`لا يمكن حذف هذه المجموعة لأنها تحتوي على ${perfumesInGroup.length} عطر.\n\nيرجى حذف العطور أو نقلها إلى مجموعة أخرى أولاً.`); return; }
-        try {
-            await _supabase.from('categories').delete().eq('id', id); await window.loadAllData(); window.renderCategories(); window.switchAdminTab('groups'); window.showToast('تم حذف المجموعة بنجاح');
-        } catch (err) { alert('Hata: ' + err.message); }
-    };
-
-    window.openProductForm = function(id = null) {
-        document.getElementById('pf-title').innerText = id ? 'تعديل المنتج' : 'إضافة منتج جديد';
-        document.getElementById('pf-id').value = id || '';
-        const preview = document.getElementById('pf-image-preview'); preview.style.display = 'none'; preview.src = '';
-        document.getElementById('pf-image-file').value = ''; currentProductImageUrl = '';
-        if (id) {
-            const p = currentProducts.find(x => String(x.id) === String(id));
-            if (p) { document.getElementById('pf-name').value = p.name_ar || p.name || ''; document.getElementById('pf-price').value = p.price; document.getElementById('pf-old-price').value = p.original_price || ''; document.getElementById('pf-category').value = p.category; document.getElementById('pf-description').value = p.description || ''; currentProductImageUrl = p.img; if (p.img) { preview.src = window.imageUrl(p.img); preview.style.display = 'block'; } }
-        } else { document.getElementById('pf-name').value = ''; document.getElementById('pf-price').value = ''; document.getElementById('pf-old-price').value = ''; document.getElementById('pf-category').value = ''; document.getElementById('pf-description').value = ''; }
-        window.openModal('productFormModal');
-    };
-    window.previewProductImage = function(input) { const file = input.files[0]; const preview = document.getElementById('pf-image-preview'); if (file) { const reader = new FileReader(); reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; }; reader.readAsDataURL(file); } };
-
-    window.saveProduct = async function() {
-        const btn = document.getElementById('pf-save-btn'); 
-        if (!btn) return alert("Kaydet butonu bulunamadı!");
-        
-        const oldText = btn.innerText; 
-        btn.innerText = 'Kaydediliyor...'; 
-        btn.disabled = true;
-
-        try {
-            const id = document.getElementById('pf-id')?.value || '';
-            const name = document.getElementById('pf-name')?.value.trim() || '';
-            const price = parseFloat(document.getElementById('pf-price')?.value) || 0;
-            const oldPrice = parseFloat(document.getElementById('pf-old-price')?.value) || 0;
-            const category = document.getElementById('pf-category')?.value.trim() || '';
-            const description = document.getElementById('pf-description')?.value.trim() || '';
-            const fileInput = document.getElementById('pf-image-file');
-            
-            if (!name) {
-                btn.innerText = oldText; 
-                btn.disabled = false;
-                return alert('Lütfen ürün adını girin!');
-            }
-
-            let imgUrl = currentProductImageUrl || '';
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                imgUrl = await window.uploadToB2(fileInput.files[0]);
-            }
-
-            const payload = { 
-                id: id || 'admin_' + Date.now(), 
-                name: name, 
-                price: price, 
-                original_price: oldPrice, 
-                category: category, 
-                description: description, 
-                img: imgUrl, 
-                active: true, 
-                synced_at: new Date().toISOString() 
-            };
-            
-            if (id) { 
-                const { error } = await _supabase.from('whatsapp_products').update(payload).eq('id', id); 
-                if (error) throw error; 
-            } else { 
-                const { error } = await _supabase.from('whatsapp_products').insert([payload]); 
-                if (error) throw error; 
-            }
-            
-            window.closeModalAndPopHistory('productFormModal'); 
-            await window.loadAllData(); 
-            window.renderCategories(); 
-            window.applyLocalFilter(); 
-            window.showToast('تم حفظ المنتج'); 
-            window.switchAdminTab('products');
-            
-        } catch (err) { 
-            console.error("KAYIT HATASI:", err);
-            alert('HATA BULUNDU: ' + err.message); 
-        } finally { 
-            btn.innerText = oldText; 
-            btn.disabled = false; 
+    // --- BAŞLATMA (INIT) ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        initSupabase();
+        if (_supabase) {
+            await window.loadSiteSettings();
+            await window.loadAllData();
         }
-    };
-
-    window.openPerfumeForm = function(id = null) {
-        const p = id ? currentPerfumes.find(x => String(x.id) === String(id)) : null;
-        let html = `<div class="modal open" id="perfumeFormModal" onclick="window.closeModalOnBackdrop(event, 'perfumeFormModal')" style="display:flex; z-index:1001;"><div class="modal-content" onclick="event.stopPropagation()"><h2 style="margin-bottom: 20px;">${id ? 'تعديل عطر' : 'إضافة عطر جديد'}</h2><input type="hidden" id="perfume-form-id" value="${id || ''}"><input type="hidden" id="perfume-form-existing-image" value="${p?.image_url || ''}"><div class="form-group"><label>صورة العطر</label><div style="display:flex; gap:10px; margin-bottom:10px;"><button type="button" class="btn-gold" onclick="document.getElementById('perfume-form-image').click()" style="flex:1;">اختيار صورة</button><button type="button" class="btn-success" onclick="window.pasteImage('perfume-form-image', 'previewPerfumeImage')" style="flex:1;">لصق صورة</button></div><input type="file" id="perfume-form-image" accept="image/*" onchange="window.previewPerfumeImage(this)" style="display:none;"><img id="perfume-form-preview" class="img-preview" src="${p?.image_url ? window.imageUrl(p.image_url) : ''}" style="display:${p?.image_url ? 'block' : 'none'};"></div><div class="form-group"><label>اسم العطر *</label><input type="text" id="perfume-form-name" value="${p?.name || ''}"></div><div class="form-group"><label>المجموعة / الجنس</label><select id="perfume-form-gender">${perfumeGroups.map(g => `<option value="${g.id}" ${p?.gender_id == g.id ? 'selected' : ''}>${g.label}</option>`).join('')}</select></div><div style="display: flex; gap: 10px; margin-top: 20px;"><button class="btn-success" id="perfume-save-btn" style="flex:1; padding:12px;" onclick="window.savePerfume()">حفظ</button><button class="btn-danger" style="flex:1; padding:12px;" onclick="document.getElementById('perfumeFormModal').remove()">إلغاء</button></div></div></div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
-    };
-    window.previewPerfumeImage = function(input) { const file = input.files[0]; const preview = document.getElementById('perfume-form-preview'); if (file) { const reader = new FileReader(); reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; }; reader.readAsDataURL(file); } };
-    window.savePerfume = async function() {
-        const id = document.getElementById('perfume-form-id').value;
-        const existingImage = document.getElementById('perfume-form-existing-image').value;
-        const name = document.getElementById('perfume-form-name').value.trim();
-        const gender_id = document.getElementById('perfume-form-gender').value || null;
-        const fileInput = document.getElementById('perfume-form-image');
-        if (!name) return alert('اسم العطر مطلوب!');
-        const btn = document.getElementById('perfume-save-btn'); const oldText = btn.innerText; btn.innerText = 'Kaydediliyor...'; btn.disabled = true;
-        try {
-            let imgUrl = existingImage; if (fileInput.files[0]) imgUrl = await window.uploadToB2(fileInput.files[0]);
-            const payload = { id: id || 'perf_' + Date.now(), name: name, gender_id: gender_id, image_url: imgUrl, active: true };
-            if (id) await _supabase.from('perfumes').update(payload).eq('id', id);
-            else await _supabase.from('perfumes').insert([payload]);
-            document.getElementById('perfumeFormModal').remove(); await window.loadAllData(); window.applyLocalFilter(); window.switchAdminTab('perfumes'); window.showToast('تم حفظ العطر بنجاح');
-        } catch (err) { alert('Hata: ' + err.message); btn.innerText = oldText; btn.disabled = false; }
-    };
-
-    window.init = async function() {
-        try {
-            const cachedProducts = localStorage.getItem('cached_products'); const cachedSettings = localStorage.getItem('cached_settings');
-            if (cachedProducts && cachedSettings) { 
-                try { currentProducts = JSON.parse(cachedProducts); siteSettings = JSON.parse(cachedSettings); window.applySiteSettingsToUI(); window.setDefaultCategory(); window.renderCategories(); window.applyLocalFilter(); window.hideLoadingScreen(); } catch(e) {} 
-            } else { 
-                window.showLoadingScreen(); 
-            }
-            
-            initSupabase();
-            
-            if (_supabase) { 
-                const { data: { session } } = await _supabase.auth.getSession(); 
-                isAdmin = !!session; 
-                sessionToken = session?.access_token || null; 
-                if (isAdmin) document.getElementById('adminBar').style.display = 'flex'; 
-            }
-            
-            try {
-                await Promise.all([window.loadSiteSettings(), window.loadAllData()]);
-            } catch (e) {
-                console.warn("Veri yükleme hatası, önbellekle devam ediliyor:", e);
-            }
-            
-            window.setDefaultCategory(); 
-            window.renderCategories(); 
-            window.applyLocalFilter(); 
-            window.updateCartUI(); 
-            window.hideLoadingScreen();
-            
-            const urlParams = new URLSearchParams(window.location.search); 
-            const productIdParam = urlParams.get('product');
-            if (productIdParam) { 
-                const isCosmetic = currentProducts.find(p => String(p.id) === String(productIdParam)); 
-                const isPerfume = currentPerfumes.find(p => String(p.id) === String(productIdParam)); 
-                if (isCosmetic) window.openProductDetail(productIdParam); 
-                else if (isPerfume) window.openPerfumeDetail(productIdParam); 
-            }
-        } catch (globalError) {
-            console.error("Kritik init hatası:", globalError);
-            window.hideLoadingScreen();
-        }
-    };
-
-    window.addEventListener('load', function() {
-        try {
-            if (typeof window.init === 'function') {
-                window.init();
-            } else {
-                console.error("init fonksiyonu bulunamadı!");
-                window.hideLoadingScreen();
-            }
-        } catch (e) {
-            console.error("Başlatma hatası:", e);
-            window.hideLoadingScreen();
-        }
+        window.renderCategories();
+        window.applyLocalFilter();
+        window.updateCartUI();
+        window.hideLoadingScreen();
     });
+
 })();
