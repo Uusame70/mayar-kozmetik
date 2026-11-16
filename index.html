@@ -312,5 +312,51 @@
             </div>
         </div>
     </div>
+        <!-- PARFÜM EKLEME / DÜZENLEME MODALI (TAM KOD) -->
+    <div id="perfumeFormModal" class="modal" onclick="closeModalOnBackdrop(event, 'perfumeFormModal')">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+            <div class="modal-header-row">
+                <h2 id="perfume-form-title">إضافة عطر جديد</h2>
+                <button class="btn-danger" onclick="closeModalAndPopHistory('perfumeFormModal')" style="border-radius:50%; width:36px; height:36px; padding:0; min-height: unset;">✕</button>
+            </div>
+            
+            <input type="hidden" id="perfume-form-id">
+            
+            <div class="form-group">
+                <label>صورة العطر</label>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <button type="button" class="btn-gold" onclick="document.getElementById('perfume-form-image').click()" style="flex:1;">اختيار صورة</button>
+                </div>
+                <input type="file" id="perfume-form-image" accept="image/*" onchange="window.previewPerfumeImage(this)" style="display:none;">
+                <img id="perfume-form-image-preview" class="img-preview" style="display:none; max-height: 150px;">
+            </div>
+
+            <div class="form-group">
+                <label>اسم العطر *</label>
+                <input type="text" id="perfume-form-name" placeholder="مثال: عطر ميار الملكي">
+            </div>
+
+            <div class="form-group">
+                <label>المجموعة (الجنس) *</label>
+                <select id="perfume-form-gender" style="width:100%; padding:12px; border-radius:10px; border:2px solid #e0dcd0; font-family:inherit;">
+                    <!-- JS ile doldurulacak -->
+                </select>
+            </div>
+
+            <!-- FİYATLANDIRMA KISMI -->
+            <div class="form-group" style="background:#faf8f3; padding:15px; border-radius:10px; border:1px solid #e0dcd0; margin-top:15px;">
+                <label style="margin-bottom:10px; display:block; color:var(--navy); font-weight:800;">الأسعار (التركيز - الحجم - السعر)</label>
+                <div id="perfume-prices-container">
+                    <!-- Fiyat satırları JS ile dinamik eklenecek -->
+                </div>
+                <button type="button" class="btn-info" onclick="window.addPriceRow()" style="margin-top:10px; width:100%; font-size:0.9rem;">+ إضافة سعر جديد</button>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-success" style="flex:1; padding:12px;" onclick="window.savePerfume()">حفظ العطر</button>
+                <button class="btn-danger" style="flex:1; padding:12px;" onclick="closeModalAndPopHistory('perfumeFormModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
