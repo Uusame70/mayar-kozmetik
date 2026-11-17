@@ -1097,6 +1097,7 @@
     category: category,
     description: description
 };
+            if (!id) dataToSave.id = crypto.randomUUID();
             if (imgUrl) dataToSave.img = imgUrl;
 
             let result;
