@@ -1,6 +1,6 @@
 (function() {
     const SUPABASE_URL = 'https://mbzwxfyjqlfxdzadofbf.supabase.co';
-    const SUPABASE_ANON_KEY = 'YENI_PROJENIN_PUBLISHABLE_KEYI';
+    const SUPABASE_ANON_KEY = 'sb_publishable_JmjCfGzzpAraLjHB0AaoHQ_xKfZI6lY';
     
     const B2_UPLOAD_URL = 'https://b2-upload.usameismail70.workers.dev'; 
     const B2_IMAGE_PROXY_URL = 'https://b2-image.usameismail70.workers.dev';
