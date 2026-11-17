@@ -1090,11 +1090,24 @@
             let imgUrl = null;
             if (imageFile) imgUrl = await window.uploadToB2(imageFile);
 
-            const dataToSave = { name: name, name_ar: name, price: price, original_price: oldPrice, category: category, description: description };
+           const dataToSave = {
+    name: name,
+    price: price,
+    original_price: oldPrice,
+    category: category,
+    description: description
+};
             if (imgUrl) dataToSave.img = imgUrl;
 
-            if (id) await _supabase.from('whatsapp_products').update(dataToSave).eq('id', id);
-            else await _supabase.from('whatsapp_products').insert([dataToSave]);
+            let result;
+
+            if (id) {
+                result = await _supabase.from('whatsapp_products').update(dataToSave).eq('id', id);
+            } else {
+                result = await _supabase.from('whatsapp_products').insert([dataToSave]);
+            }
+
+            if (result.error) throw result.error;
 
             await window.loadAllData(); window.applyLocalFilter(); window.closeModalAndPopHistory('productFormModal'); window.showToast('تم الحفظ بنجاح');
             if (document.getElementById('adminModal').classList.contains('open')) window.switchAdminTab('products');
