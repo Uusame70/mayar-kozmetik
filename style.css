@@ -246,42 +246,53 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
     .slider-nav:hover { transform: translateY(-50%) !important; background: rgba(26,41,66,0.6) !important; color: var(--gold) !important; }
     .cat-btn:hover { transform: none !important; }
 }
-/* HERO SLIDER TAM EKRAN AYARLARI */
+/* --- YENİ HERO SLIDER (YATAY 6:4) --- */
 .hero {
     position: relative;
     width: 100%;
-    height: 60vh; /* Ekran yüksekliğinin %60'ı */
-    min-height: 400px;
-    max-height: 700px;
+    max-width: 1200px; /* Bilgisayarda çok devasa olmasın */
+    margin: 0 auto 20px auto; /* Ortala */
+    aspect-ratio: 6 / 4; /* YATAY ORAN (Genişlik 6, Yükseklik 4) */
     border-radius: 0 0 30px 30px;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
-    margin-bottom: 20px;
+    background-color: var(--navy); /* Resim yüklenmezse arka plan koyu olsun */
 }
 
+/* Mobilde de yatay kalsın ama daha kısa olsun */
 @media (max-width: 768px) {
     .hero {
-        height: 40vh; /* Mobilde daha kısa */
-        min-height: 250px;
+        aspect-ratio: 4 / 3; 
     }
 }
 
-.slider-container { width: 100%; height: 100%; margin: 0; padding: 0; max-width: 100%; }
-.slider { width: 100%; height: 100%; aspect-ratio: auto; background: transparent; }
-.slider-track { height: 100%; }
-.slider-slide { height: 100%; width: 100%; }
-/* Hero alanındaki resimlerin kırpılmasını engelle ve oranını koru */
+.slider-container { 
+    width: 100%; 
+    height: 100%; 
+    margin: 0; 
+    padding: 0; 
+    max-width: 100%; 
+}
+
+.slider { 
+    width: 100%; 
+    height: 100%; 
+    background: transparent; 
+}
+
+.slider-track { 
+    height: 100%; 
+}
+
+.slider-slide { 
+    height: 100%; 
+    width: 100%; 
+}
+
+/* Resimlerin bu yatay alanı TAMAMEN kaplamasını sağlar */
 .slider-slide img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Resim kırpılmaz, tamamı görünür */
-    object-position: center;
-    background-color: var(--cream); /* Boşluklar krem rengi olur */
-}
-
-/* Mobilde daha iyi görünmesi için */
-@media (max-width: 768px) {
-    .slider-slide img {
-        object-fit: contain;
-    }
+    object-fit: cover; /* Alanı tamamen doldurur, boşluk bırakmaz */
+    object-position: center; /* Resmi ortalar */
 }
