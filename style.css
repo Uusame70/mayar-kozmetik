@@ -246,3 +246,28 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
     .slider-nav:hover { transform: translateY(-50%) !important; background: rgba(26,41,66,0.6) !important; color: var(--gold) !important; }
     .cat-btn:hover { transform: none !important; }
 }
+/* HERO SLIDER TAM EKRAN AYARLARI */
+.hero {
+    position: relative;
+    width: 100%;
+    height: 60vh; /* Ekran yüksekliğinin %60'ı */
+    min-height: 400px;
+    max-height: 700px;
+    border-radius: 0 0 30px 30px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .hero {
+        height: 40vh; /* Mobilde daha kısa */
+        min-height: 250px;
+    }
+}
+
+.slider-container { width: 100%; height: 100%; margin: 0; padding: 0; max-width: 100%; }
+.slider { width: 100%; height: 100%; aspect-ratio: auto; background: transparent; }
+.slider-track { height: 100%; }
+.slider-slide { height: 100%; width: 100%; }
+.slider-slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; background: transparent; }
