@@ -1280,6 +1280,43 @@
         window.updateCartUI();
         window.hideLoadingScreen();
     });
+    // Yükleme ekranını gizleme fonksiyonu
+    window.hideLoadingScreen = function() {
+        const loader = document.getElementById('loadingScreen');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300); // Yumuşak geçiş için
+        }
+    };
 
+    // Eksik olan diğer temel fonksiyonlar
+    window.openModal = function(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.add('open');
+            modal.style.display = 'flex';
+            // Gerekirse history stack'i buraya ekleyebilirsin
+        }
+    };
+
+    window.closeModalOnBackdrop = function(event, id) {
+        if (event.target.id === id) {
+            window.closeModal(id);
+        }
+    };
+
+    window.closeModal = function(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.remove('open');
+            modal.style.display = 'none';
+        }
+    };
+
+    window.closeModalAndPopHistory = function(id) {
+        window.closeModal(id);
+    };
 })();
 
