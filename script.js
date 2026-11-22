@@ -163,17 +163,18 @@
             } catch(e) { console.warn(e); }
         }
     };
-
+    
     window.uploadToB2 = async function(file) {
+        if (!sessionToken) throw new Error('Yükleme için admin girişi gerekli');
         const base64 = await new Promise((resolve) => {
             const reader = new FileReader(); reader.onload = e => resolve(e.target.result); reader.readAsDataURL(file);
         });
         const res = await fetch(B2_UPLOAD_URL, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64: base64, contentType: file.type })
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken }, body: JSON.stringify({ base64: base64, contentType: file.type })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Yükleme hatası (B2)');
-        if (data.key) return data.key.startsWith('http') ? data.key : '/api/b2-image?key=' + encodeURIComponent(data.key);
+        if (data.key) return B2_IMAGE_PROXY_URL + '?key=' + encodeURIComponent(data.key);
         return '';
     };
 
