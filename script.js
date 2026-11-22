@@ -116,7 +116,6 @@
         if (typeof supabase !== 'undefined' && supabase.createClient) {
             _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
-            // OTURUM DURUMUNU DİNLE (Admin panelinden atmasını engeller)
             _supabase.auth.onAuthStateChange((event, session) => {
                 if (session) {
                     isAdmin = true;
@@ -163,18 +162,17 @@
             } catch(e) { console.warn(e); }
         }
     };
-    
+
     window.uploadToB2 = async function(file) {
-        if (!sessionToken) throw new Error('Yükleme için admin girişi gerekli');
         const base64 = await new Promise((resolve) => {
             const reader = new FileReader(); reader.onload = e => resolve(e.target.result); reader.readAsDataURL(file);
         });
         const res = await fetch(B2_UPLOAD_URL, {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken }, body: JSON.stringify({ base64: base64, contentType: file.type })
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64: base64, contentType: file.type })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Yükleme hatası (B2)');
-        if (data.key) return B2_IMAGE_PROXY_URL + '?key=' + encodeURIComponent(data.key);
+        if (data.key) return data.key.startsWith('http') ? data.key : '/api/b2-image?key=' + encodeURIComponent(data.key);
         return '';
     };
 
@@ -398,40 +396,68 @@
         const container = document.getElementById('sliderContainer'); 
         const track = document.getElementById('sliderTrack'); 
         const dots = document.getElementById('sliderDots');
-        const fallback = document.getElementById('heroFallback'); // Mavi yedek alan
+        const fallback = document.getElementById('heroFallback');
     
         const images = siteSettings.slider_images || [];
     
-        // Eğer resim yoksa mavi alanı göster, slider'ı gizle
         if (!images || images.length === 0) { 
             container.style.display = 'none'; 
             if (fallback) fallback.style.display = 'flex';
             return; 
-    }
+        }
     
-    // Resim varsa slider'ı göster, mavi alanı gizle
-    container.style.display = 'block'; 
-    if (fallback) fallback.style.display = 'none';
-    
-    track.innerHTML = ''; 
-    dots.innerHTML = '';
-    
-    images.forEach((url, i) => {
-        const slide = document.createElement('div'); 
-        slide.className = 'slider-slide';
-        slide.innerHTML = '<img src="' + window.imageUrl(url) + '" alt="Banner ' + (i+1) + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'; document.getElementById(\'sliderContainer\').style.display=\'none\'; if(document.getElementById(\'heroFallback\')) document.getElementById(\'heroFallback\').style.display=\'flex\';">';
-        track.appendChild(slide);
+        container.style.display = 'block'; 
+        if (fallback) fallback.style.display = 'none';
         
-        const dot = document.createElement('div'); 
-        dot.className = 'slider-dot' + (i === 0 ? ' active' : ''); 
-        dot.onclick = () => window.goToSlide(i); 
-        dots.appendChild(dot);
-    });
+        track.innerHTML = ''; 
+        dots.innerHTML = '';
+        
+        images.forEach((url, i) => {
+            const slide = document.createElement('div'); 
+            slide.className = 'slider-slide';
+            slide.innerHTML = '<img src="' + window.imageUrl(url) + '" alt="Banner ' + (i+1) + '" loading="lazy" onerror="this.parentElement.style.display=\'none\'; document.getElementById(\'sliderContainer\').style.display=\'none\'; if(document.getElementById(\'heroFallback\')) document.getElementById(\'heroFallback\').style.display=\'flex\';">';
+            track.appendChild(slide);
+            
+            const dot = document.createElement('div'); 
+            dot.className = 'slider-dot' + (i === 0 ? ' active' : ''); 
+            dot.onclick = () => window.goToSlide(i); 
+            dots.appendChild(dot);
+        });
+        
+        currentSlide = 0; 
+        window.updateSlider(); 
+        window.startSliderAutoplay();
+    };
+
+    window.updateSlider = function() { const track = document.getElementById('sliderTrack'); if (!track) return; track.style.transform = 'translateX(' + (currentSlide * 100) + '%)'; document.querySelectorAll('.slider-dot').forEach((d, i) => { d.classList.toggle('active', i === currentSlide); }); };
+    window.goToSlide = function(idx) { const images = siteSettings.slider_images || []; if (images.length === 0) return; currentSlide = idx % images.length; if (currentSlide < 0) currentSlide = images.length - 1; window.updateSlider(); };
+    window.sliderNext = function() { window.goToSlide(currentSlide + 1); window.startSliderAutoplay(); };
+    window.sliderPrev = function() { window.goToSlide(currentSlide - 1); window.startSliderAutoplay(); };
+    window.startSliderAutoplay = function() { if (sliderAutoplayTimer) clearInterval(sliderAutoplayTimer); const images = siteSettings.slider_images || []; if (images.length < 2) return; sliderAutoplayTimer = setInterval(() => { currentSlide = (currentSlide + 1) % images.length; window.updateSlider(); }, 5000); };
+
+    window.setDefaultCategory = function() { if (selectedCategory !== 'ALL' || searchQuery) return; let unifiedCats = getAllCategoriesUnified(); const customOrder = siteSettings.custom_categories_order || []; unifiedCats.sort((a, b) => { let idxA = customOrder.indexOf(a.id); let idxB = customOrder.indexOf(b.id); if (idxA === -1) idxA = 99999; if (idxB === -1) idxB = 99999; return idxA - idxB; }); if (unifiedCats.length > 0) { const firstCat = unifiedCats[0]; selectedCategory = firstCat.type === 'perfume_group' ? 'perfume_group_' + firstCat.originalId : firstCat.originalId; } };
+    window.showLoadingScreen = function() { document.getElementById('loadingScreen').style.display = 'flex'; };
     
-    currentSlide = 0; 
-    window.updateSlider(); 
-    window.startSliderAutoplay();
-};
+    // YÜKLEME EKRANINI KAPATAN FONKSİYON (Eksikti, geri ekliyoruz)
+    window.hideLoadingScreen = function() { 
+        const loader = document.getElementById('loadingScreen');
+        if (loader) {
+            loader.style.opacity = '0'; 
+            setTimeout(() => { 
+                loader.style.display = 'none'; 
+            }, 400); 
+        }
+    };
+
+    window.handleSearch = function(val) { if (val.trim() === 'mayar.') { document.getElementById('search-input').value = ''; searchQuery = ''; window.applyLocalFilter(); window.openModal('loginModal'); return; } searchQuery = val.trim(); window.applyLocalFilter(); };
+    window.openWhatsAppChat = function() { const num = siteSettings.whatsapp_number.replace(/[^0-9]/g, ''); window.open('https://wa.me/' + num, '_blank'); };
+
+    window.openModal = function(id) { document.getElementById(id).style.display = 'flex'; document.getElementById(id).classList.add('open'); modalHistoryStack.push(id); history.pushState({ modal: id }, ''); };
+    window.closeModalAndPopHistory = function(id) { document.getElementById(id).classList.remove('open'); document.getElementById(id).style.display = 'none'; const idx = modalHistoryStack.lastIndexOf(id); if (idx !== -1) modalHistoryStack.splice(idx, 1); if (history.state && history.state.modal === id) history.back(); };
+    window.closeModalOnBackdrop = function(event, modalId) { if (event.target.id === modalId) window.closeModalAndPopHistory(modalId); };
+
+    window.addEventListener('popstate', function() { if (modalHistoryStack.length > 0) { const modalId = modalHistoryStack.pop(); document.getElementById(modalId).classList.remove('open'); } else { history.pushState({ root: true }, ''); } });
+    history.replaceState({ root: true }, '');
 
     // --- ADMIN İŞLEMLERİ ---
     window.switchAdminTab = function(tab, btn) {
@@ -1098,12 +1124,12 @@
             if (imageFile) imgUrl = await window.uploadToB2(imageFile);
 
            const dataToSave = {
-    name: name,
-    price: price,
-    original_price: oldPrice,
-    category: category,
-    description: description
-};
+                name: name,
+                price: price,
+                original_price: oldPrice,
+                category: category,
+                description: description
+            };
             if (!id) dataToSave.id = crypto.randomUUID();
             if (imgUrl) dataToSave.img = imgUrl;
 
@@ -1260,7 +1286,6 @@
             await window.loadSiteSettings();
             await window.loadAllData();
             
-            // SAYFA YENİLENDİĞİNDE OTURUMU KONTROL ET
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
                 isAdmin = true;
@@ -1280,43 +1305,5 @@
         window.updateCartUI();
         window.hideLoadingScreen();
     });
-    // Yükleme ekranını gizleme fonksiyonu
-    window.hideLoadingScreen = function() {
-        const loader = document.getElementById('loadingScreen');
-        if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.display = 'none';
-            }, 300); // Yumuşak geçiş için
-        }
-    };
 
-    // Eksik olan diğer temel fonksiyonlar
-    window.openModal = function(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.add('open');
-            modal.style.display = 'flex';
-            // Gerekirse history stack'i buraya ekleyebilirsin
-        }
-    };
-
-    window.closeModalOnBackdrop = function(event, id) {
-        if (event.target.id === id) {
-            window.closeModal(id);
-        }
-    };
-
-    window.closeModal = function(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.remove('open');
-            modal.style.display = 'none';
-        }
-    };
-
-    window.closeModalAndPopHistory = function(id) {
-        window.closeModal(id);
-    };
 })();
-
